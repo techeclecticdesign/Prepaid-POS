@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    MDOC_Annex_POS_lib::run()
+    mdoc_annex_pos_lib::run()
 }

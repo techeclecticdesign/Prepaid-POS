@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+echo "TS tests..."
+npm run test || exit 1
+
+echo "TS lint..."
+npm run lint || exit 1
+
+echo "TS formatting..."
+npm run format:check || exit 1
+
+echo "Rust fmt check..."
+npm run cargo-fmt:check || exit 1
+
+echo "Rust clippy..."
+npm run cargo-lint || exit 1
+
+echo "Rust tests..."
+npm run cargo-test || exit 1
