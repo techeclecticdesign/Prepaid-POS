@@ -3,7 +3,7 @@ use log::LevelFilter;
 
 pub fn init() -> Result<(), Box<dyn std::error::Error>> {
     Dispatch::new()
-        .level(LevelFilter::Debug)
+        .level(LevelFilter::Info)
         .chain(
             Dispatch::new()
                 .level(LevelFilter::Info)

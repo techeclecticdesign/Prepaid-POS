@@ -21,13 +21,16 @@ fn main() {
     logger::init().expect("logger init failed");
     log::info!("Annex POS is starting");
 
-    let conn = Arc::new(create_connection("annex_data.sqlite").expect("failed to open SQLite DB"));
+    let conn = Arc::new(create_connection("annex_data.sqlite").unwrap_or_else(|e| {
+        log::error!("DB init error: {}", e);
+        std::process::exit(1);
+    }));
     let op_repo: Arc<dyn OperatorRepoTrait> = Arc::new(SqliteOperatorRepo::new(Arc::clone(&conn)));
 
     // build controller once and share it
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
 
-    let _ = Builder::default()
+    Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(op_ctrl)
         .invoke_handler(tauri::generate_handler![
@@ -43,5 +46,9 @@ fn main() {
             }
         })
         .manage(op_repo) // make repos available to all commands
-        .run(tauri::generate_context!());
+        .run(tauri::generate_context!())
+        .unwrap_or_else(|e| {
+            log::error!("Tauri run failed: {}", e);
+            std::process::exit(1);
+        });
 }
