@@ -1,5 +1,6 @@
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
+use crate::error::AppError;
 use log::{error, info, warn};
 use std::sync::Arc;
 
@@ -13,24 +14,27 @@ impl OperatorService {
         Self { repo }
     }
 
-    pub fn list_operators(&self) -> anyhow::Result<Vec<Operator>> {
+    pub fn list_operators(&self) -> Result<Vec<Operator>, AppError> {
         self.repo.list()
     }
 
-    pub fn get_operator(&self, id: i32) -> anyhow::Result<Option<Operator>> {
+    pub fn get_operator(&self, id: i32) -> Result<Option<Operator>, AppError> {
         self.repo.get_by_id(id)
     }
 
-    pub fn create_operator(&self, op: &Operator) -> anyhow::Result<()> {
+    pub fn create_operator(&self, op: &Operator) -> Result<(), AppError> {
         if op.name.trim().is_empty() {
             warn!("create failed: name empty (name={})", op.name);
-            anyhow::bail!("Operator name cannot be empty");
+            return Err(AppError::Unexpected("Operator name cannot be empty".into()));
         }
         // Check if any operator already has this id
         let existing = self.repo.list()?.into_iter().find(|o| o.id == op.id);
         if existing.is_some() {
             warn!("create failed: duplicate id {}", op.id);
-            anyhow::bail!("Operator id '{}' already exists", op.id);
+            return Err(AppError::Unexpected(format!(
+                "Operator id '{}' already exists",
+                op.id
+            )));
         }
         let res = self.repo.create(op);
         match &res {
@@ -41,12 +45,15 @@ impl OperatorService {
     }
 
     /// Update an existing operator
-    pub fn update_operator(&self, op: &Operator) -> anyhow::Result<()> {
+    pub fn update_operator(&self, op: &Operator) -> Result<(), AppError> {
         // Check if operator exists
         let existing = self.repo.get_by_id(op.id)?;
         if existing.is_none() {
             warn!("update failed: not found (id={})", op.id);
-            anyhow::bail!("Cannot update: Operator with id {} not found", op.id);
+            return Err(AppError::NotFound(format!(
+                "Cannot update: Operator with id {} not found",
+                op.id
+            )));
         }
         let res = self.repo.update_by_id(op);
         match &res {

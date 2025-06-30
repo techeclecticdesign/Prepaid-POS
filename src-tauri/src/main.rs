@@ -3,6 +3,7 @@
 
 mod commands;
 mod domain;
+mod error;
 mod infrastructure;
 mod interface;
 mod logger;

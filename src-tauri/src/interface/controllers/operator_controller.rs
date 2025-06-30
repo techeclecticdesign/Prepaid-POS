@@ -1,5 +1,6 @@
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
+use crate::error::AppError;
 use crate::services::operator_service::OperatorService;
 use std::sync::Arc;
 
@@ -15,19 +16,19 @@ impl OperatorController {
         }
     }
 
-    pub fn list(&self) -> anyhow::Result<Vec<Operator>> {
+    pub fn list(&self) -> Result<Vec<Operator>, AppError> {
         self.svc.list_operators()
     }
 
-    pub fn get(&self, id: i32) -> anyhow::Result<Option<Operator>> {
+    pub fn get(&self, id: i32) -> Result<Option<Operator>, AppError> {
         self.svc.get_operator(id)
     }
 
-    pub fn create(&self, op: Operator) -> anyhow::Result<()> {
+    pub fn create(&self, op: Operator) -> Result<(), AppError> {
         self.svc.create_operator(&op)
     }
 
-    pub fn update(&self, op: Operator) -> anyhow::Result<()> {
+    pub fn update(&self, op: Operator) -> Result<(), AppError> {
         self.svc.update_operator(&op)
     }
 }
