@@ -37,6 +37,7 @@ pub fn init() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[tauri::command]
 pub fn process_frontend_error(level: &str, message: &str) {
     match level {
         "debug" => log::debug!("{}", message),
