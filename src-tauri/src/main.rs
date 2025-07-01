@@ -35,10 +35,10 @@ fn main() {
         .manage(op_ctrl)
         .invoke_handler(tauri::generate_handler![
             logger::process_frontend_error,
-            commands::list_operators,
-            commands::get_operator,
-            commands::create_operator,
-            commands::update_operator,
+            commands::crud::operator::list_operators,
+            commands::crud::operator::get_operator,
+            commands::crud::operator::create_operator,
+            commands::crud::operator::update_operator,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

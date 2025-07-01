@@ -28,12 +28,10 @@ pub fn create_operator(
     ctrl: State<'_, Arc<OperatorController>>,
     dto: OperatorDto,
 ) -> Result<(), String> {
-    // parse start
     let start_dt = DateTime::<FixedOffset>::parse_from_rfc3339(&dto.start)
         .map_err(|e| e.to_string())?
         .naive_local();
-
-    // parse stop only if provided
+    // parse stop field only if provided
     let stop_dt = if let Some(s) = &dto.stop {
         Some(
             DateTime::<FixedOffset>::parse_from_rfc3339(s)
@@ -50,7 +48,6 @@ pub fn create_operator(
         start: start_dt,
         stop: stop_dt,
     };
-
     ctrl.create(op).map_err(|e| e.to_string())
 }
 
@@ -59,12 +56,11 @@ pub fn update_operator(
     ctrl: State<'_, Arc<OperatorController>>,
     dto: OperatorDto,
 ) -> Result<(), String> {
-    // parse start
     let start_dt = DateTime::<FixedOffset>::parse_from_rfc3339(&dto.start)
         .map_err(|e| e.to_string())?
         .naive_local();
 
-    // parse stop only if provided
+    // parse stop field only if provided
     let stop_dt = if let Some(s) = &dto.stop {
         Some(
             DateTime::<FixedOffset>::parse_from_rfc3339(s)
