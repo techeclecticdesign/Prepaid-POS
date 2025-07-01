@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod auth;
 mod commands;
 mod domain;
 mod error;
@@ -15,11 +16,14 @@ use crate::interface::controllers::operator_controller::OperatorController;
 use infrastructure::db::create_connection;
 use infrastructure::repos::SqliteOperatorRepo;
 use std::sync::Arc;
+use std::sync::RwLock;
 use tauri::{Builder, WindowEvent};
 
 fn main() {
     logger::init().expect("logger init failed");
     log::info!("Annex POS is starting");
+
+    dotenvy::dotenv().ok();
 
     let conn = Arc::new(create_connection("annex_data.sqlite").unwrap_or_else(|e| {
         log::error!("DB init error: {}", e);
@@ -33,8 +37,12 @@ fn main() {
     Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(op_ctrl)
+        .manage(RwLock::new(auth::AuthState::default()))
         .invoke_handler(tauri::generate_handler![
             logger::process_frontend_error,
+            commands::auth::staff_login,
+            commands::auth::staff_logout,
+            commands::auth::check_login_status,
             commands::crud::operator::list_operators,
             commands::crud::operator::get_operator,
             commands::crud::operator::create_operator,

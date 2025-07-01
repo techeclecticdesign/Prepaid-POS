@@ -29,3 +29,4 @@ anyhow = "1.0"
 rusqlite = { version = "0.36", features = ["chrono", "bundled"] }
 rusqlite_migration = "2.2"
 thiserror ="2.0"
+dotenvy = "0.15"
