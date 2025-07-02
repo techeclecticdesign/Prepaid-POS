@@ -9,7 +9,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import AppButton from "./AppButton";
+import AppButton from "../../../components/AppButton";
 
 interface Props {
   open: boolean;
