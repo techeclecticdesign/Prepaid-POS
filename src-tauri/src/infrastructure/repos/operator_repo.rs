@@ -1,6 +1,6 @@
+use crate::common::error::AppError;
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
-use crate::error::AppError;
 use rusqlite::{params, Connection};
 use std::sync::{Arc, Mutex};
 

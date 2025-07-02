@@ -1,6 +1,6 @@
+use crate::common::error::AppError;
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
-use crate::error::AppError;
 use log::{error, info, warn};
 use std::sync::Arc;
 

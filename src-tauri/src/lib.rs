@@ -1,6 +1,7 @@
-pub mod auth;
+// required for integration tests
+
+pub mod common;
 pub mod domain;
-pub mod error;
 pub mod infrastructure;
 pub mod interface;
 pub mod services;

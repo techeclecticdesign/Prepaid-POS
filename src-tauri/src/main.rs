@@ -1,13 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod auth;
 mod commands;
+mod common;
 mod domain;
-mod error;
 mod infrastructure;
 mod interface;
-mod logger;
 mod services;
 mod test_support;
 
@@ -20,7 +18,7 @@ use std::sync::RwLock;
 use tauri::{Builder, WindowEvent};
 
 fn main() {
-    logger::init().expect("logger init failed");
+    common::logger::init().expect("logger init failed");
     log::info!("Annex POS is starting");
 
     dotenvy::dotenv().ok();
@@ -37,9 +35,9 @@ fn main() {
     Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(op_ctrl)
-        .manage(RwLock::new(auth::AuthState::default()))
+        .manage(RwLock::new(common::auth::AuthState::default()))
         .invoke_handler(tauri::generate_handler![
-            logger::process_frontend_error,
+            common::logger::process_frontend_error,
             commands::auth::staff_login,
             commands::auth::staff_logout,
             commands::auth::check_login_status,

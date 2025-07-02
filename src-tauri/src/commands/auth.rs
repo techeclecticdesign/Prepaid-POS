@@ -1,4 +1,4 @@
-use crate::auth;
+use crate::common::auth;
 use std::env;
 use std::sync::RwLock;
 use tauri::State;
@@ -22,14 +22,14 @@ pub fn staff_login(
 }
 
 #[tauri::command]
-pub fn staff_logout(auth: State<'_, RwLock<crate::auth::AuthState>>) {
+pub fn staff_logout(auth: State<'_, RwLock<crate::common::auth::AuthState>>) {
     let mut st = auth.write().unwrap();
     st.logged_in = false;
     st.last_activity = None;
 }
 
 #[tauri::command]
-pub fn check_login_status(auth: State<'_, RwLock<crate::auth::AuthState>>) -> bool {
+pub fn check_login_status(auth: State<'_, RwLock<crate::common::auth::AuthState>>) -> bool {
     let mut st = auth.write().unwrap();
     if let (true, Some(last)) = (st.logged_in, st.last_activity) {
         let elapsed = last.elapsed();
