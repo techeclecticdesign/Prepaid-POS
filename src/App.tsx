@@ -1,12 +1,24 @@
-import { Routes, Route } from "react-router-dom";
+import SessionManager from "./SessionManager";
 import HomePage from "./pages/Homepage/Homepage";
 import AdminPage from "./pages/AdminPage/AdminPage";
+import ProtectedLayout from "./ProtectedLayout";
+import { useHandleActivity } from "./hooks/useHandleActivity";
+import { useSessionPolling } from "./hooks/useSessionPolling";
+import { Routes, Route } from "react-router-dom";
 
 export default function App() {
+  useHandleActivity();
+  useSessionPolling();
+
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/admin" element={<AdminPage />} />
+      <Route element={<SessionManager />}>
+        <Route path="/" element={<HomePage />} />
+
+        <Route element={<ProtectedLayout />}>
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
+      </Route>
     </Routes>
   );
 }

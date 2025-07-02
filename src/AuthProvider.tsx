@@ -1,16 +1,12 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 interface AuthContextValue {
   loggedIn: boolean;
   login: (password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  timedOut: boolean;
+  clearTimeoutFlag: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -19,47 +15,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
 
-  // check login status
-  const checkStatus = useCallback(async () => {
-    try {
-      const ok = await invoke<boolean>("check_login_status");
-      setLoggedIn(ok);
-    } catch {
-      console.error("Auth check failed");
-    }
-  }, []);
-
-  // polling
+  // Listen for any auth-status event from heartbeat hook
   useEffect(() => {
-    checkStatus();
-    const id = setInterval(checkStatus, 30_000);
-    return () => clearInterval(id);
-  }, [checkStatus]);
-
-  const login = useCallback(
-    async (password: string) => {
-      try {
-        await invoke("staff_login", { password });
-        await checkStatus();
-        return true;
-      } catch {
-        return false;
+    const handler = (e: CustomEvent<boolean>) => {
+      const ok = e.detail;
+      if (!ok && loggedIn) {
+        setTimedOut(true);
       }
-    },
-    [checkStatus],
-  );
+      setLoggedIn(ok);
+    };
+    window.addEventListener("auth-status", handler as EventListener);
+    return () => {
+      window.removeEventListener("auth-status", handler as EventListener);
+    };
+  }, [loggedIn]);
 
-  const logout = useCallback(async () => {
+  const login = async (password: string) => {
+    try {
+      await invoke("staff_login", { password });
+      setLoggedIn(true);
+      setTimedOut(false);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const logout = async () => {
     try {
       await invoke("staff_logout");
     } finally {
       setLoggedIn(false);
+      setTimedOut(false);
     }
-  }, []);
+  };
+
+  const clearTimeoutFlag = () => {
+    setTimedOut(false);
+  };
 
   return (
-    <AuthContext.Provider value={{ loggedIn, login, logout }}>
+    <AuthContext.Provider
+      value={{ loggedIn, login, logout, timedOut, clearTimeoutFlag }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,10 +1,12 @@
 use std::sync::Arc;
 use tauri::State;
 
+use crate::common::auth::AuthState;
 use crate::domain::models::Operator;
 use crate::interface::controllers::operator_controller::OperatorController;
 use crate::interface::presenters::operator_presenter::{OperatorDto, OperatorPresenter};
 use chrono::{DateTime, FixedOffset};
+use std::sync::RwLock;
 
 #[tauri::command]
 pub fn list_operators(
@@ -25,9 +27,17 @@ pub fn get_operator(
 
 #[tauri::command]
 pub fn create_operator(
+    auth: State<'_, RwLock<AuthState>>,
     ctrl: State<'_, Arc<OperatorController>>,
     dto: OperatorDto,
 ) -> Result<(), String> {
+    // Auth
+    {
+        let st = auth.read().unwrap();
+        if !st.logged_in {
+            return Err("Unauthorized".into());
+        }
+    }
     let start_dt = DateTime::<FixedOffset>::parse_from_rfc3339(&dto.start)
         .map_err(|e| e.to_string())?
         .naive_local();
@@ -53,9 +63,17 @@ pub fn create_operator(
 
 #[tauri::command]
 pub fn update_operator(
+    auth: State<'_, RwLock<AuthState>>,
     ctrl: State<'_, Arc<OperatorController>>,
     dto: OperatorDto,
 ) -> Result<(), String> {
+    // Auth
+    {
+        let st = auth.read().unwrap();
+        if !st.logged_in {
+            return Err("Unauthorized".into());
+        }
+    }
     let start_dt = DateTime::<FixedOffset>::parse_from_rfc3339(&dto.start)
         .map_err(|e| e.to_string())?
         .naive_local();

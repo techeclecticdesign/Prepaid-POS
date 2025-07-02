@@ -41,6 +41,7 @@ fn main() {
             commands::auth::staff_login,
             commands::auth::staff_logout,
             commands::auth::check_login_status,
+            commands::auth::update_activity,
             commands::crud::operator::list_operators,
             commands::crud::operator::get_operator,
             commands::crud::operator::create_operator,

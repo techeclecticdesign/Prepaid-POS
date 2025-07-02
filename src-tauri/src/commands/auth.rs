@@ -3,8 +3,6 @@ use std::env;
 use std::sync::RwLock;
 use tauri::State;
 
-// Attempts to log in staff by comparing the provided password
-// against the BCRYPT_HASH env var. If ok, sets logged_in = true.
 #[tauri::command]
 pub fn staff_login(
     auth: State<'_, RwLock<auth::AuthState>>,
@@ -39,10 +37,19 @@ pub fn check_login_status(auth: State<'_, RwLock<crate::common::auth::AuthState>
             st.last_activity = None;
             return false;
         } else {
-            // Refresh activity timestamp
-            st.last_activity = Some(std::time::Instant::now());
             return true;
         }
     }
     false
+}
+
+#[tauri::command]
+pub fn update_activity(
+    auth: tauri::State<'_, std::sync::RwLock<crate::common::auth::AuthState>>,
+) -> Result<(), String> {
+    let mut st = auth.write().unwrap();
+    if st.logged_in {
+        st.last_activity = Some(std::time::Instant::now());
+    }
+    Ok(())
 }
