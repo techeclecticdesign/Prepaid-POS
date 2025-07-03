@@ -1,4 +1,4 @@
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "../AuthProvider";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 // redirects to homepage if not logged in

@@ -53,8 +53,8 @@ export default function OperatorsPage() {
   };
 
   return (
-    <main className="p-12 flex justify-center bg-gray-50 h-screen">
-      <div className="w-1/2">
+    <main className="p-12 flex justify-center bg-gray-50 w-full h-full">
+      <div className="w-2/3">
         <h1 className="text-3xl font-bold mb-8 text-center">Operators</h1>
 
         <OperatorSelector
