@@ -1,6 +1,7 @@
 import SessionManager from "./SessionManager";
 import HomePage from "./pages/Homepage/Homepage";
 import AdminPage from "./pages/AdminPage/AdminPage";
+import Operators from "./pages/Operators/Operators";
 import ProtectedLayout from "./ProtectedLayout";
 import { useHandleActivity } from "./hooks/useHandleActivity";
 import { useSessionPolling } from "./hooks/useSessionPolling";
@@ -17,6 +18,7 @@ export default function App() {
 
         <Route element={<ProtectedLayout />}>
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/operators" element={<Operators />} />
         </Route>
       </Route>
     </Routes>

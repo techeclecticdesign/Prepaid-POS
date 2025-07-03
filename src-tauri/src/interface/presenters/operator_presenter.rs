@@ -1,4 +1,5 @@
 use crate::domain::models::Operator;
+use chrono::TimeZone;
 use serde::{Deserialize, Serialize};
 
 /// The shape your frontend expects.
@@ -18,8 +19,10 @@ impl OperatorPresenter {
             .map(|o| OperatorDto {
                 id: o.id,
                 name: o.name,
-                start: o.start.format("%+").to_string(),
-                stop: o.stop.map(|dt| dt.format("%+").to_string()),
+                start: chrono::Utc.from_utc_datetime(&o.start).to_rfc3339(),
+                stop: o
+                    .stop
+                    .map(|dt| chrono::Utc.from_utc_datetime(&dt).to_rfc3339()),
             })
             .collect()
     }

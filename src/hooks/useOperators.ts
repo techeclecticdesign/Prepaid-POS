@@ -10,10 +10,17 @@ export interface OperatorDto {
 
 export function useOperators() {
   const [operators, setOperators] = useState<OperatorDto[]>([]);
-  useEffect(() => {
+
+  const refresh = () => {
     invoke<OperatorDto[]>("list_operators")
       .then(setOperators)
       .catch(console.error);
-  }, []);
-  return operators;
+  };
+
+  useEffect(refresh, []);
+
+  return {
+    operators,
+    refresh,
+  };
 }

@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import AppButton from "../../components/AppButton";
 import StaffLoginDialog from "./components/StaffLoginDialog";
 import { useAuth } from "../../AuthProvider";
-import { useOperators } from "./hooks/useOperators";
+import { useOperators } from "../../hooks/useOperators";
 
 export default function App() {
-  const operators = useOperators();
+  const { operators } = useOperators();
   const { loggedIn, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const navigate = useNavigate();
@@ -16,10 +16,15 @@ export default function App() {
       <h1 className="text-4xl font-bold my-20 text-center">
         Click your name or scan your ID to get started.
       </h1>
-      <div>
-        {operators.map((o) => (
-          <AppButton key={o.id} text={o.name} />
-        ))}
+      <div className="flex flex-col gap-4">
+        {operators
+          // filter out fired workers
+          .filter(
+            (o) => o.stop === null || new Date(o.start) > new Date(o.stop),
+          )
+          .map((o) => (
+            <AppButton key={o.id} text={o.name} />
+          ))}
 
         {!loggedIn ? (
           <AppButton
