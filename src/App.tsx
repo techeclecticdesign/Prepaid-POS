@@ -10,11 +10,13 @@ import AdminPage from "./pages/AdminPage/AdminPage";
 import Operators from "./pages/Operators/Operators";
 import { useHandleActivity } from "./hooks/useHandleActivity";
 import { useSessionPolling } from "./hooks/useSessionPolling";
+import { useDisableContextMenu } from "./hooks/useDisableContextMenu";
 import { Routes, Route } from "react-router-dom";
 
 export default function App() {
   useHandleActivity();
   useSessionPolling();
+  useDisableContextMenu();
 
   return (
     <Routes>
