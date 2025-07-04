@@ -4,6 +4,11 @@ use log::LevelFilter;
 pub fn init() -> Result<(), Box<dyn std::error::Error>> {
     Dispatch::new()
         .level(LevelFilter::Info)
+        // // filter spammy tao / winit event loop spam in app.log
+        .level_for(
+            "tao::platform_impl::platform::event_loop::runner",
+            LevelFilter::Error,
+        )
         .chain(
             Dispatch::new()
                 .level(LevelFilter::Info)

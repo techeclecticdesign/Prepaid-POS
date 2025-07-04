@@ -32,6 +32,12 @@ fn main() {
     // build controller once and share it
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
 
+    // filter spammy tao / winit event loop spam in console
+    std::env::set_var(
+        "RUST_LOG",
+        "info,tao::platform_impl::platform::event_loop::runner=error",
+    );
+
     Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(op_ctrl)
