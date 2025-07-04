@@ -1,12 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod commands;
+mod application;
 mod common;
 mod domain;
 mod infrastructure;
 mod interface;
-mod services;
 mod test_support;
 
 use crate::domain::repos::OperatorRepoTrait;
@@ -44,14 +43,14 @@ fn main() {
         .manage(RwLock::new(common::auth::AuthState::default()))
         .invoke_handler(tauri::generate_handler![
             common::logger::process_frontend_error,
-            commands::auth::staff_login,
-            commands::auth::staff_logout,
-            commands::auth::check_login_status,
-            commands::auth::update_activity,
-            commands::crud::operator::list_operators,
-            commands::crud::operator::get_operator,
-            commands::crud::operator::create_operator,
-            commands::crud::operator::update_operator,
+            interface::commands::auth::staff_login,
+            interface::commands::auth::staff_logout,
+            interface::commands::auth::check_login_status,
+            interface::commands::auth::update_activity,
+            interface::commands::operator::list_operators,
+            interface::commands::operator::get_operator,
+            interface::commands::operator::create_operator,
+            interface::commands::operator::update_operator,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

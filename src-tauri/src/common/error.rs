@@ -14,6 +14,9 @@ pub enum AppError {
     #[error("not found: {0}")]
     NotFound(String),
 
+    #[error("validation error: {0}")]
+    Validation(String),
+
     #[error("unexpected error: {0}")]
     Unexpected(String),
 }

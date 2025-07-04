@@ -1,35 +1,52 @@
+use crate::application::use_cases::operator_usecases::OperatorUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
-use crate::services::operator_service::OperatorService;
+use crate::interface::common::date_utils::{parse_optional_rfc3339, parse_rfc3339};
+use crate::interface::dto::operator_dto::OperatorDto;
 use std::sync::Arc;
 
-/// Controller knows how to orchestrate a use‑case.
 pub struct OperatorController {
-    svc: OperatorService,
+    uc: OperatorUseCases,
 }
 
 impl OperatorController {
     pub fn new(repo: Arc<dyn OperatorRepoTrait>) -> Self {
         Self {
-            svc: OperatorService::new(repo),
+            uc: OperatorUseCases::new(repo),
         }
     }
 
     pub fn list(&self) -> Result<Vec<Operator>, AppError> {
-        self.svc.list_operators()
+        self.uc.list_operators()
     }
 
     pub fn get(&self, id: i32) -> Result<Option<Operator>, AppError> {
-        self.svc.get_operator(id)
+        self.uc.get_operator(id)
     }
 
-    pub fn create(&self, op: Operator) -> Result<(), AppError> {
-        self.svc.create_operator(&op)
+    pub fn create(&self, dto: OperatorDto) -> Result<(), AppError> {
+        let start = parse_rfc3339(&dto.start)?;
+        let stop = parse_optional_rfc3339(&dto.stop)?;
+        let op = Operator {
+            id: dto.id,
+            name: dto.name,
+            start,
+            stop,
+        };
+        self.uc.create_operator(&op)
     }
 
-    pub fn update(&self, op: Operator) -> Result<(), AppError> {
-        self.svc.update_operator(&op)
+    pub fn update(&self, dto: OperatorDto) -> Result<(), AppError> {
+        let start = parse_rfc3339(&dto.start)?;
+        let stop = parse_optional_rfc3339(&dto.stop)?;
+        let op = Operator {
+            id: dto.id,
+            name: dto.name,
+            start,
+            stop,
+        };
+        self.uc.update_operator(&op)
     }
 }
 

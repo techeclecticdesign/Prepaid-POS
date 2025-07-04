@@ -4,11 +4,11 @@ use crate::domain::repos::OperatorRepoTrait;
 use log::{error, info, warn};
 use std::sync::Arc;
 
-pub struct OperatorService {
+pub struct OperatorUseCases {
     repo: Arc<dyn OperatorRepoTrait>,
 }
 
-impl OperatorService {
+impl OperatorUseCases {
     /// Inject the repo
     pub fn new(repo: Arc<dyn OperatorRepoTrait>) -> Self {
         Self { repo }
@@ -73,10 +73,10 @@ mod tests {
     #[test]
     fn service_crud_flow() -> anyhow::Result<()> {
         let mock = Arc::new(MockOperatorRepo::new());
-        let svc = OperatorService::new(mock.clone());
+        let uc = OperatorUseCases::new(mock.clone());
 
         // initially empty
-        assert!(svc.list_operators()?.is_empty());
+        assert!(uc.list_operators()?.is_empty());
 
         // create operator
         let op = Operator {
@@ -85,14 +85,14 @@ mod tests {
             start: chrono::Utc::now().naive_utc(),
             stop: None,
         };
-        svc.create_operator(&op)?;
-        assert_eq!(svc.list_operators()?, vec![op.clone()]);
+        uc.create_operator(&op)?;
+        assert_eq!(uc.list_operators()?, vec![op.clone()]);
 
         // update operator
         let mut updated = op.clone();
         updated.name = "Alice Updated".into();
-        svc.update_operator(&updated)?;
-        assert_eq!(svc.get_operator(1)?.unwrap().name, "Alice Updated");
+        uc.update_operator(&updated)?;
+        assert_eq!(uc.get_operator(1)?.unwrap().name, "Alice Updated");
 
         Ok(())
     }
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn create_duplicate_id_error() {
         let mock = Arc::new(MockOperatorRepo::new());
-        let svc = OperatorService::new(mock.clone());
+        let uc = OperatorUseCases::new(mock.clone());
 
         let op1 = Operator {
             id: 1,
@@ -108,7 +108,7 @@ mod tests {
             start: chrono::Utc::now().naive_utc(),
             stop: None,
         };
-        svc.create_operator(&op1).unwrap();
+        uc.create_operator(&op1).unwrap();
 
         let op_dup = Operator {
             id: 1,
@@ -116,14 +116,14 @@ mod tests {
             start: chrono::Utc::now().naive_utc(),
             stop: None,
         };
-        let err = svc.create_operator(&op_dup).unwrap_err();
+        let err = uc.create_operator(&op_dup).unwrap_err();
         assert!(err.to_string().contains("Operator id '1' already exists"));
     }
 
     #[test]
     fn update_nonexistent_operator_error() {
         let mock = Arc::new(MockOperatorRepo::new());
-        let svc = OperatorService::new(mock.clone());
+        let uc = OperatorUseCases::new(mock.clone());
 
         let op = Operator {
             id: 99,
@@ -131,14 +131,14 @@ mod tests {
             start: chrono::Utc::now().naive_utc(),
             stop: None,
         };
-        let err = svc.update_operator(&op).unwrap_err();
+        let err = uc.update_operator(&op).unwrap_err();
         assert!(err.to_string().contains("Operator with id 99 not found"));
     }
 
     #[test]
     fn create_empty_name_error() {
         let mock = Arc::new(MockOperatorRepo::new());
-        let svc = OperatorService::new(mock.clone());
+        let uc = OperatorUseCases::new(mock.clone());
 
         let op = Operator {
             id: 1,
@@ -146,7 +146,7 @@ mod tests {
             start: chrono::Utc::now().naive_utc(),
             stop: None,
         };
-        let err = svc.create_operator(&op).unwrap_err();
+        let err = uc.create_operator(&op).unwrap_err();
         assert!(err.to_string().contains("Operator name cannot be empty"));
     }
 }
