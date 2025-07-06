@@ -1,13 +1,14 @@
 use crate::application::common::db::atomic_tx;
 use crate::common::error::AppError;
-use crate::domain::models::{PriceAdjustment, Product};
-use crate::domain::repos::{PriceAdjustmentRepoTrait, ProductRepoTrait};
+use crate::domain::models::{Category, PriceAdjustment, Product};
+use crate::domain::repos::{CategoryRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait};
 use chrono::Utc;
 use std::sync::{Arc, Mutex};
 
 pub struct ProductUseCases {
     repo: Arc<dyn ProductRepoTrait>,
     price_repo: Arc<dyn PriceAdjustmentRepoTrait>,
+    category_repo: Arc<dyn CategoryRepoTrait>,
     conn: Arc<Mutex<rusqlite::Connection>>,
 }
 
@@ -15,11 +16,13 @@ impl ProductUseCases {
     pub fn new(
         repo: Arc<dyn ProductRepoTrait>,
         price_repo: Arc<dyn PriceAdjustmentRepoTrait>,
+        category_repo: Arc<dyn CategoryRepoTrait>,
         conn: Arc<Mutex<rusqlite::Connection>>,
     ) -> Self {
         Self {
             repo,
             price_repo,
+            category_repo,
             conn,
         }
     }
@@ -160,6 +163,18 @@ impl ProductUseCases {
         let offset = (page.saturating_sub(1) as i64) * limit;
         self.repo.search(search, category, limit, offset)
     }
+
+    pub fn list_categories(&self) -> Result<Vec<Category>, AppError> {
+        self.category_repo.list_active()
+    }
+
+    pub fn delete_category(&self, id: i64) -> Result<(), AppError> {
+        self.category_repo.soft_delete(id)
+    }
+
+    pub fn create_category(&self, cat: String) -> Result<(), AppError> {
+        self.category_repo.create(cat)
+    }
 }
 
 #[cfg(test)]
@@ -168,6 +183,7 @@ mod tests {
     use crate::application::use_cases::product_usecases::ProductUseCases;
     use crate::domain::models::Operator;
     use crate::domain::repos::OperatorRepoTrait;
+    use crate::test_support::mock_category_repo::MockCategoryRepo;
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
     use crate::test_support::mock_price_adjustment_repo::MockPriceAdjustmentRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
@@ -177,14 +193,21 @@ mod tests {
         let op_repo = Arc::new(MockOperatorRepo::new());
         let prod_repo = Arc::new(MockProductRepo::new());
         let price_repo = Arc::new(MockPriceAdjustmentRepo::new());
+        let category_repo = Arc::new(MockCategoryRepo::new());
         let conn = Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap()));
-        let uc = ProductUseCases::new(prod_repo.clone(), price_repo.clone(), conn);
+        let uc = ProductUseCases::new(
+            prod_repo.clone(),
+            price_repo.clone(),
+            category_repo.clone(),
+            conn,
+        );
         (uc, op_repo, prod_repo)
     }
 
     // populate a few products in a MockProductRepo
     fn make_search_usecase() -> ProductUseCases {
         let repo = Arc::new(MockProductRepo::new());
+        let category_repo = Arc::new(MockCategoryRepo::new());
         // insert 4 products
         repo.create(&Product {
             upc: 1,
@@ -233,7 +256,7 @@ mod tests {
         );
         let conn = Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap()));
 
-        ProductUseCases::new(repo, price_repo, conn)
+        ProductUseCases::new(repo, price_repo, category_repo, conn)
     }
 
     #[test]
@@ -354,6 +377,26 @@ mod tests {
         // no match
         let none = uc.search_products(Some("pear".into()), None, 0)?;
         assert!(none.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn create_category_adds_new_category() -> anyhow::Result<()> {
+        let (uc, _, _) = make_use_cases();
+
+        // Should start empty
+        let initial = uc.list_categories()?;
+        assert!(initial.is_empty());
+
+        // Create one
+        uc.create_category("Snacks".to_string())?;
+
+        // List and verify
+        let cats = uc.list_categories()?;
+        assert_eq!(cats.len(), 1);
+        assert_eq!(cats[0].name, "Snacks");
+        assert!(cats[0].deleted.is_none());
 
         Ok(())
     }

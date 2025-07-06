@@ -1,8 +1,8 @@
 use crate::common::error::AppError;
 use crate::interface::controllers::product_controller::ProductController;
+use crate::interface::dto::category_dto::CategoryDto;
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
 use crate::interface::dto::product_dto::ProductDto;
-use crate::interface::dto::product_dto::RemoveProductDto;
 use std::sync::Arc;
 use tauri::State;
 
@@ -15,11 +15,8 @@ pub fn create_product(
 }
 
 #[tauri::command]
-pub fn remove_product(
-    controller: State<Arc<ProductController>>,
-    dto: RemoveProductDto,
-) -> Result<(), AppError> {
-    controller.remove_product(dto)
+pub fn remove_product(controller: State<Arc<ProductController>>, upc: i64) -> Result<(), AppError> {
+    controller.remove_product(upc)
 }
 
 #[tauri::command]
@@ -96,4 +93,21 @@ pub fn search_products(
 ) -> Result<Vec<ProductDto>, AppError> {
     let page = page.unwrap_or(1);
     controller.search_products(search, category, page)
+}
+
+#[tauri::command]
+pub fn list_categories(
+    controller: State<Arc<ProductController>>,
+) -> Result<Vec<CategoryDto>, AppError> {
+    controller.list_categories()
+}
+
+#[tauri::command]
+pub fn delete_category(controller: State<Arc<ProductController>>, id: i64) -> Result<(), AppError> {
+    controller.delete_category(id)
+}
+
+#[tauri::command]
+pub fn create_category(controller: State<Arc<ProductController>>, id: i64) -> Result<(), AppError> {
+    controller.delete_category(id)
 }

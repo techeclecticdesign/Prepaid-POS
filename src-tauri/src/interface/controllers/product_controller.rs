@@ -1,7 +1,9 @@
 use crate::application::use_cases::product_usecases::ProductUseCases;
 use crate::common::error::AppError;
+use crate::interface::dto::category_dto::CategoryDto;
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
-use crate::interface::dto::product_dto::{ProductDto, RemoveProductDto};
+use crate::interface::dto::product_dto::ProductDto;
+use crate::interface::presenters::category_presenter::CategoryPresenter;
 use crate::interface::presenters::price_adjustment_presenter::PriceAdjustmentPresenter;
 use crate::interface::presenters::product_presenter::ProductPresenter;
 use std::sync::Arc;
@@ -14,10 +16,11 @@ impl ProductController {
     pub fn new(
         repo: Arc<dyn crate::domain::repos::ProductRepoTrait>,
         price_repo: Arc<dyn crate::domain::repos::PriceAdjustmentRepoTrait>,
+        category_repo: Arc<dyn crate::domain::repos::CategoryRepoTrait>,
         conn: Arc<std::sync::Mutex<rusqlite::Connection>>,
     ) -> Self {
         Self {
-            uc: ProductUseCases::new(repo, price_repo, conn),
+            uc: ProductUseCases::new(repo, price_repo, category_repo, conn),
         }
     }
 
@@ -26,8 +29,8 @@ impl ProductController {
             .create_product(dto.upc, dto.desc, dto.category, dto.price)
     }
 
-    pub fn remove_product(&self, dto: RemoveProductDto) -> Result<(), AppError> {
-        self.uc.remove_product(dto.upc)
+    pub fn remove_product(&self, upc: i64) -> Result<(), AppError> {
+        self.uc.remove_product(upc)
     }
 
     pub fn list_products(&self) -> Result<Vec<ProductDto>, AppError> {
@@ -91,32 +94,47 @@ impl ProductController {
         let pas = self.uc.list_price_adjust()?;
         Ok(PriceAdjustmentPresenter::to_dto_list(pas))
     }
+
+    pub fn list_categories(&self) -> Result<Vec<CategoryDto>, AppError> {
+        let cats = self.uc.list_categories()?;
+        Ok(CategoryPresenter::to_dto_list(cats))
+    }
+    pub fn delete_category(&self, id: i64) -> Result<(), AppError> {
+        self.uc.delete_category(id)
+    }
+
+    pub fn create_category(&self, cat: String) -> Result<(), AppError> {
+        self.uc.create_category(cat)
+    }
 }
 
 #[cfg(test)]
 mod smoke {
     use super::*;
+    use crate::test_support::mock_category_repo::MockCategoryRepo;
     use crate::test_support::mock_price_adjustment_repo::MockPriceAdjustmentRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
     use rusqlite::Connection;
     use std::sync::{Arc, Mutex};
 
-    #[test]
-    fn controller_smoke_list_products() {
+    fn make_controller() -> ProductController {
         let prod_repo = Arc::new(MockProductRepo::new());
         let price_repo = Arc::new(MockPriceAdjustmentRepo::new());
+        let category_repo = Arc::new(MockCategoryRepo::new());
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
-        let ctrl = ProductController::new(prod_repo.clone(), price_repo.clone(), conn);
+        ProductController::new(prod_repo, price_repo, category_repo, conn)
+    }
+
+    #[test]
+    fn controller_smoke_list_products() {
+        let ctrl = make_controller();
         let out = ctrl.list_products().expect("list_products should succeed");
         assert!(out.is_empty());
     }
 
     #[test]
     fn controller_smoke_list_price_adjust() {
-        let prod_repo = Arc::new(MockProductRepo::new());
-        let price_repo = Arc::new(MockPriceAdjustmentRepo::new());
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
-        let ctrl = ProductController::new(prod_repo, price_repo.clone(), conn);
+        let ctrl = make_controller();
         let out = ctrl
             .list_price_adjust()
             .expect("list_price_adjust should succeed");
@@ -125,10 +143,7 @@ mod smoke {
 
     #[test]
     fn controller_smoke_search_products_empty() {
-        let prod_repo = Arc::new(MockProductRepo::new());
-        let price_repo = Arc::new(MockPriceAdjustmentRepo::new());
-        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
-        let ctrl = ProductController::new(prod_repo, price_repo, conn);
+        let ctrl = make_controller();
 
         // no products added, so search should return empty
         let result = ctrl

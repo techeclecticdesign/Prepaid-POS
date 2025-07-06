@@ -6,7 +6,8 @@ pub mod interface;
 pub mod test_support;
 
 use crate::domain::repos::{
-    InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
+    CategoryRepoTrait, InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait,
+    ProductRepoTrait,
 };
 use crate::interface::controllers::{
     operator_controller::OperatorController, product_controller::ProductController,
@@ -14,8 +15,8 @@ use crate::interface::controllers::{
 };
 use infrastructure::db::create_connection;
 use infrastructure::repos::{
-    SqliteInventoryTransactionRepo, SqliteOperatorRepo, SqlitePriceAdjustmentRepo,
-    SqliteProductRepo,
+    SqliteCategoryRepo, SqliteInventoryTransactionRepo, SqliteOperatorRepo,
+    SqlitePriceAdjustmentRepo, SqliteProductRepo,
 };
 use std::sync::{Arc, RwLock};
 use tauri::{Builder, WindowEvent};
@@ -35,6 +36,8 @@ pub fn run() {
         std::process::exit(1);
     }));
     // Define dependency injected objects
+    let category_repo: Arc<dyn CategoryRepoTrait> =
+        Arc::new(SqliteCategoryRepo::new(Arc::clone(&conn)));
     let op_repo: Arc<dyn OperatorRepoTrait> = Arc::new(SqliteOperatorRepo::new(Arc::clone(&conn)));
     let product_repo: Arc<dyn ProductRepoTrait> =
         Arc::new(SqliteProductRepo::new(Arc::clone(&conn)));
@@ -46,6 +49,7 @@ pub fn run() {
     let product_ctrl = Arc::new(ProductController::new(
         Arc::clone(&product_repo),
         Arc::clone(&price_repo),
+        Arc::clone(&category_repo),
         Arc::clone(&conn),
     ));
     let tx_ctrl = Arc::new(TransactionController::new(Arc::clone(&inv_repo)));
@@ -87,6 +91,9 @@ pub fn run() {
             interface::commands::product::price_adjustment,
             interface::commands::product::remove_product,
             interface::commands::product::update_item,
+            interface::commands::product::list_categories,
+            interface::commands::product::delete_category,
+            interface::commands::product::create_category,
             interface::commands::transaction::get_transaction,
             interface::commands::transaction::inventory_adjustment,
             interface::commands::transaction::list_inv_adjust_today,

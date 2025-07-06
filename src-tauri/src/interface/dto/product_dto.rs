@@ -10,8 +10,3 @@ pub struct ProductDto {
     pub added: String,           // RFC 3339 timestamp
     pub deleted: Option<String>, // optional RFC 3339 timestamp
 }
-
-#[derive(Serialize, Deserialize)]
-pub struct RemoveProductDto {
-    pub upc: i64,
-}
