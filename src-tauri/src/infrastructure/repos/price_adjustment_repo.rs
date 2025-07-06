@@ -1,4 +1,5 @@
 use crate::common::error::AppError;
+use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::PriceAdjustment;
 use crate::domain::repos::PriceAdjustmentRepoTrait;
 use rusqlite::{params, Connection};
@@ -16,7 +17,7 @@ impl SqlitePriceAdjustmentRepo {
 
 impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
     fn get_by_id(&self, id: i64) -> Result<Option<PriceAdjustment>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, operator_mdoc, upc, old, new, created_at \
          FROM price_adjustments WHERE id = ?1",
@@ -37,7 +38,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
     }
 
     fn create(&self, a: &PriceAdjustment) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         conn.execute(
             "INSERT INTO price_adjustments (operator_mdoc, upc, old, new) VALUES (?1, ?2, ?3, ?4)",
             params![a.operator_mdoc, a.upc, a.old, a.new],
@@ -59,7 +60,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
     }
 
     fn list_for_operator(&self, operator_mdoc: i32) -> Result<Vec<PriceAdjustment>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt =
             conn.prepare(
               "SELECT id, operator_mdoc, upc, old, new, created_at FROM price_adjustments WHERE operator_mdoc = ?1"
@@ -80,7 +81,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
     }
 
     fn list_for_product(&self, upc: i64) -> Result<Vec<PriceAdjustment>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, operator_mdoc, upc, old, new, created_at FROM price_adjustments WHERE upc = ?1"
         )?;
@@ -100,7 +101,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
     }
 
     fn list_for_today(&self) -> Result<Vec<PriceAdjustment>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, operator_mdoc, upc, old, new, created_at FROM price_adjustments WHERE date(created_at) = date('now')"
         )?;
@@ -120,7 +121,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
     }
 
     fn list(&self) -> Result<Vec<PriceAdjustment>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, operator_mdoc, upc, old, new, created_at FROM price_adjustments",
         )?;

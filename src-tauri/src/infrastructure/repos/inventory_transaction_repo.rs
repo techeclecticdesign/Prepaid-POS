@@ -1,4 +1,5 @@
 use crate::common::error::AppError;
+use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::InventoryTransaction;
 use crate::domain::repos::InventoryTransactionRepoTrait;
 use rusqlite::{params, Connection};
@@ -16,7 +17,7 @@ impl SqliteInventoryTransactionRepo {
 
 impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
     fn get_by_id(&self, id: i64) -> Result<Option<InventoryTransaction>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
           FROM inventory_transactions WHERE customer_mdoc = ?1",
@@ -39,7 +40,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
     }
 
     fn create(&self, a: &InventoryTransaction) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         conn.execute(
             "INSERT INTO inventory_transactions \
          (upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference) \
@@ -57,7 +58,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
     }
 
     fn list_for_customer(&self, customer_mdoc: i32) -> Result<Vec<InventoryTransaction>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn
             .prepare(         "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
           FROM inventory_transactions WHERE customer_mdoc = ?1")?;
@@ -79,7 +80,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
     }
 
     fn list(&self) -> Result<Vec<InventoryTransaction>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
              FROM inventory_transactions"
@@ -102,7 +103,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
     }
 
     fn list_for_product(&self, upc: i64) -> Result<Vec<InventoryTransaction>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
              FROM inventory_transactions WHERE upc = ?1"
@@ -124,7 +125,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
     }
 
     fn list_for_operator(&self, operator_mdoc: i32) -> Result<Vec<InventoryTransaction>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
          "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
           FROM inventory_transactions WHERE operator_mdoc = ?1"
@@ -146,7 +147,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
     }
 
     fn list_for_today(&self) -> Result<Vec<InventoryTransaction>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
              FROM inventory_transactions WHERE date(created_at) = date('now')"

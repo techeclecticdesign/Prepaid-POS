@@ -18,6 +18,9 @@ pub enum AppError {
     #[error("validation error: {0}")]
     Validation(String),
 
+    #[error("mutex was poisoned: {0}")]
+    LockPoisoned(String),
+
     #[error("unexpected error: {0}")]
     Unexpected(String),
 }

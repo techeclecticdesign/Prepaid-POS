@@ -1,4 +1,5 @@
 use crate::common::error::AppError;
+use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
 use rusqlite::{params, Connection};
@@ -16,7 +17,7 @@ impl SqliteOperatorRepo {
 
 impl OperatorRepoTrait for SqliteOperatorRepo {
     fn get_by_id(&self, id: i32) -> Result<Option<Operator>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare("SELECT id, name, start, stop FROM operators WHERE id = ?1")?;
         let mut rows = stmt.query(params![id])?;
         if let Some(r) = rows.next()? {
@@ -32,7 +33,7 @@ impl OperatorRepoTrait for SqliteOperatorRepo {
     }
 
     fn create(&self, o: &Operator) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         conn.execute(
             "INSERT INTO operators (id, name, start, stop) VALUES (?1, ?2, ?3, ?4)",
             params![o.id, o.name, o.start, o.stop],
@@ -41,7 +42,7 @@ impl OperatorRepoTrait for SqliteOperatorRepo {
     }
 
     fn list(&self) -> Result<Vec<Operator>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare("SELECT id, name, start, stop FROM operators")?;
         let ops = stmt
             .query_map([], |r| {
@@ -57,7 +58,7 @@ impl OperatorRepoTrait for SqliteOperatorRepo {
     }
 
     fn update_by_id(&self, o: &Operator) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         conn.execute(
             "UPDATE operators SET name = ?1, start = ?2, stop = ?3 WHERE id = ?4",
             params![o.name, o.start, o.stop, o.id],

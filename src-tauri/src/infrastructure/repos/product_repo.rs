@@ -1,4 +1,5 @@
 use crate::common::error::AppError;
+use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::Product;
 use crate::domain::repos::ProductRepoTrait;
 use rusqlite::{params, Connection};
@@ -16,7 +17,7 @@ impl SqliteProductRepo {
 
 impl ProductRepoTrait for SqliteProductRepo {
     fn get_by_upc(&self, upc: i64) -> Result<Option<Product>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT upc, desc, category, price, updated, added, deleted 
              FROM products WHERE upc = ?1",
@@ -38,7 +39,7 @@ impl ProductRepoTrait for SqliteProductRepo {
     }
 
     fn get_price(&self, upc: i64) -> Result<i32, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let price: i32 = conn.query_row(
             "SELECT price FROM products WHERE upc = ?1",
             params![upc],
@@ -48,7 +49,7 @@ impl ProductRepoTrait for SqliteProductRepo {
     }
 
     fn create(&self, p: &Product) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         conn.execute(
             "INSERT INTO products (upc, desc, category, price, updated, added, deleted) 
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
@@ -58,7 +59,7 @@ impl ProductRepoTrait for SqliteProductRepo {
     }
 
     fn update_by_upc(&self, p: &Product) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         conn.execute(
             "UPDATE products SET desc = ?1, category = ?2, price = ?3, 
              updated = ?4, deleted = ?5 WHERE upc = ?6",
@@ -81,7 +82,7 @@ impl ProductRepoTrait for SqliteProductRepo {
     }
 
     fn list(&self) -> Result<Vec<Product>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.safe_lock()?;
         let mut stmt = conn
             .prepare("SELECT upc, desc, category, price, updated, added, deleted FROM products")?;
         let prods = stmt

@@ -1,5 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![deny(clippy::expect_used)]
+#![deny(clippy::panic)]
+#![deny(unused_must_use)]
 
 mod application;
 mod common;
@@ -24,7 +27,10 @@ use std::sync::{Arc, RwLock};
 use tauri::{Builder, WindowEvent};
 
 fn main() {
-    common::logger::init().expect("logger init failed");
+    common::logger::init().unwrap_or_else(|e| {
+        eprintln!("Logger init failed: {}", e);
+        std::process::exit(1);
+    });
     log::info!("Annex POS is starting");
 
     dotenvy::dotenv().ok();

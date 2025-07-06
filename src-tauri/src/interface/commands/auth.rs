@@ -1,4 +1,5 @@
 use crate::common::auth;
+use crate::common::rwlock_ext::RwLockExt;
 use std::env;
 use std::sync::RwLock;
 use tauri::State;
@@ -10,7 +11,7 @@ pub fn staff_login(
 ) -> Result<(), String> {
     let expected = env::var("STAFF_PASSWORD").map_err(|_| "Missing STAFF_PASSWORD".to_string())?;
     if password == expected {
-        let mut st = auth.write().unwrap();
+        let mut st = auth.safe_write()?;
         st.logged_in = true;
         st.last_activity = Some(std::time::Instant::now());
         Ok(())
@@ -20,34 +21,36 @@ pub fn staff_login(
 }
 
 #[tauri::command]
-pub fn staff_logout(auth: State<'_, RwLock<crate::common::auth::AuthState>>) {
-    let mut st = auth.write().unwrap();
+pub fn staff_logout(auth: State<'_, RwLock<crate::common::auth::AuthState>>) -> Result<(), String> {
+    let mut st = auth.safe_write()?;
     st.logged_in = false;
     st.last_activity = None;
+    Ok(())
 }
 
 #[tauri::command]
-pub fn check_login_status(auth: State<'_, RwLock<crate::common::auth::AuthState>>) -> bool {
-    let mut st = auth.write().unwrap();
+pub fn check_login_status(
+    auth: State<'_, RwLock<crate::common::auth::AuthState>>,
+) -> Result<bool, String> {
+    let mut st = auth.safe_write()?;
     if let (true, Some(last)) = (st.logged_in, st.last_activity) {
         let elapsed = last.elapsed();
         if elapsed.as_secs() > 60 * 15 {
-            // Timeout after 15 min
             st.logged_in = false;
             st.last_activity = None;
-            return false;
+            return Ok(false);
         } else {
-            return true;
+            return Ok(true);
         }
     }
-    false
+    Ok(false)
 }
 
 #[tauri::command]
 pub fn update_activity(
     auth: tauri::State<'_, std::sync::RwLock<crate::common::auth::AuthState>>,
 ) -> Result<(), String> {
-    let mut st = auth.write().unwrap();
+    let mut st = auth.safe_write()?;
     if st.logged_in {
         st.last_activity = Some(std::time::Instant::now());
     }
