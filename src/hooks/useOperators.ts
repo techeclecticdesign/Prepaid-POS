@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-
-export interface OperatorDto {
-  id: number;
-  name: string;
-  start: string;
-  stop: string | null;
-}
+import type { Operator } from "../models/Operator";
 
 export function useOperators() {
-  const [operators, setOperators] = useState<OperatorDto[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
 
   const refresh = () => {
-    invoke<OperatorDto[]>("list_operators")
+    invoke<Operator[]>("list_operators")
       .then(setOperators)
       .catch(console.error);
   };

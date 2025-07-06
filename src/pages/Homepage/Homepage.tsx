@@ -28,7 +28,7 @@ export default function App() {
       return;
     }
     const scanNum = parseInt(scan, 10);
-    const matched = operatorsRef.current.find((o) => o.id === scanNum);
+    const matched = operatorsRef.current.find((o) => o.mdoc === scanNum);
     if (!matched) {
       setScanError("Scan input does not match any operator MDOC.");
       if (errorTimerRef.current) {
@@ -70,7 +70,7 @@ export default function App() {
       </h1>
       <div className="flex flex-col gap-4">
         {activeOperators.map((o) => (
-          <AppButton key={o.id} text={o.name} />
+          <AppButton key={o.mdoc} text={o.name} />
         ))}
 
         {!loggedIn ? (

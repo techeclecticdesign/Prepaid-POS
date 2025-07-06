@@ -1,9 +1,9 @@
 import TextField from "@mui/material/TextField";
 import AppButton from "../../../components/AppButton";
-import type { OperatorDto } from "../../../hooks/useOperators";
+import type { Operator } from "../../../models/Operator";
 
 interface Props {
-  operator: OperatorDto;
+  operator: Operator;
   onTerminate: () => void;
   onRehire: () => void;
 }
@@ -19,7 +19,7 @@ export default function OperatorDetails({
         {["MDOC", "Name", "Start Time", "Stop Time"].map((label, i) => {
           const value =
             i === 0
-              ? operator.id
+              ? operator.mdoc
               : i === 1
                 ? operator.name
                 : i === 2

@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { OperatorDto } from "../../../hooks/useOperators";
+import type { Operator } from "../../../models/Operator";
 
 export function useOperatorActions() {
-  const create = async (dto: OperatorDto) => invoke("create_operator", { dto });
-  const update = async (dto: OperatorDto) => invoke("update_operator", { dto });
+  const create = async (op: Operator) => invoke("create_operator", { op });
+  const update = async (op: Operator) => invoke("update_operator", { op });
   return { create, update };
 }

@@ -1,12 +1,12 @@
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import AppButton from "../../../components/AppButton";
-import { OperatorDto } from "../../../hooks/useOperators";
+import type { Operator } from "../../../models/Operator";
 
 interface Props {
-  options: OperatorDto[];
-  selected: OperatorDto | null;
-  onChange: (op: OperatorDto | null) => void;
+  options: Operator[];
+  selected: Operator | null;
+  onChange: (op: Operator | null) => void;
   onAddClick: () => void;
 }
 

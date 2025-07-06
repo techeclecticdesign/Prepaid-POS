@@ -6,20 +6,21 @@ import {
   operatorSchema,
   OperatorFormValues,
 } from "../../schema/operatorSchema";
-import { useOperators, OperatorDto } from "../../hooks/useOperators";
+import type { Operator } from "../../models/Operator";
+import { useOperators } from "../../hooks/useOperators";
 import { useOperatorActions } from "./hooks/useOperatorActions";
 
 export default function OperatorsPage() {
   const { operators, refresh } = useOperators();
   const { create, update } = useOperatorActions();
-  const [selected, setSelected] = useState<OperatorDto | null>(null);
+  const [selected, setSelected] = useState<Operator | null>(null);
   const [showDialog, setShowDialog] = useState(false);
 
   const handleAdd = async (vals: OperatorFormValues) => {
     const parsed = operatorSchema.parse(vals);
     const now = new Date().toISOString();
     await create({
-      id: parsed.mdoc,
+      mdoc: parsed.mdoc,
       name: parsed.name,
       start: now,
       stop: null,
@@ -32,7 +33,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      id: selected.id,
+      mdoc: selected.mdoc,
       name: selected.name,
       start: selected.start,
       stop: now,
@@ -44,7 +45,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      id: selected.id,
+      mdoc: selected.mdoc,
       name: selected.name,
       start: now,
       stop: null,
