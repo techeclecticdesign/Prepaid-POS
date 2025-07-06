@@ -1,7 +1,9 @@
 use crate::common::error::AppError;
 use std::sync::{Arc, Mutex};
 
-// Runs multiple repository operations atomically in a single transaction.
+/* Runs multiple repository operations atomically in a single transaction.
+  IMPORTANT: Do not attempt any read operations inside of an atomic_tx transaction.
+*/
 pub fn atomic_tx<F, T>(conn: &Arc<Mutex<rusqlite::Connection>>, f: F) -> Result<T, AppError>
 where
     F: FnOnce(&rusqlite::Transaction) -> Result<T, AppError>,

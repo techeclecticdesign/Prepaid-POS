@@ -1,6 +1,6 @@
 # Maine Department of Corrections Annex POS
 
-A robust point-of-sale system that uses unit and integration tests to guarantee in-the-field stability.
+A robust point-of-sale system that uses frontend/backend validation and unit/integration tests to guarantee in-the-field stability.
 
 It is designed for use in Maine State Prison to allow inmates to order items using money they have transferred to an annex account. Account funds are sent via report by accountant, parsed into the system, and once processed are available for use by prison residents.
 
@@ -12,52 +12,52 @@ It is built using the Clean Architecture model (https://blog.cleancoder.com/uncl
 
 ```
 src/
-├── main.rs             # App entrypoint + Tauri setup
-├── commands.rs         # Tauri commands adapters
-├── error.rs            # Central AppError enum (thiserror)
-├── logger.rs           # fern-based logging config
-├── domain/             # Core business models & repo traits
-│   ├── models/
-│   └── repos/
-├── infrastructure/     # Concrete implementations
+├── main.rs           # App entrypoint + Tauri setup
+├── application/      # Business logic and use-case orchestration
+├── common            # Common libs like auth, error and logger
+├── domain/           # Core business models & repo traits
+│   ├── models/         # The shape of the data
+│   └── repos/          # The shape of the repos
+├── infrastructure/   # Concrete implementations
 │   ├── db.rs           # SQLite connection + migrations
-│   └── repos/
-├── interface/          # Controllers & presenters
-│   ├── controllers/
-│   └── presenters/
-├── services/           # Business-use-case orchestration
-└── test_support/       # Mocks + test helpers
+│   └── repo            # SQL operations
+├── interface/        # Boundary of front and back end.
+│   ├── controller      # Type conversion etc of data coming from frontend
+|   ├── dto             # The shape of the data going to and from the frontend
+│   └── presenter       # Type conversion etc of data going to frontend
+└── test_support/     # Mocks + test helpers
 ```
 
 ---
 
-## Module Responsibilities
+## Responsibilities
 
 - **Domain**: defines models + generic traits.
-- **Infrastructure**: holds SQLite connection logic + concrete Database Repositories.
-- **Services**: contains services that orchestrate domain logic (create, list, update, etc).
+- **Infrastructure**: concrete Database Repositories containing SQLite logic.
+- **Application**: services that orchestrate business logic (sale_transaction, stock_items, etc).
 - **Interface**:
   - **Controllers**: adapt service calls into simple methods.
   - **Presenters**: process data in the way it is expected by the frontend.
   - **Commands**: Tauri-facing functions.
 - **Error Handling**: `error.rs` centralizes `AppError` variants (`Db`, `Migration`, `Parse`, `NotFound`, etc).
 - **Logging**: `logger.rs` configures `fern` to output to console + file.
+- **Auth**: `auth.rs` and associated commands handle log in/out, timeout etc.
 - **Test Support**: reusable mocks for isolated controller/service tests.
 
 ---
 
-## Data & Call Flow
+## Logical Flow
 
 ```
 Frontend
    ⇅
 Tauri Command
    ⇅
+  DTO
+   ⇅
 Interface Controller
    ⇅
-Service
-   ⇅
-Repo Trait (Domain)
+Application
    ⇅
 Repository (Infrastructure)
    ⇅
