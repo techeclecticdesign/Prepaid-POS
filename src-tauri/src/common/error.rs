@@ -1,3 +1,4 @@
+use tauri::ipc::InvokeError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -19,4 +20,10 @@ pub enum AppError {
 
     #[error("unexpected error: {0}")]
     Unexpected(String),
+}
+
+impl From<AppError> for InvokeError {
+    fn from(val: AppError) -> InvokeError {
+        InvokeError::from(val.to_string())
+    }
 }

@@ -1,0 +1,276 @@
+use crate::application::common::db::atomic_tx;
+use crate::common::error::AppError;
+use crate::domain::models::{PriceAdjustment, Product};
+use crate::domain::repos::{PriceAdjustmentRepoTrait, ProductRepoTrait};
+use chrono::Utc;
+use std::sync::{Arc, Mutex};
+
+pub struct ProductUseCases {
+    repo: Arc<dyn ProductRepoTrait>,
+    price_repo: Arc<dyn PriceAdjustmentRepoTrait>,
+    conn: Arc<Mutex<rusqlite::Connection>>,
+}
+
+impl ProductUseCases {
+    pub fn new(
+        repo: Arc<dyn ProductRepoTrait>,
+        price_repo: Arc<dyn PriceAdjustmentRepoTrait>,
+        conn: Arc<Mutex<rusqlite::Connection>>,
+    ) -> Self {
+        Self {
+            repo,
+            price_repo,
+            conn,
+        }
+    }
+
+    pub fn create_product(
+        &self,
+        upc: i64,
+        desc: String,
+        category: String,
+        price: i32,
+    ) -> Result<(), AppError> {
+        let now = Utc::now().naive_utc();
+        let p = Product {
+            upc,
+            desc,
+            category,
+            price,
+            updated: now,
+            added: now,
+            deleted: None,
+        };
+        self.repo.create(&p)
+    }
+
+    pub fn remove_product(&self, upc: i64) -> Result<(), AppError> {
+        let mut p = self
+            .repo
+            .get_by_upc(upc)?
+            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
+        p.deleted = Some(Utc::now().naive_utc());
+        self.repo.update_by_upc(&p)
+    }
+
+    pub fn list_products(&self) -> Result<Vec<Product>, AppError> {
+        self.repo.list()
+    }
+
+    pub fn list_products_by_category(&self, cat: String) -> Result<Vec<Product>, AppError> {
+        Ok(self
+            .repo
+            .list()?
+            .into_iter()
+            .filter(|p| p.category == cat)
+            .collect())
+    }
+
+    pub fn price_adjustment(
+        &self,
+        operator_mdoc: i32,
+        upc: i64,
+        new_price: i32,
+    ) -> Result<PriceAdjustment, AppError> {
+        let old = self.repo.get_price(upc)?;
+        let mut p = self
+            .repo
+            .get_by_upc(upc)?
+            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
+
+        let adj_id = atomic_tx(&self.conn, |tx| {
+            // create adjustment record
+            let adj = PriceAdjustment {
+                id: 0,
+                operator_mdoc,
+                upc,
+                old,
+                new: new_price,
+                created_at: chrono::Utc::now().naive_utc(),
+            };
+            self.price_repo.create_with_tx(&adj, tx)?;
+
+            p.price = new_price;
+            p.updated = chrono::Utc::now().naive_utc();
+            self.repo.update_by_upc_with_tx(&p, tx)?;
+
+            Ok(tx.last_insert_rowid())
+        })?;
+
+        // now that TX is committed (and Mutex released), read back the row:
+        self.price_repo
+            .get_by_id(adj_id)?
+            .ok_or_else(|| AppError::Unexpected("failed load price adj".into()))
+    }
+
+    pub fn update_item(
+        &self,
+        upc: i64,
+        desc: Option<String>,
+        category: Option<String>,
+    ) -> Result<(), AppError> {
+        if desc.is_none() && category.is_none() {
+            return Err(AppError::Unexpected("no fields to update".into()));
+        }
+
+        // load existing product
+        let mut p = self
+            .repo
+            .get_by_upc(upc)?
+            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
+
+        // update
+        if let Some(d) = desc {
+            p.desc = d;
+        }
+        if let Some(c) = category {
+            p.category = c;
+        }
+        p.updated = Utc::now().naive_utc();
+
+        self.repo.update_by_upc(&p)
+    }
+
+    pub fn list_price_adjust_today(&self) -> Result<Vec<PriceAdjustment>, AppError> {
+        self.price_repo.list_for_today()
+    }
+
+    pub fn list_price_adjust_operator(&self, op: i32) -> Result<Vec<PriceAdjustment>, AppError> {
+        self.price_repo.list_for_operator(op)
+    }
+
+    pub fn list_price_adjust(&self) -> Result<Vec<PriceAdjustment>, AppError> {
+        self.price_repo.list()
+    }
+
+    pub fn list_price_adjust_for_product(
+        &self,
+        upc: i64,
+    ) -> Result<Vec<PriceAdjustment>, AppError> {
+        self.price_repo.list_for_product(upc)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::use_cases::product_usecases::ProductUseCases;
+    use crate::domain::models::Operator;
+    use crate::domain::repos::OperatorRepoTrait;
+    use crate::test_support::mock_operator_repo::MockOperatorRepo;
+    use crate::test_support::mock_price_adjustment_repo::MockPriceAdjustmentRepo;
+    use crate::test_support::mock_product_repo::MockProductRepo;
+    use std::sync::Arc;
+
+    fn make_use_cases() -> (ProductUseCases, Arc<MockOperatorRepo>, Arc<MockProductRepo>) {
+        let op_repo = Arc::new(MockOperatorRepo::new());
+        let prod_repo = Arc::new(MockProductRepo::new());
+        let price_repo = Arc::new(MockPriceAdjustmentRepo::new());
+        let conn = Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap()));
+        let uc = ProductUseCases::new(prod_repo.clone(), price_repo.clone(), conn);
+        (uc, op_repo, prod_repo)
+    }
+
+    #[test]
+    fn full_product_crud_and_category_filter() -> anyhow::Result<()> {
+        let (uc, _op_repo, _prod_repo) = make_use_cases();
+
+        assert!(uc.list_products()?.is_empty());
+
+        uc.create_product(100, "Widget".into(), "Gadgets".into(), 1000)?;
+        uc.create_product(200, "Gizmo".into(), "Gadgets".into(), 2000)?;
+        uc.create_product(300, "Thing".into(), "Stuff".into(), 1500)?;
+
+        let all = uc.list_products()?;
+        assert_eq!(all.len(), 3);
+
+        // filter by category
+        let gadgets = uc.list_products_by_category("Gadgets".into())?;
+        assert_eq!(
+            gadgets.iter().map(|p| p.upc).collect::<Vec<_>>(),
+            vec![100, 200]
+        );
+
+        // remove one product
+        uc.remove_product(200)?;
+        let post = uc.list_products()?;
+        assert!(post
+            .iter()
+            .find(|p| p.upc == 200)
+            .unwrap()
+            .deleted
+            .is_some());
+
+        Ok(())
+    }
+
+    #[test]
+    fn update_item_changes_only_specified_fields() -> anyhow::Result<()> {
+        let (uc, _op_repo, _prod_repo) = make_use_cases();
+        uc.create_product(42, "OldDesc".into(), "OldCat".into(), 500)?;
+
+        // update desc
+        uc.update_item(42, Some("NewDesc".into()), None)?;
+        let p = uc.repo.get_by_upc(42)?.unwrap();
+        assert_eq!(p.desc, "NewDesc");
+        assert_eq!(p.category, "OldCat");
+
+        // update category
+        uc.update_item(42, None, Some("NewCat".into()))?;
+        let p2 = uc.repo.get_by_upc(42)?.unwrap();
+        assert_eq!(p2.desc, "NewDesc");
+        assert_eq!(p2.category, "NewCat");
+
+        // no fields -> error
+        let err = uc.update_item(42, None, None).unwrap_err();
+        assert!(err.to_string().contains("no fields to update"));
+        Ok(())
+    }
+
+    #[test]
+    fn price_adjustment_round_trip() -> anyhow::Result<()> {
+        let (uc, operator_repo, _product_repo) = make_use_cases();
+
+        // make sure the operator exists
+        operator_repo.create(&Operator {
+            id: 1,
+            name: "Cashier".into(),
+            start: Utc::now().naive_utc(),
+            stop: None,
+        })?;
+
+        // product must exist
+        uc.create_product(7, "Priced".into(), "Cat".into(), 1234)?;
+
+        // adjust price
+        let adj = uc.price_adjustment(1, 7, 2000)?;
+        assert_eq!(adj.upc, 7);
+        assert_eq!(adj.old, 1234);
+        assert_eq!(adj.new, 2000);
+
+        // verify update
+        let p = uc.repo.get_by_upc(7)?.unwrap();
+        assert_eq!(p.price, 2000);
+
+        // listing adjustments
+        let today = uc.list_price_adjust_today()?;
+        assert_eq!(today.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn list_price_adjust_for_product_returns_expected_results() -> anyhow::Result<()> {
+        let (uc, _op_repo, _prod_repo) = make_use_cases();
+
+        // Seed with two price adjustments for same product
+        uc.create_product(1, "Item".into(), "Cat".into(), 1000)?;
+        uc.price_adjustment(1, 1, 1100)?;
+        uc.price_adjustment(1, 1, 1200)?;
+
+        let list = uc.list_price_adjust_for_product(1)?;
+        assert_eq!(list.len(), 2);
+        assert!(list.iter().all(|pa| pa.upc == 1));
+
+        Ok(())
+    }
+}
