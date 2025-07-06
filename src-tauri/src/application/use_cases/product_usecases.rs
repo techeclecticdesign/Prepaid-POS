@@ -149,6 +149,17 @@ impl ProductUseCases {
     ) -> Result<Vec<PriceAdjustment>, AppError> {
         self.price_repo.list_for_product(upc)
     }
+
+    pub fn search_products(
+        &self,
+        search: Option<String>,
+        category: Option<String>,
+        page: u32,
+    ) -> Result<Vec<Product>, AppError> {
+        let limit = 25;
+        let offset = (page.saturating_sub(1) as i64) * limit;
+        self.repo.search(search, category, limit, offset)
+    }
 }
 
 #[cfg(test)]
@@ -169,6 +180,60 @@ mod tests {
         let conn = Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap()));
         let uc = ProductUseCases::new(prod_repo.clone(), price_repo.clone(), conn);
         (uc, op_repo, prod_repo)
+    }
+
+    // populate a few products in a MockProductRepo
+    fn make_search_usecase() -> ProductUseCases {
+        let repo = Arc::new(MockProductRepo::new());
+        // insert 4 products
+        repo.create(&Product {
+            upc: 1,
+            desc: "Red apple".into(),
+            category: "Fruit".into(),
+            price: 100,
+            updated: chrono::Utc::now().naive_utc(),
+            added: chrono::Utc::now().naive_utc(),
+            deleted: None,
+        })
+        .unwrap();
+        repo.create(&Product {
+            upc: 2,
+            desc: "Green apple".into(),
+            category: "Fruit".into(),
+            price: 100,
+            updated: chrono::Utc::now().naive_utc(),
+            added: chrono::Utc::now().naive_utc(),
+            deleted: None,
+        })
+        .unwrap();
+        repo.create(&Product {
+            upc: 3,
+            desc: "Yellow banana".into(),
+            category: "Fruit".into(),
+            price: 200,
+            updated: chrono::Utc::now().naive_utc(),
+            added: chrono::Utc::now().naive_utc(),
+            deleted: None,
+        })
+        .unwrap();
+        repo.create(&Product {
+            upc: 4,
+            desc: "Blueberry".into(),
+            category: "Berry".into(),
+            price: 50,
+            updated: chrono::Utc::now().naive_utc(),
+            added: chrono::Utc::now().naive_utc(),
+            deleted: None,
+        })
+        .unwrap();
+
+        // price_repo + conn are unused for search
+        let price_repo = Arc::new(
+            crate::test_support::mock_price_adjustment_repo::MockPriceAdjustmentRepo::new(),
+        );
+        let conn = Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap()));
+
+        ProductUseCases::new(repo, price_repo, conn)
     }
 
     #[test]
@@ -270,6 +335,25 @@ mod tests {
         let list = uc.list_price_adjust_for_product(1)?;
         assert_eq!(list.len(), 2);
         assert!(list.iter().all(|pa| pa.upc == 1));
+
+        Ok(())
+    }
+
+    #[test]
+    fn search_by_desc_substring_and_pagination() -> anyhow::Result<()> {
+        let uc = make_search_usecase();
+
+        // page 0: should find 2 apples
+        let apples = uc.search_products(Some("apple".into()), None, 0)?;
+        assert_eq!(apples.len(), 2);
+
+        // filter by category “Berry”
+        let berries = uc.search_products(None, Some("Berry".into()), 0)?;
+        assert_eq!(berries.len(), 1);
+
+        // no match
+        let none = uc.search_products(Some("pear".into()), None, 0)?;
+        assert!(none.is_empty());
 
         Ok(())
     }

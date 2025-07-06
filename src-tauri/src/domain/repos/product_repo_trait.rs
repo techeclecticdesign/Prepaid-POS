@@ -12,4 +12,11 @@ pub trait ProductRepoTrait: Send + Sync {
         tx: &rusqlite::Transaction<'_>,
     ) -> Result<(), AppError>;
     fn list(&self) -> Result<Vec<Product>, AppError>;
+    fn search(
+        &self,
+        desc_like: Option<String>,
+        category: Option<String>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Product>, AppError>;
 }

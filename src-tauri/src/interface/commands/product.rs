@@ -86,3 +86,14 @@ pub fn list_price_adjust_for_product(
 ) -> Result<Vec<PriceAdjustmentDto>, AppError> {
     controller.list_price_adjust_for_product(upc)
 }
+
+#[tauri::command]
+pub fn search_products(
+    controller: State<Arc<ProductController>>,
+    search: Option<String>,
+    category: Option<String>,
+    page: Option<u32>,
+) -> Result<Vec<ProductDto>, AppError> {
+    let page = page.unwrap_or(1);
+    controller.search_products(search, category, page)
+}

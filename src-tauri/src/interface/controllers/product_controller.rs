@@ -59,6 +59,16 @@ impl ProductController {
         self.uc.update_item(upc, desc, category)
     }
 
+    pub fn search_products(
+        &self,
+        search: Option<String>,
+        category: Option<String>,
+        page: u32,
+    ) -> Result<Vec<ProductDto>, AppError> {
+        let ps = self.uc.search_products(search, category, page)?;
+        Ok(ProductPresenter::to_dto_list(ps))
+    }
+
     pub fn list_price_adjust_for_product(
         &self,
         upc: i64,
@@ -111,5 +121,19 @@ mod smoke {
             .list_price_adjust()
             .expect("list_price_adjust should succeed");
         assert!(out.is_empty());
+    }
+
+    #[test]
+    fn controller_smoke_search_products_empty() {
+        let prod_repo = Arc::new(MockProductRepo::new());
+        let price_repo = Arc::new(MockPriceAdjustmentRepo::new());
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
+        let ctrl = ProductController::new(prod_repo, price_repo, conn);
+
+        // no products added, so search should return empty
+        let result = ctrl
+            .search_products(Some("apple".into()), Some("Fruit".into()), 0)
+            .expect("search_products should succeed");
+        assert!(result.is_empty());
     }
 }

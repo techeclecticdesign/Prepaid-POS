@@ -65,4 +65,29 @@ impl ProductRepoTrait for MockProductRepo {
     fn list(&self) -> Result<Vec<Product>, AppError> {
         Ok(self.store.lock().unwrap().clone())
     }
+    fn search(
+        &self,
+        desc_like: Option<String>,
+        category: Option<String>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Product>, AppError> {
+        let guard = self.store.lock().unwrap();
+        let mut products: Vec<Product> = guard
+            .iter()
+            .filter(|p| {
+                let desc_match = desc_like
+                    .as_ref()
+                    .map(|s| p.desc.contains(s))
+                    .unwrap_or(true);
+                let cat_match = category.as_ref().map(|c| &p.category == c).unwrap_or(true);
+                desc_match && cat_match
+            })
+            .cloned()
+            .collect();
+        products.sort_by(|a, b| b.added.cmp(&a.added));
+        let start = offset as usize;
+        let end = (start + limit as usize).min(products.len());
+        Ok(products.get(start..end).unwrap_or(&[]).to_vec())
+    }
 }

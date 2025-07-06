@@ -100,4 +100,56 @@ impl ProductRepoTrait for SqliteProductRepo {
             .collect::<Result<Vec<_>, _>>()?;
         Ok(prods)
     }
+
+    fn search(
+        &self,
+        desc_like: Option<String>,
+        category: Option<String>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Product>, AppError> {
+        let conn = self.conn.lock().unwrap();
+
+        let mut sql = String::from(
+            "SELECT upc, desc, category, price, updated, added, deleted
+             FROM products",
+        );
+        let mut clauses = Vec::new();
+        let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+        let mut dynamic_params: Vec<String> = Vec::new();
+
+        if let Some(ref s) = desc_like {
+            clauses.push("desc LIKE ?");
+            let formatted = format!("%{}%", s);
+            dynamic_params.push(formatted);
+            params.push(dynamic_params.last().unwrap());
+        }
+        if let Some(ref c) = category {
+            clauses.push("category = ?");
+            params.push(c);
+        }
+        if !clauses.is_empty() {
+            sql.push_str(" WHERE ");
+            sql.push_str(&clauses.join(" AND "));
+        }
+
+        sql.push_str(" ORDER BY added DESC LIMIT ? OFFSET ?");
+        params.push(&limit);
+        params.push(&offset);
+
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params.as_slice(), |r| {
+            Ok(Product {
+                upc: r.get(0)?,
+                desc: r.get(1)?,
+                category: r.get(2)?,
+                price: r.get(3)?,
+                updated: r.get(4)?,
+                added: r.get(5)?,
+                deleted: r.get(6)?,
+            })
+        })?;
+
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
 }
