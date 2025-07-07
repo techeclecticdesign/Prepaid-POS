@@ -10,10 +10,6 @@ export default function App() {
   const { operators } = useOperators();
   const operatorsRef = useRef(operators);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    operatorsRef.current = operators;
-  }, [operators]);
   const { loggedIn, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -23,12 +19,16 @@ export default function App() {
     (o) => o.stop === null || new Date(o.start) > new Date(o.stop),
   );
 
+  useEffect(() => {
+    operatorsRef.current = operators;
+  }, [operators]);
+
   const handleScan = (scan: string) => {
     if (!/^\d+$/.test(scan)) {
       return;
     }
     const scanNum = parseInt(scan, 10);
-    const matched = operatorsRef.current.find((o) => o.mdoc === scanNum);
+    const matched = operatorsRef.current.find((o) => o.id === scanNum);
     if (!matched) {
       setScanError("Scan input does not match any operator MDOC.");
       if (errorTimerRef.current) {
@@ -70,17 +70,22 @@ export default function App() {
       </h1>
       <div className="flex flex-col gap-4">
         {activeOperators.map((o) => (
-          <AppButton key={o.mdoc} text={o.name} />
+          <AppButton
+            key={o.id}
+            text={o.name}
+            variant="outlined"
+            sx={{ width: 250 }}
+          />
         ))}
 
         {!loggedIn ? (
           <AppButton
-            variant="contained"
             onClick={() => setShowLogin(true)}
             text="Admin Login"
+            sx={{ width: 250 }}
           />
         ) : (
-          <AppButton variant="contained" onClick={logout} text="Log Out" />
+          <AppButton onClick={logout} text="Log Out" />
         )}
       </div>
 

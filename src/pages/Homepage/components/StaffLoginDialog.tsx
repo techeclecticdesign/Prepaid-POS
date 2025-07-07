@@ -6,10 +6,9 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 import AppButton from "../../../components/AppButton";
+import AppSnackbar from "../../../components/AppSnackbar";
 
 interface Props {
   open: boolean;
@@ -57,21 +56,11 @@ export default function StaffLoginDialog({
           </DialogActions>
         </form>
       </Dialog>
-
-      <Snackbar
+      <AppSnackbar
         open={snackbarOpen}
-        autoHideDuration={3000}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        message="Incorrect password"
         onClose={() => setSnackbarOpen(false)}
-      >
-        <Alert
-          severity="error"
-          onClose={() => setSnackbarOpen(false)}
-          sx={{ width: "100%" }}
-        >
-          Incorrect password
-        </Alert>
-      </Snackbar>
+      />
     </>
   );
 }

@@ -7,7 +7,7 @@ interface SidebarLayoutProps {
 export default function SidebarLayout({ Sidebar }: SidebarLayoutProps) {
   return (
     <main className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center bg-gray-50 p-6">
+      <div className="flex-1 flex items-center justify-center p-6">
         <Outlet />
       </div>
 

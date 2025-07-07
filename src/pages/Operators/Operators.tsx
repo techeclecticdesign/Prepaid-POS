@@ -20,7 +20,7 @@ export default function OperatorsPage() {
     const parsed = operatorSchema.parse(vals);
     const now = new Date().toISOString();
     await create({
-      mdoc: parsed.mdoc,
+      id: parsed.mdoc,
       name: parsed.name,
       start: now,
       stop: null,
@@ -33,7 +33,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      mdoc: selected.mdoc,
+      id: selected.id,
       name: selected.name,
       start: selected.start,
       stop: now,
@@ -45,7 +45,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      mdoc: selected.mdoc,
+      id: selected.id,
       name: selected.name,
       start: now,
       stop: null,
@@ -54,8 +54,8 @@ export default function OperatorsPage() {
   };
 
   return (
-    <div className="p-12 flex justify-center bg-gray-50 w-full h-screen">
-      <div className="w-2/3">
+    <div className="p-12 flex justify-center w-full mb-auto">
+      <div className="w-2/3 mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-center">Operators</h1>
 
         <OperatorSelector
@@ -77,6 +77,7 @@ export default function OperatorsPage() {
           open={showDialog}
           onClose={() => setShowDialog(false)}
           onSubmit={handleAdd}
+          existingMdocs={operators.map((o) => o.id)}
         />
       </div>
     </div>

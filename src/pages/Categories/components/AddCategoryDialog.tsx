@@ -1,12 +1,11 @@
+import { useState, useRef, useEffect } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import { useState, useRef, useEffect } from "react";
+import AppSnackbar from "../../../components/AppSnackbar";
 
 interface Props {
   open: boolean;
@@ -91,20 +90,11 @@ export default function AddCategoryDialog({
           </DialogActions>
         </form>
       </Dialog>
-      <Snackbar
+      <AppSnackbar
         open={snackbarOpen}
-        autoHideDuration={3000}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        message={error}
         onClose={() => setSnackbarOpen(false)}
-      >
-        <Alert
-          severity="error"
-          onClose={() => setSnackbarOpen(false)}
-          sx={{ width: "100%" }}
-        >
-          {error}
-        </Alert>
-      </Snackbar>
+      />
     </>
   );
 }

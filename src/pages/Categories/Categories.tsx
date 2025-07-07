@@ -4,7 +4,7 @@ import { useCategoryActions } from "./hooks/useCategoryActions";
 import CategoryList from "./components/CategoryList";
 import AddCategoryDialog from "./components/AddCategoryDialog";
 import DeleteCatNotify from "./components/DeleteCatNotify";
-import Button from "@mui/material/Button";
+import AppButton from "../../components/AppButton";
 
 export default function CategoriesPage() {
   const { categories, refresh } = useCategories();
@@ -25,14 +25,12 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="p-12 flex justify-center bg-gray-50 w-full h-screen">
+    <div className="p-12 flex justify-center w-full h-full">
       <div className="w-2/3">
         <h1 className="text-4xl font-bold mb-8 text-center">Categories</h1>
 
         <div className="mb-12 text-center">
-          <Button variant="contained" onClick={() => setShowAdd(true)}>
-            Add Category
-          </Button>
+          <AppButton onClick={() => setShowAdd(true)} text="Add Category" />
         </div>
 
         <CategoryList categories={categories} onDelete={handleDelete} />

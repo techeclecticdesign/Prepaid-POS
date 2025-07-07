@@ -6,9 +6,9 @@ interface AppButtonProps extends ButtonProps {
 
 // A button with custom defaults and which takes its inner text as a prop
 export default function AppButton({
-  variant = "outlined",
+  variant = "contained",
   color = "primary",
-  sx = { width: 250 },
+  sx = { maxWidth: 250, width: "100%" },
   text,
   ...rest
 }: AppButtonProps) {

@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "MDOC Annex Point of Sale",
+        "backgroundColor": "#f9fafb",
         "maximized": true
       }
     ],

@@ -4,7 +4,7 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { Button } from "@mui/material";
+import AppButton from "./AppButton";
 
 interface Props {
   open: boolean;
@@ -16,10 +16,8 @@ export default function SessionTimeoutDialog({ open, onClose }: Props) {
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Session Timed Out</DialogTitle>
       <DialogContent>You have been logged out due to inactivity.</DialogContent>
-      <DialogActions>
-        <Button variant="contained" onClick={onClose}>
-          Ok
-        </Button>
+      <DialogActions sx={{ justifyContent: "center" }}>
+        <AppButton onClick={onClose} text="Ok" />
       </DialogActions>
     </Dialog>
   );

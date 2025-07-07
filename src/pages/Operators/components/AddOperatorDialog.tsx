@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -12,64 +13,93 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import TextField from "@mui/material/TextField";
 import AppButton from "../../../components/AppButton";
+import AppSnackbar from "../../../components/AppSnackbar";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: OperatorFormValues) => void;
+  onSubmit: (values: OperatorFormValues) => Promise<void>;
+  existingMdocs: Array<number>;
 }
 
-export default function AddOperatorDialog({ open, onClose, onSubmit }: Props) {
+export default function AddOperatorDialog({
+  open,
+  onClose,
+  onSubmit,
+  existingMdocs,
+}: Props) {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState("");
   const { control, handleSubmit, formState, reset } =
     useForm<OperatorFormValues>({
       resolver: zodResolver(operatorSchema),
     });
 
+  // wrap form submit to catch errors
+  const wrappedSubmit = handleSubmit(async (vals) => {
+    // duplicate check (case‑insensitive if you store strings)
+    if (existingMdocs.some((m) => m === vals.mdoc)) {
+      setSnackbarMsg("Operator with that MDOC already exists.");
+      setSnackbarOpen(true);
+      return;
+    }
+    try {
+      await onSubmit(vals);
+      onClose();
+      reset();
+    } catch (err) {
+      setSnackbarMsg(err instanceof Error ? err.message : String(err));
+      setSnackbarOpen(true);
+    }
+  });
+
   return (
-    <Dialog open={open} onClose={onClose}>
-      <form
-        onSubmit={handleSubmit((v) => {
-          onSubmit(v);
-          reset();
-        })}
-      >
-        <DialogTitle>Add Operator</DialogTitle>
-        <DialogContent className="space-y-4">
-          <div className="flex flex-col gap-3">
-            <Controller
-              name="mdoc"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="MDOC"
-                  fullWidth
-                  error={!!formState.errors.mdoc}
-                  helperText={formState.errors.mdoc?.message}
-                />
-              )}
-            />
-            <Controller
-              name="name"
-              control={control}
-              defaultValue=""
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Full Name"
-                  fullWidth
-                  error={!!formState.errors.name}
-                  helperText={formState.errors.name?.message}
-                />
-              )}
-            />
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <AppButton text="Cancel" onClick={onClose} />
-          <AppButton type="submit" variant="contained" text="Submit" />
-        </DialogActions>
-      </form>
-    </Dialog>
+    <>
+      <Dialog open={open} onClose={onClose}>
+        <form onSubmit={wrappedSubmit}>
+          <DialogTitle>Add Operator</DialogTitle>
+          <DialogContent className="space-y-4">
+            <div className="flex flex-col gap-3 pt-1.5">
+              <Controller
+                name="mdoc"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="MDOC"
+                    fullWidth
+                    error={!!formState.errors.mdoc}
+                    helperText={formState.errors.mdoc?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="name"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Full Name"
+                    fullWidth
+                    error={!!formState.errors.name}
+                    helperText={formState.errors.name?.message}
+                  />
+                )}
+              />
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <AppButton text="Cancel" onClick={onClose} variant="outlined" />
+            <AppButton type="submit" text="Submit" />
+          </DialogActions>
+        </form>
+      </Dialog>
+      <AppSnackbar
+        open={snackbarOpen}
+        message={snackbarMsg}
+        onClose={() => setSnackbarOpen(false)}
+      />
+    </>
   );
 }

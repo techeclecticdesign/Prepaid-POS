@@ -14,6 +14,18 @@
   src: url("/fonts/Lato-Bold.ttf") format("ttf");
 }
 
+/* Border to distinguish title bar from page content */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #d1d5db;
+  z-index: 50;
+}
+
 :root {
   font-family: "Lato", sans-serif;
 }

@@ -19,7 +19,7 @@ export default function OperatorDetails({
         {["MDOC", "Name", "Start Time", "Stop Time"].map((label, i) => {
           const value =
             i === 0
-              ? operator.mdoc
+              ? operator.id
               : i === 1
                 ? operator.name
                 : i === 2
@@ -37,16 +37,8 @@ export default function OperatorDetails({
             />
           );
         })}
-        <AppButton
-          variant="contained"
-          onClick={onTerminate}
-          text="Terminate Operator"
-        />
-        <AppButton
-          variant="contained"
-          onClick={onRehire}
-          text="Rehire Operator"
-        />
+        <AppButton onClick={onTerminate} text="Terminate Operator" />
+        <AppButton onClick={onRehire} text="Rehire Operator" />
       </div>
     </div>
   );

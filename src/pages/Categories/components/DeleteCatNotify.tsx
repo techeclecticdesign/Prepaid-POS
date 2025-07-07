@@ -2,7 +2,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
+import AppButton from "../../../components/AppButton";
 
 interface Props {
   open: boolean;
@@ -21,9 +21,7 @@ export default function DeleteCatNotify({ open, onClose }: Props) {
         </p>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} variant="contained">
-          OK
-        </Button>
+        <AppButton onClick={onClose} text="Ok" />
       </DialogActions>
     </Dialog>
   );
