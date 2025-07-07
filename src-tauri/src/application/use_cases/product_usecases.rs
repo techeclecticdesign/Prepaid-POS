@@ -173,6 +173,18 @@ impl ProductUseCases {
     }
 
     pub fn create_category(&self, cat: String) -> Result<(), AppError> {
+        if let Some(existing) = self.category_repo.get_by_name(&cat)? {
+            // it was soft‐deleted, undelete it.
+            if existing.deleted.is_some() {
+                return self.category_repo.undelete(existing.id);
+            }
+            // otherwise it's already active
+            return Err(AppError::Unexpected(format!(
+                "Category `{}` already exists",
+                cat
+            )));
+        }
+        // create new category
         self.category_repo.create(cat)
     }
 }

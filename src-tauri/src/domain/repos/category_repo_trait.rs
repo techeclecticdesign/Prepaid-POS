@@ -7,4 +7,6 @@ pub trait CategoryRepoTrait: Send + Sync {
     fn get_by_id(&self, id: i64) -> Result<Option<Category>, AppError>;
     fn create(&self, c: String) -> Result<(), AppError>;
     fn soft_delete(&self, id: i64) -> Result<(), AppError>;
+    fn get_by_name(&self, name: &str) -> Result<Option<Category>, AppError>;
+    fn undelete(&self, id: i64) -> Result<(), AppError>;
 }

@@ -108,6 +108,9 @@ pub fn delete_category(controller: State<Arc<ProductController>>, id: i64) -> Re
 }
 
 #[tauri::command]
-pub fn create_category(controller: State<Arc<ProductController>>, id: i64) -> Result<(), AppError> {
-    controller.delete_category(id)
+pub fn create_category(
+    controller: State<Arc<ProductController>>,
+    name: String,
+) -> Result<(), AppError> {
+    controller.create_category(name)
 }

@@ -12,7 +12,9 @@ export default function AdminSidebar() {
         <Link to="/operators" className="text-blue-600 hover:underline">
           Operators
         </Link>
-        <span className="text-gray-500 cursor-not-allowed">Lorem</span>
+        <Link to="/categories" className="text-blue-600 hover:underline">
+          Categories
+        </Link>
         <span className="text-gray-500 cursor-not-allowed">Ipsum</span>
         <span className="text-gray-500 cursor-not-allowed">Dolor</span>
       </nav>

@@ -65,4 +65,22 @@ impl CategoryRepoTrait for MockCategoryRepo {
         }
         Ok(())
     }
+
+    fn get_by_name(&self, name: &str) -> Result<Option<Category>, AppError> {
+        Ok(self
+            .store
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|c| c.name == name)
+            .cloned())
+    }
+
+    fn undelete(&self, id: i64) -> Result<(), AppError> {
+        let mut guard = self.store.lock().unwrap();
+        if let Some(cat) = guard.iter_mut().find(|c| c.id == id) {
+            cat.deleted = None;
+        }
+        Ok(())
+    }
 }

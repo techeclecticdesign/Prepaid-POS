@@ -71,4 +71,28 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
         )?;
         Ok(())
     }
+
+    fn get_by_name(&self, name: &str) -> Result<Option<Category>, AppError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, name, deleted FROM categories WHERE name = ?1")?;
+        let mut rows = stmt.query(params![name])?;
+        if let Some(r) = rows.next()? {
+            Ok(Some(Category {
+                id: r.get(0)?,
+                name: r.get(1)?,
+                deleted: r.get(2)?,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn undelete(&self, id: i64) -> Result<(), AppError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE categories SET deleted = NULL WHERE id = ?1",
+            params![id],
+        )?;
+        Ok(())
+    }
 }
