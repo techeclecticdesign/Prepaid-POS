@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import type { Operator } from "./models/Operator";
 
 interface AuthContextValue {
   loggedIn: boolean;
@@ -7,6 +8,8 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   timedOut: boolean;
   clearTimeoutFlag: () => void;
+  activeOperator: Operator | null;
+  setActiveOperator: (op: Operator | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -16,6 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [loggedIn, setLoggedIn] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const [activeOperator, setActiveOperator] = useState<Operator | null>(null);
 
   // Listen for any auth-status event from heartbeat hook
   useEffect(() => {
@@ -58,7 +62,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ loggedIn, login, logout, timedOut, clearTimeoutFlag }}
+      value={{
+        loggedIn,
+        login,
+        logout,
+        timedOut,
+        clearTimeoutFlag,
+        activeOperator,
+        setActiveOperator,
+      }}
     >
       {children}
     </AuthContext.Provider>

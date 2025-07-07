@@ -14,8 +14,9 @@ export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { setActiveOperator } = useAuth();
 
-  const activeOperators = operators.filter(
+  const currentOperators = operators.filter(
     (o) => o.stop === null || new Date(o.start) > new Date(o.stop),
   );
 
@@ -41,6 +42,7 @@ export default function App() {
     if (errorTimerRef.current) {
       clearTimeout(errorTimerRef.current);
     }
+    setActiveOperator(matched);
     navigate("/sales");
   };
 
@@ -69,12 +71,16 @@ export default function App() {
         Click your name or scan your ID to get started.
       </h1>
       <div className="flex flex-col gap-4">
-        {activeOperators.map((o) => (
+        {currentOperators.map((o) => (
           <AppButton
             key={o.id}
             text={o.name}
             variant="outlined"
             sx={{ width: 250 }}
+            onClick={() => {
+              setActiveOperator(o);
+              navigate("/sales");
+            }}
           />
         ))}
 
