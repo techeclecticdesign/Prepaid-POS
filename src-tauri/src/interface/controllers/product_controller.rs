@@ -59,7 +59,7 @@ impl ProductController {
             upc: dto.upc,
             old: dto.old,
             new: dto.new,
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: None,
         };
 
         let pa = self.uc.price_adjustment(domain)?;

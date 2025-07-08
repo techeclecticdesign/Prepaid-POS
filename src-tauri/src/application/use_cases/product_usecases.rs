@@ -38,7 +38,7 @@ impl ProductUseCases {
         if let Some(existing) = maybe_existing {
             if existing.deleted.is_some() {
                 // Resurrect the product by updating it
-                let now = Utc::now().naive_utc();
+                let now = Some(Utc::now().naive_utc());
                 let resurrected = Product {
                     upc,
                     desc,
@@ -55,7 +55,7 @@ impl ProductUseCases {
                 ));
             }
         }
-        let now = Utc::now().naive_utc();
+        let now = Some(Utc::now().naive_utc());
         let p = Product {
             upc,
             desc,
@@ -96,10 +96,13 @@ impl ProductUseCases {
             .get_by_upc(adj.upc)?
             .ok_or_else(|| AppError::NotFound(format!("Product {} not found", adj.upc)))?;
 
+        let mut adj = adj;
+        adj.created_at = Some(chrono::Utc::now().naive_utc());
+
         let adj_id = atomic_tx(&self.conn, |tx| {
             self.price_repo.create_with_tx(&adj, tx)?;
             p.price = adj.new;
-            p.updated = chrono::Utc::now().naive_utc();
+            p.updated = Some(chrono::Utc::now().naive_utc());
             self.repo.update_by_upc_with_tx(&p, tx)?;
 
             Ok(tx.last_insert_rowid())
@@ -134,7 +137,7 @@ impl ProductUseCases {
         if let Some(c) = category {
             p.category = c;
         }
-        p.updated = Utc::now().naive_utc();
+        p.updated = Some(Utc::now().naive_utc());
 
         self.repo.update_by_upc(&p)
     }
@@ -239,8 +242,8 @@ mod tests {
             desc: "Red apple".into(),
             category: "Fruit".into(),
             price: 100,
-            updated: chrono::Utc::now().naive_utc(),
-            added: chrono::Utc::now().naive_utc(),
+            updated: Some(chrono::Utc::now().naive_utc()),
+            added: Some(chrono::Utc::now().naive_utc()),
             deleted: None,
         })
         .unwrap();
@@ -249,8 +252,8 @@ mod tests {
             desc: "Green apple".into(),
             category: "Fruit".into(),
             price: 100,
-            updated: chrono::Utc::now().naive_utc(),
-            added: chrono::Utc::now().naive_utc(),
+            updated: Some(chrono::Utc::now().naive_utc()),
+            added: Some(chrono::Utc::now().naive_utc()),
             deleted: None,
         })
         .unwrap();
@@ -259,8 +262,8 @@ mod tests {
             desc: "Yellow banana".into(),
             category: "Fruit".into(),
             price: 200,
-            updated: chrono::Utc::now().naive_utc(),
-            added: chrono::Utc::now().naive_utc(),
+            updated: Some(chrono::Utc::now().naive_utc()),
+            added: Some(chrono::Utc::now().naive_utc()),
             deleted: None,
         })
         .unwrap();
@@ -269,8 +272,8 @@ mod tests {
             desc: "Blueberry".into(),
             category: "Berry".into(),
             price: 50,
-            updated: chrono::Utc::now().naive_utc(),
-            added: chrono::Utc::now().naive_utc(),
+            updated: Some(chrono::Utc::now().naive_utc()),
+            added: Some(chrono::Utc::now().naive_utc()),
             deleted: None,
         })
         .unwrap();
@@ -348,7 +351,7 @@ mod tests {
         operator_repo.create(&Operator {
             id: 1,
             name: "Cashier".into(),
-            start: Utc::now().naive_utc(),
+            start: Some(Utc::now().naive_utc()),
             stop: None,
         })?;
 
@@ -362,7 +365,7 @@ mod tests {
             upc: 7,
             old: 1234,
             new: 2000,
-            created_at: Utc::now().naive_utc(),
+            created_at: Some(Utc::now().naive_utc()),
         })?;
         assert_eq!(adj.upc, 7);
         assert_eq!(adj.old, 1234);
@@ -390,7 +393,7 @@ mod tests {
             upc: 1,
             old: 1000,
             new: 1100,
-            created_at: Utc::now().naive_utc(),
+            created_at: Some(Utc::now().naive_utc()),
         })?;
         uc.price_adjustment(PriceAdjustment {
             id: 0,
@@ -398,7 +401,7 @@ mod tests {
             upc: 1,
             old: 1100,
             new: 1200,
-            created_at: Utc::now().naive_utc(),
+            created_at: Some(Utc::now().naive_utc()),
         })?;
 
         let list = uc.list_price_adjust_for_product(1)?;

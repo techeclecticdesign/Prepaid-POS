@@ -10,7 +10,9 @@ impl OperatorPresenter {
             .map(|o| OperatorDto {
                 id: o.id,
                 name: o.name,
-                start: chrono::Utc.from_utc_datetime(&o.start).to_rfc3339(),
+                start: o
+                    .start
+                    .map(|dt| chrono::Utc.from_utc_datetime(&dt).to_rfc3339()),
                 stop: o
                     .stop
                     .map(|dt| chrono::Utc.from_utc_datetime(&dt).to_rfc3339()),

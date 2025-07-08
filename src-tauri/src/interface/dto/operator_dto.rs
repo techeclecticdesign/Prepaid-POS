@@ -4,6 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct OperatorDto {
     pub id: i32,
     pub name: String,
-    pub start: String,        // RFC 3339 timestamp
-    pub stop: Option<String>, // RFC 3339 timestamp
+    pub start: Option<String>, // RFC 3339 timestamp
+    pub stop: Option<String>,  // RFC 3339 timestamp
 }

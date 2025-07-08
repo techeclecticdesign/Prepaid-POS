@@ -6,6 +6,9 @@ pub struct InventoryTransactionPresenter;
 
 impl InventoryTransactionPresenter {
     pub fn to_dto(itx: InventoryTransaction) -> InventoryTransactionDto {
+        let created_at = itx
+            .created_at
+            .map(|dt| Utc.from_utc_datetime(&dt).to_rfc3339());
         InventoryTransactionDto {
             id: itx.id,
             upc: itx.upc,
@@ -14,7 +17,7 @@ impl InventoryTransactionPresenter {
             operator_mdoc: itx.operator_mdoc,
             customer_mdoc: itx.customer_mdoc,
             ref_order_id: itx.ref_order_id,
-            created_at: Utc.from_utc_datetime(&itx.created_at).to_rfc3339(),
+            created_at,
         }
     }
 

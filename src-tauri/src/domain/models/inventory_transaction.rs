@@ -9,5 +9,5 @@ pub struct InventoryTransaction {
     pub customer_mdoc: Option<i32>,
     pub ref_order_id: Option<i32>,
     pub reference: Option<String>,
-    pub created_at: NaiveDateTime,
+    pub created_at: Option<NaiveDateTime>,
 }

@@ -2,7 +2,7 @@ use crate::application::use_cases::operator_usecases::OperatorUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
-use crate::interface::common::date_utils::{parse_optional_rfc3339, parse_rfc3339};
+use crate::interface::common::date_utils::parse_rfc3339;
 use crate::interface::dto::operator_dto::OperatorDto;
 use std::sync::Arc;
 
@@ -26,8 +26,14 @@ impl OperatorController {
     }
 
     pub fn create(&self, dto: OperatorDto) -> Result<(), AppError> {
-        let start = parse_rfc3339(&dto.start)?;
-        let stop = parse_optional_rfc3339(&dto.stop)?;
+        let start = match &dto.start {
+            Some(s) => Some(parse_rfc3339(s)?),
+            None => None,
+        };
+        let stop = match &dto.stop {
+            Some(s) => Some(parse_rfc3339(s)?),
+            None => None,
+        };
         let op = Operator {
             id: dto.id,
             name: dto.name,
@@ -38,8 +44,14 @@ impl OperatorController {
     }
 
     pub fn update(&self, dto: OperatorDto) -> Result<(), AppError> {
-        let start = parse_rfc3339(&dto.start)?;
-        let stop = parse_optional_rfc3339(&dto.stop)?;
+        let start = match &dto.start {
+            Some(s) => Some(parse_rfc3339(s)?),
+            None => None,
+        };
+        let stop = match &dto.stop {
+            Some(s) => Some(parse_rfc3339(s)?),
+            None => None,
+        };
         let op = Operator {
             id: dto.id,
             name: dto.name,

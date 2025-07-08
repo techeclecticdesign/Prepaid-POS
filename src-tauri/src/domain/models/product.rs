@@ -6,7 +6,7 @@ pub struct Product {
     pub desc: String,
     pub category: String,
     pub price: i32, // price stored as integer cents
-    pub updated: NaiveDateTime,
-    pub added: NaiveDateTime,
+    pub updated: Option<NaiveDateTime>,
+    pub added: Option<NaiveDateTime>,
     pub deleted: Option<NaiveDateTime>,
 }

@@ -7,5 +7,5 @@ pub struct PriceAdjustment {
     pub upc: i64,
     pub old: i32,
     pub new: i32,
-    pub created_at: NaiveDateTime,
+    pub created_at: Option<NaiveDateTime>,
 }

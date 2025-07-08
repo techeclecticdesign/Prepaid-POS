@@ -27,7 +27,7 @@ impl TransactionUseCases {
             customer_mdoc,
             ref_order_id: None,
             reference: Some("Operator Adjustment".to_string()),
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: Some(chrono::Utc::now().naive_utc()),
         };
 
         self.inv_repo.create(&tx)?;
@@ -49,7 +49,7 @@ impl TransactionUseCases {
             customer_mdoc,
             ref_order_id: None,
             reference: Some("Operator Adjustment".to_string()),
-            created_at: chrono::Utc::now().naive_utc(),
+            created_at: Some(chrono::Utc::now().naive_utc()),
         };
         self.inv_repo.create(&tx)?;
         Ok(tx)
@@ -132,7 +132,7 @@ mod tests {
         op_repo.create(&Operator {
             id: 10,
             name: "Op1".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         })?;
         prod_repo.create(&Product {
@@ -140,8 +140,8 @@ mod tests {
             desc: "Item".into(),
             category: "Cat".into(),
             price: 1000,
-            updated: chrono::Utc::now().naive_utc(),
-            added: chrono::Utc::now().naive_utc(),
+            updated: Some(chrono::Utc::now().naive_utc()),
+            added: Some(chrono::Utc::now().naive_utc()),
             deleted: None,
         })?;
 
@@ -180,13 +180,13 @@ mod tests {
         op_repo.create(&Operator {
             id: 1,
             name: "Op1".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         })?;
         op_repo.create(&Operator {
             id: 2,
             name: "Op2".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         })?;
         prod_repo.create(&Product {
@@ -194,8 +194,8 @@ mod tests {
             desc: "X".into(),
             category: "Y".into(),
             price: 500,
-            updated: chrono::Utc::now().naive_utc(),
-            added: chrono::Utc::now().naive_utc(),
+            updated: Some(chrono::Utc::now().naive_utc()),
+            added: Some(chrono::Utc::now().naive_utc()),
             deleted: None,
         })?;
 

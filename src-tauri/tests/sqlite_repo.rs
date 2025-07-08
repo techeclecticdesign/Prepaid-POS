@@ -28,7 +28,7 @@ fn sqlite_repo_crud() {
     let op = Operator {
         id: 1,
         name: "Test".into(),
-        start: chrono::Utc::now().naive_utc(),
+        start: Some(chrono::Utc::now().naive_utc()),
         stop: None,
     };
     repo.create(&op).unwrap();

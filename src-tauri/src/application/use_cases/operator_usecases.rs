@@ -82,7 +82,7 @@ mod tests {
         let op = Operator {
             id: 1,
             name: "Alice".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         };
         uc.create_operator(&op)?;
@@ -105,7 +105,7 @@ mod tests {
         let op1 = Operator {
             id: 1,
             name: "Sibley".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         };
         uc.create_operator(&op1).unwrap();
@@ -113,7 +113,7 @@ mod tests {
         let op_dup = Operator {
             id: 1,
             name: "Bubar".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         };
         let err = uc.create_operator(&op_dup).unwrap_err();
@@ -128,7 +128,7 @@ mod tests {
         let op = Operator {
             id: 99,
             name: "Ghost".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         };
         let err = uc.update_operator(&op).unwrap_err();
@@ -143,7 +143,7 @@ mod tests {
         let op = Operator {
             id: 1,
             name: "".into(),
-            start: chrono::Utc::now().naive_utc(),
+            start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         };
         let err = uc.create_operator(&op).unwrap_err();

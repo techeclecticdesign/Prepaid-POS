@@ -9,5 +9,5 @@ pub struct InventoryTransactionDto {
     pub operator_mdoc: i32,
     pub customer_mdoc: Option<i32>,
     pub ref_order_id: Option<i32>,
-    pub created_at: String, // RFC3339
+    pub created_at: Option<String>, // RFC3339
 }

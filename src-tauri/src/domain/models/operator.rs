@@ -4,6 +4,6 @@ use chrono::NaiveDateTime;
 pub struct Operator {
     pub id: i32,
     pub name: String,
-    pub start: NaiveDateTime,
+    pub start: Option<NaiveDateTime>,
     pub stop: Option<NaiveDateTime>,
 }
