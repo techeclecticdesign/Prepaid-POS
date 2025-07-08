@@ -14,21 +14,9 @@ impl TransactionUseCases {
 
     pub fn inventory_adjustment(
         &self,
-        operator_mdoc: i32,
-        customer_mdoc: Option<i32>,
-        upc: i64,
-        quantity_change: i32,
+        mut tx: InventoryTransaction,
     ) -> Result<InventoryTransaction, AppError> {
-        let tx = InventoryTransaction {
-            id: 0,
-            upc,
-            quantity_change,
-            operator_mdoc,
-            customer_mdoc,
-            ref_order_id: None,
-            reference: Some("Operator Adjustment".to_string()),
-            created_at: Some(chrono::Utc::now().naive_utc()),
-        };
+        tx.created_at = Some(chrono::Utc::now().naive_utc());
 
         self.inv_repo.create(&tx)?;
         Ok(tx)
@@ -36,35 +24,25 @@ impl TransactionUseCases {
 
     pub fn sale_transaction(
         &self,
-        operator_mdoc: i32,
-        customer_mdoc: Option<i32>,
-        upc: i64,
-        quantity_change: i32,
+        mut tx: InventoryTransaction,
     ) -> Result<InventoryTransaction, AppError> {
-        let tx = InventoryTransaction {
-            id: 0,
-            upc,
-            quantity_change,
-            operator_mdoc,
-            customer_mdoc,
-            ref_order_id: None,
-            reference: Some("Operator Adjustment".to_string()),
-            created_at: Some(chrono::Utc::now().naive_utc()),
-        };
+        tx.created_at = Some(chrono::Utc::now().naive_utc());
         self.inv_repo.create(&tx)?;
         Ok(tx)
     }
 
     pub fn stock_items(
         &self,
-        operator_mdoc: i32,
-        upc: i64,
-        quantity_change: i32,
+        mut tx: InventoryTransaction,
     ) -> Result<InventoryTransaction, AppError> {
-        if quantity_change <= 0 {
+        if tx.quantity_change <= 0 {
             return Err(AppError::Unexpected("quantity_change must be > 0".into()));
         }
-        self.inventory_adjustment(operator_mdoc, None, upc, quantity_change)
+        tx.customer_mdoc = None;
+        tx.ref_order_id = None;
+        tx.reference = Some("Stock Addition".to_string());
+
+        self.inventory_adjustment(tx)
     }
 
     pub fn list_inv_adjust_today(&self) -> Result<Vec<InventoryTransaction>, AppError> {
@@ -106,6 +84,21 @@ mod tests {
     };
     use std::sync::Arc;
 
+    impl Default for InventoryTransaction {
+        fn default() -> Self {
+            Self {
+                id: 0,
+                upc: 0,
+                quantity_change: 0,
+                operator_mdoc: 0,
+                customer_mdoc: None,
+                ref_order_id: None,
+                reference: None,
+                created_at: None,
+            }
+        }
+    }
+
     fn make_use_cases() -> (
         TransactionUseCases,
         Arc<dyn OperatorRepoTrait>,
@@ -146,23 +139,47 @@ mod tests {
         })?;
 
         // inventory adjust
-        let itx1 = uc.inventory_adjustment(10, None, 555, 5)?;
+        let itx1 = uc.inventory_adjustment(InventoryTransaction {
+            operator_mdoc: 10,
+            upc: 555,
+            quantity_change: 5,
+            ..Default::default()
+        })?;
         assert_eq!(itx1.upc, 555);
         assert_eq!(itx1.quantity_change, 5);
 
         // sale transaction
-        let itx2 = uc.sale_transaction(10, Some(20), 555, -2)?;
+        let itx2 = uc.sale_transaction(InventoryTransaction {
+            operator_mdoc: 10,
+            customer_mdoc: Some(20),
+            upc: 555,
+            quantity_change: -2,
+            ..Default::default()
+        })?;
 
         assert_eq!(itx2.customer_mdoc, Some(20));
         assert_eq!(itx2.quantity_change, -2);
 
         // stock items (positive only)
-        let itx3 = uc.stock_items(10, 555, 3)?;
+        let itx3 = uc.stock_items(InventoryTransaction {
+            operator_mdoc: 10,
+            customer_mdoc: Some(20),
+            upc: 555,
+            quantity_change: 3,
+            ..Default::default()
+        })?;
 
         assert_eq!(itx3.quantity_change, 3);
 
-        // negative stock fails
-        let err = uc.stock_items(10, 555, 0).unwrap_err();
+        // 0 or negative stock fails
+        let err = uc
+            .stock_items(InventoryTransaction {
+                operator_mdoc: 10,
+                upc: 555,
+                quantity_change: 0,
+                ..Default::default()
+            })
+            .unwrap_err();
         assert!(err.to_string().contains("must be > 0"));
 
         // listing all
@@ -200,8 +217,19 @@ mod tests {
         })?;
 
         // create two adjustments
-        uc.inventory_adjustment(1, None, 1, 1)?;
-        uc.inventory_adjustment(2, None, 1, 2)?;
+        uc.inventory_adjustment(InventoryTransaction {
+            operator_mdoc: 1,
+            upc: 1,
+            quantity_change: 1,
+            ..Default::default()
+        })?;
+
+        uc.inventory_adjustment(InventoryTransaction {
+            operator_mdoc: 2,
+            upc: 1,
+            quantity_change: 2,
+            ..Default::default()
+        })?;
 
         let all = uc.list_inv_adjust()?;
         assert_eq!(all.len(), 2);

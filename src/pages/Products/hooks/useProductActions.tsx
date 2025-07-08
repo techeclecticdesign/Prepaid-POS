@@ -52,7 +52,7 @@ export function useProductActions() {
   };
 
   const removeProduct = (upc: number) => {
-    return invoke("remove_product", { upc });
+    return invoke("delete_product", { upc });
   };
 
   return {

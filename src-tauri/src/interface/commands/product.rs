@@ -11,13 +11,12 @@ pub fn create_product(
     controller: State<Arc<ProductController>>,
     dto: CreateProductDto,
 ) -> Result<(), AppError> {
-    // call directly into your use-case
-    controller.create_product(dto.upc, dto.desc, dto.category, dto.price)
+    controller.create_product(dto)
 }
 
 #[tauri::command]
-pub fn remove_product(controller: State<Arc<ProductController>>, upc: i64) -> Result<(), AppError> {
-    controller.remove_product(upc)
+pub fn delete_product(controller: State<Arc<ProductController>>, upc: i64) -> Result<(), AppError> {
+    controller.delete_product(upc)
 }
 
 #[tauri::command]

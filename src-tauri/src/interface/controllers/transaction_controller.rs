@@ -1,5 +1,6 @@
 use crate::application::use_cases::transaction_usecases::TransactionUseCases;
 use crate::common::error::AppError;
+use crate::domain::models::inventory_transaction::InventoryTransaction;
 use crate::interface::dto::inventory_transaction_dto::InventoryTransactionDto;
 use crate::interface::presenters::inventory_transaction_presenter::InventoryTransactionPresenter;
 use std::sync::Arc;
@@ -17,36 +18,58 @@ impl TransactionController {
 
     pub fn inventory_adjustment(
         &self,
-        operator_mdoc: i32,
-        upc: i64,
-        quantity_change: i32,
+        dto: InventoryTransactionDto,
     ) -> Result<InventoryTransactionDto, AppError> {
-        let itx = self
-            .uc
-            .inventory_adjustment(operator_mdoc, None, upc, quantity_change)?;
+        let tx = InventoryTransaction {
+            id: 0, // new record, gets auto-assigned by db
+            upc: dto.upc,
+            quantity_change: dto.quantity_change,
+            operator_mdoc: dto.operator_mdoc,
+            customer_mdoc: dto.customer_mdoc,
+            ref_order_id: dto.ref_order_id,
+            reference: dto.reference,
+            created_at: None,
+        };
+
+        let itx = self.uc.inventory_adjustment(tx)?;
         Ok(InventoryTransactionPresenter::to_dto(itx))
     }
 
     pub fn sale_transaction(
         &self,
-        operator_mdoc: i32,
-        customer_mdoc: i32,
-        upc: i64,
-        quantity_change: i32,
+        dto: InventoryTransactionDto,
     ) -> Result<InventoryTransactionDto, AppError> {
-        let itx =
-            self.uc
-                .sale_transaction(operator_mdoc, Some(customer_mdoc), upc, quantity_change)?;
+        let tx = InventoryTransaction {
+            id: 0, // new record, gets auto-assigned by db
+            upc: dto.upc,
+            quantity_change: dto.quantity_change,
+            operator_mdoc: dto.operator_mdoc,
+            customer_mdoc: dto.customer_mdoc,
+            ref_order_id: dto.ref_order_id,
+            reference: dto.reference,
+            created_at: None,
+        };
+
+        let itx = self.uc.sale_transaction(tx)?;
         Ok(InventoryTransactionPresenter::to_dto(itx))
     }
 
     pub fn stock_items(
         &self,
-        operator_mdoc: i32,
-        upc: i64,
-        quantity_change: i32,
+        dto: InventoryTransactionDto,
     ) -> Result<InventoryTransactionDto, AppError> {
-        let itx = self.uc.stock_items(operator_mdoc, upc, quantity_change)?;
+        let tx = InventoryTransaction {
+            id: 0, // new record, gets auto-assigned by db
+            upc: dto.upc,
+            quantity_change: dto.quantity_change,
+            operator_mdoc: dto.operator_mdoc,
+            customer_mdoc: dto.customer_mdoc,
+            ref_order_id: dto.ref_order_id,
+            reference: dto.reference,
+            created_at: None,
+        };
+
+        let itx = self.uc.stock_items(tx)?;
         Ok(InventoryTransactionPresenter::to_dto(itx))
     }
 

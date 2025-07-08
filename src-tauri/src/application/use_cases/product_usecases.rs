@@ -27,26 +27,17 @@ impl ProductUseCases {
         }
     }
 
-    pub fn create_product(
-        &self,
-        upc: i64,
-        desc: String,
-        category: String,
-        price: i32,
-    ) -> Result<(), AppError> {
-        let maybe_existing = self.repo.get_by_upc(upc)?;
+    pub fn create_product(&self, product: Product) -> Result<(), AppError> {
+        let maybe_existing = self.repo.get_by_upc(product.upc)?;
         if let Some(existing) = maybe_existing {
             if existing.deleted.is_some() {
                 // Resurrect the product by updating it
                 let now = Some(Utc::now().naive_utc());
                 let resurrected = Product {
-                    upc,
-                    desc,
-                    category,
-                    price,
                     updated: now,
                     added: existing.added, // keep original added date
                     deleted: None,         // un-delete
+                    ..product
                 };
                 return self.repo.update_by_upc(&resurrected);
             } else {
@@ -56,19 +47,16 @@ impl ProductUseCases {
             }
         }
         let now = Some(Utc::now().naive_utc());
-        let p = Product {
-            upc,
-            desc,
-            category,
-            price,
+        let new_product = Product {
             updated: now,
             added: now,
             deleted: None,
+            ..product
         };
-        self.repo.create(&p)
+        self.repo.create(&new_product)
     }
 
-    pub fn remove_product(&self, upc: i64) -> Result<(), AppError> {
+    pub fn delete_product(&self, upc: i64) -> Result<(), AppError> {
         let mut p = self
             .repo
             .get_by_upc(upc)?
@@ -217,6 +205,20 @@ mod tests {
     use crate::test_support::mock_product_repo::MockProductRepo;
     use std::sync::Arc;
 
+    impl Default for Product {
+        fn default() -> Self {
+            Self {
+                upc: 0,
+                desc: String::new(),
+                category: String::new(),
+                price: 0,
+                updated: None,
+                added: None,
+                deleted: None,
+            }
+        }
+    }
+
     fn make_use_cases() -> (ProductUseCases, Arc<MockOperatorRepo>, Arc<MockProductRepo>) {
         let op_repo = Arc::new(MockOperatorRepo::new());
         let prod_repo = Arc::new(MockProductRepo::new());
@@ -293,9 +295,27 @@ mod tests {
 
         assert!(uc.list_products()?.is_empty());
 
-        uc.create_product(100, "Widget".into(), "Gadgets".into(), 1000)?;
-        uc.create_product(200, "Gizmo".into(), "Gadgets".into(), 2000)?;
-        uc.create_product(300, "Thing".into(), "Stuff".into(), 1500)?;
+        uc.create_product(Product {
+            upc: 100,
+            desc: "Widget".into(),
+            category: "Gadgets".into(),
+            price: 1000,
+            ..Default::default()
+        })?;
+        uc.create_product(Product {
+            upc: 200,
+            desc: "Gizmo".into(),
+            category: "Gadgets".into(),
+            price: 2000,
+            ..Default::default()
+        })?;
+        uc.create_product(Product {
+            upc: 300,
+            desc: "Thing".into(),
+            category: "Stuff".into(),
+            price: 1500,
+            ..Default::default()
+        })?;
 
         let all = uc.list_products()?;
         assert_eq!(all.len(), 3);
@@ -308,7 +328,7 @@ mod tests {
         );
 
         // remove one product
-        uc.remove_product(200)?;
+        uc.delete_product(200)?;
         let post = uc.list_products()?;
         assert!(post
             .iter()
@@ -323,7 +343,13 @@ mod tests {
     #[test]
     fn update_item_changes_only_specified_fields() -> anyhow::Result<()> {
         let (uc, _op_repo, _prod_repo) = make_use_cases();
-        uc.create_product(42, "OldDesc".into(), "OldCat".into(), 500)?;
+        uc.create_product(Product {
+            upc: 42,
+            desc: "OldDesc".into(),
+            category: "OldCat".into(),
+            price: 500,
+            ..Default::default()
+        })?;
 
         // update desc
         uc.update_item(42, Some("NewDesc".into()), None)?;
@@ -356,7 +382,13 @@ mod tests {
         })?;
 
         // product must exist
-        uc.create_product(7, "Priced".into(), "Cat".into(), 1234)?;
+        uc.create_product(Product {
+            upc: 7,
+            desc: "Priced".into(),
+            category: "Cat".into(),
+            price: 1234,
+            ..Default::default()
+        })?;
 
         // adjust price
         let adj = uc.price_adjustment(PriceAdjustment {
@@ -386,7 +418,13 @@ mod tests {
         let (uc, _op_repo, _prod_repo) = make_use_cases();
 
         // Seed with two price adjustments for same product
-        uc.create_product(1, "Item".into(), "Cat".into(), 1000)?;
+        uc.create_product(Product {
+            upc: 1,
+            desc: "Item".into(),
+            category: "Cat".into(),
+            price: 1000,
+            ..Default::default()
+        })?;
         uc.price_adjustment(PriceAdjustment {
             id: 0,
             operator_mdoc: 1,

@@ -1,9 +1,10 @@
 use crate::application::use_cases::product_usecases::ProductUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::price_adjustment::PriceAdjustment;
+use crate::domain::models::product::Product;
 use crate::interface::dto::category_dto::CategoryDto;
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
-use crate::interface::dto::product_dto::{ProductDto, ProductSearchResult};
+use crate::interface::dto::product_dto::{CreateProductDto, ProductDto, ProductSearchResult};
 use crate::interface::presenters::category_presenter::CategoryPresenter;
 use crate::interface::presenters::price_adjustment_presenter::PriceAdjustmentPresenter;
 use crate::interface::presenters::product_presenter::ProductPresenter;
@@ -25,18 +26,21 @@ impl ProductController {
         }
     }
 
-    pub fn create_product(
-        &self,
-        upc: i64,
-        desc: String,
-        category: String,
-        price: i32,
-    ) -> Result<(), AppError> {
-        self.uc.create_product(upc, desc, category, price)
+    pub fn create_product(&self, dto: CreateProductDto) -> Result<(), AppError> {
+        let product = Product {
+            upc: dto.upc,
+            desc: dto.desc,
+            category: dto.category,
+            price: dto.price,
+            updated: None,
+            added: None,
+            deleted: None,
+        };
+        self.uc.create_product(product)
     }
 
-    pub fn remove_product(&self, upc: i64) -> Result<(), AppError> {
-        self.uc.remove_product(upc)
+    pub fn delete_product(&self, upc: i64) -> Result<(), AppError> {
+        self.uc.delete_product(upc)
     }
 
     pub fn list_products(&self) -> Result<Vec<ProductDto>, AppError> {

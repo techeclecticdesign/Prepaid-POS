@@ -7,32 +7,25 @@ use tauri::State;
 #[tauri::command]
 pub fn inventory_adjustment(
     controller: State<Arc<TransactionController>>,
-    operator_mdoc: i32,
-    upc: i64,
-    quantity_change: i32,
+    dto: InventoryTransactionDto,
 ) -> Result<InventoryTransactionDto, AppError> {
-    controller.inventory_adjustment(operator_mdoc, upc, quantity_change)
+    controller.inventory_adjustment(dto)
 }
 
 #[tauri::command]
 pub fn sale_transaction(
     controller: State<Arc<TransactionController>>,
-    operator_mdoc: i32,
-    customer_mdoc: i32,
-    upc: i64,
-    quantity_change: i32,
+    dto: InventoryTransactionDto,
 ) -> Result<InventoryTransactionDto, AppError> {
-    controller.sale_transaction(operator_mdoc, customer_mdoc, upc, quantity_change)
+    controller.sale_transaction(dto)
 }
 
 #[tauri::command]
 pub fn stock_items(
     controller: State<Arc<TransactionController>>,
-    operator_mdoc: i32,
-    upc: i64,
-    quantity_change: i32,
+    dto: InventoryTransactionDto,
 ) -> Result<InventoryTransactionDto, AppError> {
-    controller.stock_items(operator_mdoc, upc, quantity_change)
+    controller.stock_items(dto)
 }
 
 #[tauri::command]

@@ -13,7 +13,7 @@ impl InventoryTransactionPresenter {
             id: itx.id,
             upc: itx.upc,
             quantity_change: itx.quantity_change,
-            reference: itx.reference.unwrap_or_default(),
+            reference: itx.reference,
             operator_mdoc: itx.operator_mdoc,
             customer_mdoc: itx.customer_mdoc,
             ref_order_id: itx.ref_order_id,
