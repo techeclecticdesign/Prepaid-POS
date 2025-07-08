@@ -19,4 +19,5 @@ pub trait ProductRepoTrait: Send + Sync {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Product>, AppError>;
+    fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<u32, AppError>;
 }

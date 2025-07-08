@@ -34,6 +34,27 @@ impl ProductUseCases {
         category: String,
         price: i32,
     ) -> Result<(), AppError> {
+        let maybe_existing = self.repo.get_by_upc(upc)?;
+        if let Some(existing) = maybe_existing {
+            if existing.deleted.is_some() {
+                // Resurrect the product by updating it
+                let now = Utc::now().naive_utc();
+                let resurrected = Product {
+                    upc,
+                    desc,
+                    category,
+                    price,
+                    updated: now,
+                    added: existing.added, // keep original added date
+                    deleted: None,         // un-delete
+                };
+                return self.repo.update_by_upc(&resurrected);
+            } else {
+                return Err(AppError::Validation(
+                    "Product with this UPC already exists".into(),
+                ));
+            }
+        }
         let now = Utc::now().naive_utc();
         let p = Product {
             upc,
@@ -69,31 +90,15 @@ impl ProductUseCases {
             .collect())
     }
 
-    pub fn price_adjustment(
-        &self,
-        operator_mdoc: i32,
-        upc: i64,
-        new_price: i32,
-    ) -> Result<PriceAdjustment, AppError> {
-        let old = self.repo.get_price(upc)?;
+    pub fn price_adjustment(&self, adj: PriceAdjustment) -> Result<PriceAdjustment, AppError> {
         let mut p = self
             .repo
-            .get_by_upc(upc)?
-            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
+            .get_by_upc(adj.upc)?
+            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", adj.upc)))?;
 
         let adj_id = atomic_tx(&self.conn, |tx| {
-            // create adjustment record
-            let adj = PriceAdjustment {
-                id: 0,
-                operator_mdoc,
-                upc,
-                old,
-                new: new_price,
-                created_at: chrono::Utc::now().naive_utc(),
-            };
             self.price_repo.create_with_tx(&adj, tx)?;
-
-            p.price = new_price;
+            p.price = adj.new;
             p.updated = chrono::Utc::now().naive_utc();
             self.repo.update_by_upc_with_tx(&p, tx)?;
 
@@ -159,7 +164,7 @@ impl ProductUseCases {
         category: Option<String>,
         page: u32,
     ) -> Result<Vec<Product>, AppError> {
-        let limit = 25;
+        let limit = 10;
         let offset = (page.saturating_sub(1) as i64) * limit;
         self.repo.search(search, category, limit, offset)
     }
@@ -186,6 +191,14 @@ impl ProductUseCases {
         }
         // create new category
         self.category_repo.create(cat)
+    }
+
+    pub fn count_products(
+        &self,
+        search: Option<String>,
+        category: Option<String>,
+    ) -> Result<u32, AppError> {
+        self.repo.count(search, category)
     }
 }
 
@@ -343,7 +356,14 @@ mod tests {
         uc.create_product(7, "Priced".into(), "Cat".into(), 1234)?;
 
         // adjust price
-        let adj = uc.price_adjustment(1, 7, 2000)?;
+        let adj = uc.price_adjustment(PriceAdjustment {
+            id: 0,
+            operator_mdoc: 1,
+            upc: 7,
+            old: 1234,
+            new: 2000,
+            created_at: Utc::now().naive_utc(),
+        })?;
         assert_eq!(adj.upc, 7);
         assert_eq!(adj.old, 1234);
         assert_eq!(adj.new, 2000);
@@ -364,8 +384,22 @@ mod tests {
 
         // Seed with two price adjustments for same product
         uc.create_product(1, "Item".into(), "Cat".into(), 1000)?;
-        uc.price_adjustment(1, 1, 1100)?;
-        uc.price_adjustment(1, 1, 1200)?;
+        uc.price_adjustment(PriceAdjustment {
+            id: 0,
+            operator_mdoc: 1,
+            upc: 1,
+            old: 1000,
+            new: 1100,
+            created_at: Utc::now().naive_utc(),
+        })?;
+        uc.price_adjustment(PriceAdjustment {
+            id: 0,
+            operator_mdoc: 1,
+            upc: 1,
+            old: 1100,
+            new: 1200,
+            created_at: Utc::now().naive_utc(),
+        })?;
 
         let list = uc.list_price_adjust_for_product(1)?;
         assert_eq!(list.len(), 2);

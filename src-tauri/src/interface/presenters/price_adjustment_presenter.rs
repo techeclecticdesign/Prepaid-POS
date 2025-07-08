@@ -7,12 +7,11 @@ pub struct PriceAdjustmentPresenter;
 impl PriceAdjustmentPresenter {
     pub fn to_dto(pa: PriceAdjustment) -> PriceAdjustmentDto {
         PriceAdjustmentDto {
-            id: pa.id,
             upc: pa.upc,
             old: pa.old,
             new: pa.new,
             operator_mdoc: pa.operator_mdoc,
-            created_at: Utc.from_utc_datetime(&pa.created_at).to_rfc3339(),
+            created_at: Some(Utc.from_utc_datetime(&pa.created_at).to_rfc3339()),
         }
     }
 

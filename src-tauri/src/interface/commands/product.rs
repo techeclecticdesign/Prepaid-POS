@@ -2,16 +2,17 @@ use crate::common::error::AppError;
 use crate::interface::controllers::product_controller::ProductController;
 use crate::interface::dto::category_dto::CategoryDto;
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
-use crate::interface::dto::product_dto::ProductDto;
+use crate::interface::dto::product_dto::{CreateProductDto, ProductDto, ProductSearchResult};
 use std::sync::Arc;
 use tauri::State;
 
 #[tauri::command]
 pub fn create_product(
     controller: State<Arc<ProductController>>,
-    dto: ProductDto,
+    dto: CreateProductDto,
 ) -> Result<(), AppError> {
-    controller.create_product(dto)
+    // call directly into your use-case
+    controller.create_product(dto.upc, dto.desc, dto.category, dto.price)
 }
 
 #[tauri::command]
@@ -22,11 +23,9 @@ pub fn remove_product(controller: State<Arc<ProductController>>, upc: i64) -> Re
 #[tauri::command]
 pub fn price_adjustment(
     controller: State<Arc<ProductController>>,
-    operator_mdoc: i32,
-    upc: i64,
-    new_price: i32,
+    dto: PriceAdjustmentDto,
 ) -> Result<PriceAdjustmentDto, AppError> {
-    controller.price_adjustment(operator_mdoc, upc, new_price)
+    controller.price_adjustment(dto)
 }
 
 #[tauri::command]
@@ -90,7 +89,7 @@ pub fn search_products(
     search: Option<String>,
     category: Option<String>,
     page: Option<u32>,
-) -> Result<Vec<ProductDto>, AppError> {
+) -> Result<ProductSearchResult, AppError> {
     let page = page.unwrap_or(1);
     controller.search_products(search, category, page)
 }

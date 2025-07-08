@@ -128,6 +128,7 @@ impl ProductRepoTrait for SqliteProductRepo {
             clauses.push("category = ?");
             params.push(c);
         }
+        clauses.push("deleted IS NULL");
         if !clauses.is_empty() {
             sql.push_str(" WHERE ");
             sql.push_str(&clauses.join(" AND "));
@@ -151,5 +152,31 @@ impl ProductRepoTrait for SqliteProductRepo {
         })?;
 
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
+    }
+
+    // Returns the total count of products matching the optional filters.
+    fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<u32, AppError> {
+        let conn = self.conn.safe_lock()?;
+        let mut sql = String::from("SELECT COUNT(*) FROM products");
+        let mut clauses = Vec::new();
+        let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+        let mut dyn_params = Vec::new();
+
+        if let Some(ref s) = desc_like {
+            clauses.push("desc LIKE ?");
+            dyn_params.push(format!("%{}%", s));
+            params.push(dyn_params.last().unwrap());
+        }
+        if let Some(ref c) = category {
+            clauses.push("category = ?");
+            params.push(c);
+        }
+        if !clauses.is_empty() {
+            sql.push_str(" WHERE ");
+            sql.push_str(&clauses.join(" AND "));
+        }
+
+        let count: u32 = conn.query_row(&sql, params.as_slice(), |r| r.get(0))?;
+        Ok(count)
     }
 }

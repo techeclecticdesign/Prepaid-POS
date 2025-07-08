@@ -90,4 +90,20 @@ impl ProductRepoTrait for MockProductRepo {
         let end = (start + limit as usize).min(products.len());
         Ok(products.get(start..end).unwrap_or(&[]).to_vec())
     }
+
+    fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<u32, AppError> {
+        let guard = self.store.lock().unwrap();
+        let count = guard
+            .iter()
+            .filter(|p| {
+                let desc_match = desc_like
+                    .as_ref()
+                    .map(|s| p.desc.contains(s))
+                    .unwrap_or(true);
+                let cat_match = category.as_ref().map(|c| &p.category == c).unwrap_or(true);
+                desc_match && cat_match
+            })
+            .count();
+        Ok(count as u32)
+    }
 }

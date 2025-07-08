@@ -94,6 +94,7 @@ pub fn run() {
             interface::commands::product::list_categories,
             interface::commands::product::delete_category,
             interface::commands::product::create_category,
+            interface::commands::product::search_products,
             interface::commands::transaction::get_transaction,
             interface::commands::transaction::inventory_adjustment,
             interface::commands::transaction::list_inv_adjust_today,

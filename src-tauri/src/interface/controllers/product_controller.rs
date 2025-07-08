@@ -1,8 +1,9 @@
 use crate::application::use_cases::product_usecases::ProductUseCases;
 use crate::common::error::AppError;
+use crate::domain::models::price_adjustment::PriceAdjustment;
 use crate::interface::dto::category_dto::CategoryDto;
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
-use crate::interface::dto::product_dto::ProductDto;
+use crate::interface::dto::product_dto::{ProductDto, ProductSearchResult};
 use crate::interface::presenters::category_presenter::CategoryPresenter;
 use crate::interface::presenters::price_adjustment_presenter::PriceAdjustmentPresenter;
 use crate::interface::presenters::product_presenter::ProductPresenter;
@@ -24,9 +25,14 @@ impl ProductController {
         }
     }
 
-    pub fn create_product(&self, dto: ProductDto) -> Result<(), AppError> {
-        self.uc
-            .create_product(dto.upc, dto.desc, dto.category, dto.price)
+    pub fn create_product(
+        &self,
+        upc: i64,
+        desc: String,
+        category: String,
+        price: i32,
+    ) -> Result<(), AppError> {
+        self.uc.create_product(upc, desc, category, price)
     }
 
     pub fn remove_product(&self, upc: i64) -> Result<(), AppError> {
@@ -45,11 +51,18 @@ impl ProductController {
 
     pub fn price_adjustment(
         &self,
-        operator_mdoc: i32,
-        upc: i64,
-        new_price: i32,
+        dto: PriceAdjustmentDto,
     ) -> Result<PriceAdjustmentDto, AppError> {
-        let pa = self.uc.price_adjustment(operator_mdoc, upc, new_price)?;
+        let domain = PriceAdjustment {
+            id: 0, // gets assigned during persistence
+            operator_mdoc: dto.operator_mdoc,
+            upc: dto.upc,
+            old: dto.old,
+            new: dto.new,
+            created_at: chrono::Utc::now().naive_utc(),
+        };
+
+        let pa = self.uc.price_adjustment(domain)?;
         Ok(PriceAdjustmentPresenter::to_dto(pa))
     }
 
@@ -67,9 +80,15 @@ impl ProductController {
         search: Option<String>,
         category: Option<String>,
         page: u32,
-    ) -> Result<Vec<ProductDto>, AppError> {
-        let ps = self.uc.search_products(search, category, page)?;
-        Ok(ProductPresenter::to_dto_list(ps))
+    ) -> Result<ProductSearchResult, AppError> {
+        let products = self
+            .uc
+            .search_products(search.clone(), category.clone(), page)?;
+        let total_count = self.uc.count_products(search, category)?;
+        Ok(ProductSearchResult {
+            products: ProductPresenter::to_dto_list(products),
+            total_count,
+        })
     }
 
     pub fn list_price_adjust_for_product(
@@ -149,6 +168,6 @@ mod smoke {
         let result = ctrl
             .search_products(Some("apple".into()), Some("Fruit".into()), 0)
             .expect("search_products should succeed");
-        assert!(result.is_empty());
+        assert!(result.products.is_empty());
     }
 }
