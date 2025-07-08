@@ -21,6 +21,9 @@ pub enum AppError {
     #[error("mutex was poisoned: {0}")]
     LockPoisoned(String),
 
+    #[error("unauthorized")]
+    Unauthorized,
+
     #[error("unexpected error: {0}")]
     Unexpected(String),
 }
