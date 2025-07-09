@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Product } from "../../../models/Product";
-import type { Category } from "../../../models/Category";
+import type Product from "../../../models/Product";
+import type Category from "../../../models/Category";
 
 export interface SearchProductsResponse {
   products: Product[];
@@ -22,7 +22,7 @@ export interface CreateProductDto {
   price: number;
 }
 
-export function useProductActions() {
+export default function useProductActions() {
   const searchProducts = (
     search: string | null,
     category: string | null,

@@ -1,5 +1,5 @@
-import { useAuth } from "../AuthProvider";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../AuthProvider";
 
 // redirects to homepage if not logged in
 export default function ProtectedLayout() {

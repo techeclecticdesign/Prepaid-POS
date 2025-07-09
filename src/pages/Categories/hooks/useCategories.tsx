@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { Category } from "../../../models/Category";
+import { useState, useEffect } from "react";
+import type Category from "../../../models/Category";
 
-export function useCategories() {
+export default function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   const refresh = async () => {

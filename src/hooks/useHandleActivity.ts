@@ -1,7 +1,7 @@
-import { useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useEffect } from "react";
 
-export function useHandleActivity() {
+export default function useHandleActivity() {
   useEffect(() => {
     const handleActivity = async () => {
       await invoke("update_activity").catch(console.error);

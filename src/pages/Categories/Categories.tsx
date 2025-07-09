@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useCategories } from "./hooks/useCategories";
-import { useCategoryActions } from "./hooks/useCategoryActions";
+import useCategories from "./hooks/useCategories";
+import useCategoryActions from "./hooks/useCategoryActions";
 import CategoryList from "./components/CategoryList";
 import AddCategoryDialog from "./components/AddCategoryDialog";
 import DeleteCatNotify from "./components/DeleteCatNotify";

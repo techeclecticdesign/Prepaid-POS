@@ -6,11 +6,11 @@ import Button from "@mui/material/Button";
 import Autocomplete from "@mui/material/Autocomplete";
 import EditIcon from "@mui/icons-material/Edit";
 import IconButton from "@mui/material/IconButton";
+import DeleteIcon from "@mui/icons-material/Delete";
 import ProductDialogLayout from "./ProductDialogLayout";
 import EditPriceDialog from "./EditPriceDialog";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { useProductActions } from "../hooks/useProductActions";
-import type { Product } from "../../../models/Product";
+import useProductActions from "../hooks/useProductActions";
+import type Product from "../../../models/Product";
 import {
   editProductSchema,
   EditProductForm,

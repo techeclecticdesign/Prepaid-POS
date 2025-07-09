@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { Operator } from "../models/Operator";
+import { useEffect, useState } from "react";
+import type Operator from "../models/Operator";
 
-export function useOperators() {
+export default function useOperators() {
   const [operators, setOperators] = useState<Operator[]>([]);
 
   const refresh = () => {

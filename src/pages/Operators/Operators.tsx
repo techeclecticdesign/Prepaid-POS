@@ -6,9 +6,9 @@ import {
   operatorSchema,
   OperatorFormValues,
 } from "../../schema/operatorSchema";
-import type { Operator } from "../../models/Operator";
-import { useOperators } from "../../hooks/useOperators";
-import { useOperatorActions } from "./hooks/useOperatorActions";
+import type Operator from "../../models/Operator";
+import useOperators from "../../hooks/useOperators";
+import useOperatorActions from "./hooks/useOperatorActions";
 
 export default function OperatorsPage() {
   const { operators, refresh } = useOperators();

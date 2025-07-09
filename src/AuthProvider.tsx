@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { Operator } from "./models/Operator";
+import type Operator from "./models/Operator";
 
 interface AuthContextValue {
   loggedIn: boolean;

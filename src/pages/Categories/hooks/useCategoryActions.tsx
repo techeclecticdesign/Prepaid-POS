@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export function useCategoryActions() {
+export default function useCategoryActions() {
   const create = async (name: string): Promise<void> => {
     console.log("Create");
     await invoke("create_category", { name });

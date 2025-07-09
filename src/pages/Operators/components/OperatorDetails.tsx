@@ -1,6 +1,6 @@
 import TextField from "@mui/material/TextField";
 import AppButton from "../../../components/AppButton";
-import type { Operator } from "../../../models/Operator";
+import type Operator from "../../../models/Operator";
 
 interface Props {
   operator: Operator;

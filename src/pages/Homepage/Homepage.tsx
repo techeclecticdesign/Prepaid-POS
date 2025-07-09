@@ -4,7 +4,7 @@ import BarcodeScanner from "../../lib/barcode";
 import AppButton from "../../components/AppButton";
 import StaffLoginDialog from "./components/StaffLoginDialog";
 import { useAuth } from "../../AuthProvider";
-import { useOperators } from "../../hooks/useOperators";
+import useOperators from "../../hooks/useOperators";
 
 export default function App() {
   const { operators } = useOperators();

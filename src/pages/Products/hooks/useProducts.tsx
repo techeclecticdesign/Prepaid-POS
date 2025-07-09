@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
-import type { Product } from "../../../models/Product";
-import { useProductActions } from "./useProductActions";
+import type Product from "../../../models/Product";
+import useProductActions from "./useProductActions";
 
-export function useProducts(search: string, category: string, page: number) {
+export default function useProducts(
+  search: string,
+  category: string,
+  page: number,
+) {
   const [products, setProducts] = useState<Product[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const { searchProducts } = useProductActions();

@@ -1,3 +1,4 @@
+import { Routes, Route } from "react-router-dom";
 import SessionManager from "./SessionManager";
 import ProtectedLayout from "./layouts/ProtectedLayout";
 import SidebarLayout from "./layouts/SidebarLayout";
@@ -9,10 +10,9 @@ import Products from "./pages/Products/Products";
 import AdminPage from "./pages/AdminPage/AdminPage";
 import Operators from "./pages/Operators/Operators";
 import Categories from "./pages/Categories/Categories";
-import { useHandleActivity } from "./hooks/useHandleActivity";
-import { useSessionPolling } from "./hooks/useSessionPolling";
-import { useDisableContextMenu } from "./hooks/useDisableContextMenu";
-import { Routes, Route } from "react-router-dom";
+import useHandleActivity from "./hooks/useHandleActivity";
+import useSessionPolling from "./hooks/useSessionPolling";
+import useDisableContextMenu from "./hooks/useDisableContextMenu";
 
 export default function App() {
   useHandleActivity();

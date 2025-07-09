@@ -1,7 +1,6 @@
-// src/hooks/useDisableContextMenu.ts
 import { useEffect } from "react";
 
-export function useDisableContextMenu() {
+export default function useDisableContextMenu() {
   useEffect(() => {
     if (import.meta.env.DEV) return; // do nothing in dev
 

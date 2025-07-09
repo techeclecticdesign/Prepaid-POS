@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import type { Category } from "../../../models/Category";
-import { useProductActions } from "./useProductActions";
+import type Category from "../../../models/Category";
+import useProductActions from "./useProductActions";
 
-export function useCategories() {
+export default function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const { listCategories } = useProductActions();
   useEffect(() => {

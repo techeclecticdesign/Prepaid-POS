@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Pagination, IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import type { Product } from "../../models/Product";
-import { useProducts } from "./hooks/useProducts";
-import { useCategories } from "./hooks/useCategories";
-import { useProductActions } from "./hooks/useProductActions";
+import type Product from "../../models/Product";
+import useProducts from "./hooks/useProducts";
+import useCategories from "./hooks/useCategories";
+import useProductActions from "./hooks/useProductActions";
 import { useAuth } from "../../AuthProvider";
 import ProductsTable from "./components/ProductsTable";
 import ProductsFilters from "./components/ProductsFilters";

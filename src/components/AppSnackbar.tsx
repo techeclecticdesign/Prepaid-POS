@@ -1,4 +1,5 @@
-import { Snackbar, Alert } from "@mui/material";
+import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
 
 interface Props {
   open: boolean;
@@ -7,6 +8,7 @@ interface Props {
   severity?: "error" | "warning" | "info" | "success";
 }
 
+// Snackbar that broadcasts messages at top of screen
 export default function AppSnackbar({
   open,
   message,
