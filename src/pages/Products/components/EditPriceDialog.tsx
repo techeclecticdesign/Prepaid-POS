@@ -5,8 +5,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
+import AppSnackbar from "../../../components/AppSnackbar";
 
 interface Props {
   open: boolean;
@@ -137,20 +136,12 @@ export default function EditPriceDialog({
           Save
         </Button>
       </DialogActions>
-      <Snackbar
+      <AppSnackbar
         open={snackbarOpen}
-        autoHideDuration={6000}
+        message={snackbarMessage}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+        severity={snackbarSeverity}
+      />
     </Dialog>
   );
 }
