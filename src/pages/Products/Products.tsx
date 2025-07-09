@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Pagination, IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import type Product from "../../models/Product";
 import useProducts from "./hooks/useProducts";
 import useCategories from "./hooks/useCategories";
@@ -23,13 +25,20 @@ export default function ProductsPage() {
   const { updateItem, priceAdjustment, createProduct } = useProductActions();
 
   return (
-    <div className="p-8 min-h-screen w-3/5">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Products</h1>
+    <Box className="p-2 w-3/5 mx-auto 2xl:px-50">
+      <Box className="flex justify-between items-center mb-6">
+        <Typography
+          variant="h4"
+          component="h1"
+          className="font-bold"
+          sx={{ color: "text.primary" }}
+        >
+          Products
+        </Typography>
         <IconButton onClick={() => setCreating(true)}>
           <AddIcon className="mt-1" />
         </IconButton>
-      </div>
+      </Box>
       <ProductsFilters
         search={search}
         category={category}
@@ -44,15 +53,13 @@ export default function ProductsPage() {
         }}
       />
       <ProductsTable products={products} onProductClick={setEditing} />
-
-      <div className="flex justify-center mt-4 2xl:mt-12">
+      <Box className="flex justify-center mt-4 2xl:mt-12">
         <Pagination
           count={totalPages}
           page={page}
           onChange={(_, v) => setPage(v)}
         />
-      </div>
-
+      </Box>
       {editing && (
         <EditProductDialog
           open={true}
@@ -76,7 +83,6 @@ export default function ProductsPage() {
           refetch={refetch}
         />
       )}
-
       <CreateProductDialog
         open={creating}
         categories={categories.map((c) => c.name)}
@@ -94,6 +100,6 @@ export default function ProductsPage() {
           setCreating(false);
         }}
       />
-    </div>
+    </Box>
   );
 }

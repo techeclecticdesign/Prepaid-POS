@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -7,7 +7,7 @@ import ProductDialogLayout from "./ProductDialogLayout";
 import AppSnackbar from "../../../components/AppSnackbar";
 import {
   createProductSchema,
-  CreateProductForm,
+  type CreateProductForm,
 } from "../../../schema/productSchema";
 
 interface Props {
@@ -34,7 +34,6 @@ export default function CreateProductDialog({
       defaultValues: { upc: "", price: "", desc: "", category: "" },
     });
 
-  // Reset form whenever product changes
   useEffect(() => {
     reset({ upc: "", price: "", desc: "", category: "" });
     setSnackbarOpen(false);
@@ -131,7 +130,6 @@ export default function CreateProductDialog({
               <TextField
                 {...field}
                 label="Price ($)"
-                type="number"
                 error={!!formState.errors.price}
                 helperText={formState.errors.price?.message}
                 fullWidth

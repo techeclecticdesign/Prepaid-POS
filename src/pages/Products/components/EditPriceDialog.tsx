@@ -4,6 +4,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import AppSnackbar from "../../../components/AppSnackbar";
 
@@ -36,12 +37,11 @@ export default function EditPriceDialog({
     if (open) {
       setNewPrice(initialPriceDollars);
       setInputValue((initialPriceDollars / 100).toFixed(2));
-      setSnackbarOpen(false); // Close any open snackbar when dialog opens
+      setSnackbarOpen(false);
       if (inputRef.current) {
         inputRef.current.focus(); // autofocus on textfield when modal opens
       }
     } else if (document.activeElement instanceof HTMLElement) {
-      // Remove focus from button
       document.activeElement.blur();
     }
   }, [open, initialPriceDollars]);
@@ -49,38 +49,35 @@ export default function EditPriceDialog({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
-
     if (value.startsWith("$")) {
       setSnackbarMessage("Please omit $ sign from price.");
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
-      setNewPrice(0); // Set to invalid value to prevent saving
+      setNewPrice(0);
       return;
     }
-
     const parsedValue = Number.parseFloat(value);
-
-    if (isNaN(parsedValue) || parsedValue <= 0) {
+    if (Number.isNaN(parsedValue) || parsedValue <= 0) {
       setSnackbarMessage("Price must be a positive, non-zero number.");
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
-      setNewPrice(0); // Set to invalid value to prevent saving
+      setNewPrice(0);
       return;
     }
-
-    // If input is valid, close snackbar and update price
     setSnackbarOpen(false);
     setNewPrice(Math.round(parsedValue * 100));
   };
 
   const handleSave = async () => {
-    // Perform final validation before saving
     const parsedValue = Number.parseFloat(inputValue);
-    if (isNaN(parsedValue) || parsedValue <= 0 || inputValue.startsWith("$")) {
-      // Snackbar message would already be set by handleInputChange, just prevent save
+    if (
+      Number.isNaN(parsedValue) ||
+      parsedValue <= 0 ||
+      inputValue.startsWith("$")
+    ) {
+      // prevent save
       return;
     }
-
     await onSubmit(initialPriceDollars, newPrice);
     onClose();
   };
@@ -117,10 +114,10 @@ export default function EditPriceDialog({
     >
       <DialogTitle>Adjust Price</DialogTitle>
       <DialogContent dividers className="space-y-4">
-        <p className="text-sm text-gray-700">
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
           Any changes to prices are logged and reported. If you wish to
           continue, please enter the new price below.
-        </p>
+        </Typography>
         <TextField
           label="New Price ($)"
           value={inputValue}

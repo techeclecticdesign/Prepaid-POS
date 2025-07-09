@@ -1,4 +1,11 @@
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 import type Product from "../../../models/Product";
+import { useTheme } from "@mui/material/styles";
 
 interface Props {
   products: Product[];
@@ -6,40 +13,98 @@ interface Props {
 }
 
 export default function ProductsTable({ products, onProductClick }: Props) {
+  const theme = useTheme();
+
+  const headerSx = {
+    marginLeft: {
+      xs: 0.8,
+      xl: 1,
+    },
+    color: "text.secondary",
+    fontWeight: theme.typography.fontWeightMedium as number,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    fontSize: {
+      xs: theme.typography.pxToRem(12),
+      xl: theme.typography.pxToRem(16),
+    },
+  };
+
+  const cellSx = {
+    padding: {
+      xs: "8px 18px",
+      xl: "28px 22px",
+    },
+  };
+
+  const cellTextSx = {
+    color: "text.primary",
+    whiteSpace: "nowrap",
+    fontSize: {
+      xs: theme.typography.pxToRem(14),
+      xl: theme.typography.pxToRem(20),
+    },
+  };
+
   return (
-    <table className="min-w-full divide-y divide-gray-200">
-      <thead>
-        <tr>
-          <th className="px-6 py-3 text-left text-xs 2xl:text-md font-medium text-gray-500 uppercase tracking-wider">
-            Description
-          </th>
-          <th className="px-6 py-3 text-left text-xs 2xl:text-md font-medium text-gray-500 uppercase tracking-wider">
-            Category
-          </th>
-          <th className="px-6 py-3 text-right text-xs 2xl:text-md font-medium text-gray-500 uppercase tracking-wider">
-            Price
-          </th>
-        </tr>
-      </thead>
-      <tbody className="bg-white divide-y divide-gray-200">
-        {products.map((p) => (
-          <tr
-            key={p.upc}
-            className="hover:bg-gray-50 cursor-pointer"
-            onClick={() => onProductClick(p)}
+    <Table
+      className="min-w-full"
+      sx={{
+        "& .MuiTableCell-root": {
+          borderColor: "divider",
+        },
+      }}
+    >
+      <TableHead>
+        <TableRow>
+          <TableCell sx={{ paddingBottom: 0, paddingLeft: 1.2 }}>
+            <Typography variant="caption" sx={headerSx}>
+              Description
+            </Typography>
+          </TableCell>
+          <TableCell sx={{ paddingBottom: 0, paddingLeft: 1.2 }}>
+            <Typography variant="body2" sx={headerSx}>
+              Category
+            </Typography>
+          </TableCell>
+          <TableCell
+            sx={{ textAlign: "right", paddingBottom: 0, paddingRight: 2 }}
           >
-            <td className="px-6 py-2 2xl:py-5 whitespace-nowrap text-sm 2xl:text-xl text-gray-900">
-              {p.desc}
-            </td>
-            <td className="px-6 py-2 2xl:py-5 whitespace-nowrap text-sm 2xl:text-xl text-gray-900">
-              {p.category}
-            </td>
-            <td className="px-6 py-2 2xl:py-5 whitespace-nowrap text-sm 2xl:text-xl text-gray-900 text-right">
-              ${(p.price / 100).toFixed(2)}
-            </td>
-          </tr>
+            <Typography variant="caption" sx={{ ...headerSx }}>
+              Price
+            </Typography>
+          </TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody
+        sx={{
+          backgroundColor: "background.paper",
+          "& .MuiTableRow-root:hover": {
+            backgroundColor: theme.palette.action.hover,
+            cursor: "pointer",
+          },
+        }}
+      >
+        {products.map((p) => (
+          <TableRow key={p.upc} onClick={() => onProductClick(p)}>
+            <TableCell sx={cellSx}>
+              <Typography variant="body2" sx={cellTextSx}>
+                {p.desc}
+              </Typography>
+            </TableCell>
+            <TableCell sx={cellSx}>
+              <Typography variant="body2" sx={cellTextSx}>
+                {p.category}
+              </Typography>
+            </TableCell>
+            <TableCell sx={{ ...cellSx, textAlign: "right" }}>
+              <Typography variant="body2" sx={cellTextSx}>
+                ${(p.price / 100).toFixed(2)}
+              </Typography>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }

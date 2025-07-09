@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -13,7 +13,7 @@ import useProductActions from "../hooks/useProductActions";
 import type Product from "../../../models/Product";
 import {
   editProductSchema,
-  EditProductForm,
+  type EditProductForm,
 } from "../../../schema/productSchema";
 
 interface Props {
@@ -71,7 +71,7 @@ export default function EditProductDialog({
   const handleDelete = async () => {
     await removeProduct(product.upc);
     onClose();
-    refetch(); // Update the list
+    refetch();
   };
 
   return (

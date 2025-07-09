@@ -1,4 +1,5 @@
 import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 import AppButton from "../../../components/AppButton";
 import type Operator from "../../../models/Operator";
 
@@ -14,8 +15,8 @@ export default function OperatorDetails({
   onRehire,
 }: Props) {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+    <Box className="space-y-6">
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
         {["MDOC", "Name", "Start Time", "Stop Time"].map((label, i) => {
           const value =
             i === 0
@@ -39,7 +40,7 @@ export default function OperatorDetails({
         })}
         <AppButton onClick={onTerminate} text="Terminate Operator" />
         <AppButton onClick={onRehire} text="Rehire Operator" />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

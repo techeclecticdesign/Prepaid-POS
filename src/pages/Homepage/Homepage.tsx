@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import BarcodeScanner from "../../lib/barcode";
 import AppButton from "../../components/AppButton";
 import StaffLoginDialog from "./components/StaffLoginDialog";
 import { useAuth } from "../../AuthProvider";
 import useOperators from "../../hooks/useOperators";
+import type Operator from "../../models/Operator";
 
 export default function App() {
   const { operators } = useOperators();
-  const operatorsRef = useRef(operators);
+  const operatorsRef = useRef<Operator[]>(operators);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { loggedIn, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
@@ -28,7 +31,7 @@ export default function App() {
     if (!/^\d+$/.test(scan)) {
       return;
     }
-    const scanNum = parseInt(scan, 10);
+    const scanNum = Number.parseInt(scan, 10);
     const matched = operatorsRef.current.find((o) => o.id === scanNum);
     if (!matched) {
       setScanError("Scan input does not match any operator MDOC.");
@@ -52,6 +55,8 @@ export default function App() {
       shouldCapture: () => true,
       barcodeCallback: handleScan,
     });
+
+    return () => {};
   }, []);
 
   useEffect(() => {
@@ -59,18 +64,28 @@ export default function App() {
   }, [operators]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start">
-      <div className="h-20">
+    <Box className="min-h-screen flex flex-col items-center justify-start">
+      <Box className="h-20">
         {scanError && (
-          <h1 className="text-3xl font-bold text-center mt-4 text-red-500">
+          <Typography
+            variant="h5"
+            component="h1"
+            className="font-bold text-center mt-4"
+            sx={{ color: "error.main" }}
+          >
             {scanError}
-          </h1>
+          </Typography>
         )}
-      </div>
-      <h1 className="text-4xl font-bold mb-20 text-center">
+      </Box>
+      <Typography
+        variant="h4"
+        component="h1"
+        className="font-bold text-center"
+        sx={{ color: "text.primary" }}
+      >
         Click your name or scan your ID to get started.
-      </h1>
-      <div className="flex flex-col gap-4">
+      </Typography>
+      <Box className="flex flex-col gap-4 mt-20">
         {currentOperators.map((o) => (
           <AppButton
             key={o.id}
@@ -83,7 +98,6 @@ export default function App() {
             }}
           />
         ))}
-
         {!loggedIn ? (
           <AppButton
             onClick={() => setShowLogin(true)}
@@ -93,8 +107,7 @@ export default function App() {
         ) : (
           <AppButton onClick={logout} text="Log Out" />
         )}
-      </div>
-
+      </Box>
       <StaffLoginDialog
         open={showLogin}
         onClose={() => setShowLogin(false)}
@@ -106,6 +119,6 @@ export default function App() {
           }
         }}
       />
-    </div>
+    </Box>
   );
 }

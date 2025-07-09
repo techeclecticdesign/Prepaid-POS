@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import useCategories from "./hooks/useCategories";
 import useCategoryActions from "./hooks/useCategoryActions";
 import CategoryList from "./components/CategoryList";
@@ -25,16 +27,20 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="p-12 flex justify-center w-full h-full">
-      <div className="w-110">
-        <h1 className="text-4xl font-bold mb-8 text-center">Categories</h1>
-
-        <div className="mb-12 text-center">
+    <Box className="p-12 flex justify-center w-full h-full">
+      <Box className="w-110">
+        <Typography
+          variant="h4"
+          component="h1"
+          className="font-bold text-center"
+          sx={{ color: "text.primary" }}
+        >
+          Categories
+        </Typography>
+        <Box className="my-12 text-center">
           <AppButton onClick={() => setShowAdd(true)} text="Add Category" />
-        </div>
-
+        </Box>
         <CategoryList categories={categories} onDelete={handleDelete} />
-
         <AddCategoryDialog
           open={showAdd}
           onClose={() => setShowAdd(false)}
@@ -45,7 +51,7 @@ export default function CategoriesPage() {
           open={notifyOpen}
           onClose={() => setNotifyOpen(false)}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

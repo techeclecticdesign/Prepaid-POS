@@ -16,6 +16,7 @@ export default function CategoryList({ categories, onDelete }: Props) {
       {categories.map((cat) => (
         <ListItem
           key={cat.id}
+          sx={{ borderBottom: 1, borderColor: "divider" }}
           secondaryAction={
             <IconButton edge="end" onClick={() => onDelete(cat.id)}>
               <DeleteIcon />

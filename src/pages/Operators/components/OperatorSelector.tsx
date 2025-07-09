@@ -1,5 +1,6 @@
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 import AppButton from "../../../components/AppButton";
 import type Operator from "../../../models/Operator";
 
@@ -17,7 +18,7 @@ export default function OperatorSelector({
   onAddClick,
 }: Props) {
   return (
-    <div className="flex gap-4 mb-6">
+    <Box className="flex gap-4 mb-6">
       <Autocomplete
         className="w-full max-w-sm"
         options={options}
@@ -29,6 +30,6 @@ export default function OperatorSelector({
         )}
       />
       <AppButton onClick={onAddClick} text="Add Operator" />
-    </div>
+    </Box>
   );
 }

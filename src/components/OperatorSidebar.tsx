@@ -1,29 +1,85 @@
 import { Link, useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import { useTheme as useMuiTheme } from "@mui/material/styles";
 import { useAuth } from "../AuthProvider";
+import ThemeSwitch from "./ThemeSwitch";
 
-export default function AdminSidebar() {
+export default function OperatorSidebar() {
   const navigate = useNavigate();
   const { setActiveOperator } = useAuth();
+  const theme = useMuiTheme();
+
   return (
-    <aside className="sticky top-0 self-start w-xs shrink-0 border-l border-gray-300 p-6 bg-white h-screen">
-      <h2 className="text-2xl font-semibold mb-4">Pages</h2>
+    <Box
+      component="aside"
+      className="fixed top-0 right-0 w-xs shrink-0 p-6 h-screen"
+      sx={{
+        borderLeft: 1,
+        borderColor: "divider",
+        backgroundColor: "background.paper",
+        color: "text.primary",
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <Typography
+          variant="h5"
+          component="h2"
+          className="font-semibold mb-4"
+          sx={{ color: "text.primary" }}
+        >
+          Pages
+        </Typography>
+        <ThemeSwitch />
+      </div>
       <nav className="flex flex-col space-y-2">
-        <Link to="/products" className="text-blue-600 hover:underline">
+        <Link
+          to="/products"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
+        >
           Products
         </Link>
-        <span className="text-gray-500 cursor-not-allowed">Lorem</span>
-        <span className="text-gray-500 cursor-not-allowed">Ipsum</span>
-        <span className="text-gray-500 cursor-not-allowed">Dolor</span>
+        <Typography
+          component="span"
+          className="cursor-not-allowed"
+          sx={{ color: "text.secondary" }}
+        >
+          Lorem
+        </Typography>
+        <Typography
+          component="span"
+          className="cursor-not-allowed"
+          sx={{ color: "text.secondary" }}
+        >
+          Ipsum
+        </Typography>
+        <Typography
+          component="span"
+          className="cursor-not-allowed"
+          sx={{ color: "text.secondary" }}
+        >
+          Dolor
+        </Typography>
       </nav>
-      <button
+      <Button
         onClick={() => {
           navigate("/");
           setActiveOperator(null);
         }}
-        className="mt-6 text-red-600 hover:underline text-left"
+        className="mt-6 text-left"
+        sx={{
+          color: "error.main",
+          "&:hover": {
+            textDecoration: "underline",
+            backgroundColor: "transparent",
+          },
+        }}
+        variant="text"
       >
         Sign Out
-      </button>
-    </aside>
+      </Button>
+    </Box>
   );
 }

@@ -34,10 +34,9 @@ export default function ProductDialogLayout({
             : { justifyContent: "flex-end" }
         }
       >
-        {leftActions && leftActions}{" "}
+        {leftActions && leftActions}
         {/* Only render leftActions if it's not null/undefined */}
-        <div>
-          {" "}
+        <div className="flex gap-4">
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="contained" onClick={onSubmit}>
             {submitText}

@@ -1,10 +1,12 @@
 import { useState } from "react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import OperatorSelector from "./components/OperatorSelector";
 import OperatorDetails from "./components/OperatorDetails";
 import AddOperatorDialog from "./components/AddOperatorDialog";
 import {
   operatorSchema,
-  OperatorFormValues,
+  type OperatorFormValues,
 } from "../../schema/operatorSchema";
 import type Operator from "../../models/Operator";
 import useOperators from "../../hooks/useOperators";
@@ -54,17 +56,22 @@ export default function OperatorsPage() {
   };
 
   return (
-    <div className="p-12 flex justify-center w-full mb-auto">
-      <div className="w-110 mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-center">Operators</h1>
-
+    <Box className="p-12 flex justify-center w-full mb-auto">
+      <Box className="w-110 mx-auto">
+        <Typography
+          variant="h4"
+          component="h1"
+          className="font-bold mb-8 text-center"
+          sx={{ color: "text.primary", marginBottom: 6 }}
+        >
+          Operators
+        </Typography>
         <OperatorSelector
           options={operators}
           selected={selected}
           onChange={setSelected}
           onAddClick={() => setShowDialog(true)}
         />
-
         {selected && (
           <OperatorDetails
             operator={selected}
@@ -72,14 +79,13 @@ export default function OperatorsPage() {
             onRehire={handleRehire}
           />
         )}
-
         <AddOperatorDialog
           open={showDialog}
           onClose={() => setShowDialog(false)}
           onSubmit={handleAdd}
           existingMdocs={operators.map((o) => o.id)}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

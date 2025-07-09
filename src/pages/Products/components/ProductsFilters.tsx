@@ -3,6 +3,8 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import type Category from "../../../models/Category";
 
 interface Props {
@@ -21,7 +23,7 @@ export default function ProductsFilters({
   onCategoryChange,
 }: Props) {
   return (
-    <div className="flex gap-4 mb-3">
+    <Box className="flex gap-4 mb-3">
       <TextField
         className="flex-1 basis-0"
         label="Search"
@@ -37,7 +39,9 @@ export default function ProductsFilters({
           style={{ minWidth: "13rem" }}
         >
           <MenuItem value="">
-            <em>All</em>
+            <Typography component="em" sx={{ color: "text.secondary" }}>
+              All
+            </Typography>
           </MenuItem>
           {categories.map((c) => (
             <MenuItem key={c.id} value={c.name}>
@@ -46,6 +50,6 @@ export default function ProductsFilters({
           ))}
         </Select>
       </FormControl>
-    </div>
+    </Box>
   );
 }

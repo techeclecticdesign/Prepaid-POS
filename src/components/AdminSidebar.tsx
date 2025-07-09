@@ -1,32 +1,85 @@
 import { Link, useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
 import { useAuth } from "../AuthProvider";
+import ThemeSwitch from "./ThemeSwitch";
+import { useTheme as useMuiTheme } from "@mui/material/styles";
 
 export default function AdminSidebar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const theme = useMuiTheme();
 
   return (
-    <aside className="sticky top-0 self-start w-xs shrink-0 border-l border-gray-300 p-6 bg-white h-screen">
-      <h2 className="text-2xl font-semibold mb-4">Admin Pages</h2>
+    <Box
+      component="aside"
+      className="fixed top-0 right-0 w-xs shrink-0 p-6 h-screen"
+      sx={{
+        borderLeft: 1,
+        borderColor: "divider",
+        backgroundColor: "background.paper",
+        color: "text.primary",
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <Typography
+          variant="h5"
+          component="h2"
+          className="font-semibold mb-4"
+          sx={{ color: "text.primary" }}
+        >
+          Admin Pages
+        </Typography>
+        <ThemeSwitch />
+      </div>
       <nav className="flex flex-col space-y-2">
-        <Link to="/operators" className="text-blue-600 hover:underline">
+        <Link
+          to="/operators"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
+        >
           Operators
         </Link>
-        <Link to="/categories" className="text-blue-600 hover:underline">
+        <Link
+          to="/categories"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
+        >
           Categories
         </Link>
-        <span className="text-gray-500 cursor-not-allowed">Ipsum</span>
-        <span className="text-gray-500 cursor-not-allowed">Dolor</span>
+        <Typography
+          component="span"
+          className="cursor-not-allowed"
+          sx={{ color: "text.secondary" }}
+        >
+          Ipsum
+        </Typography>
+        <Typography
+          component="span"
+          className="cursor-not-allowed"
+          sx={{ color: "text.secondary" }}
+        >
+          Dolor
+        </Typography>
       </nav>
-      <button
+      <Button
         onClick={() => {
           logout();
           navigate("/");
         }}
-        className="mt-6 text-red-600 hover:underline text-left"
+        className="mt-6 text-left"
+        sx={{
+          color: "error.main",
+          "&:hover": {
+            textDecoration: "underline",
+            backgroundColor: "transparent",
+          },
+        }}
+        variant="text"
       >
         Sign Out
-      </button>
-    </aside>
+      </Button>
+    </Box>
   );
 }

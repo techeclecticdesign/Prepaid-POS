@@ -1,42 +1,50 @@
-import { Routes, Route } from "react-router-dom";
-import SessionManager from "./SessionManager";
-import ProtectedLayout from "./layouts/ProtectedLayout";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useAuth } from "./AuthProvider";
 import SidebarLayout from "./layouts/SidebarLayout";
 import AdminSidebar from "./components/AdminSidebar";
 import OperatorSidebar from "./components/OperatorSidebar";
-import HomePage from "./pages/Homepage/Homepage";
-import Sales from "./pages/Sales/Sales";
-import Products from "./pages/Products/Products";
 import AdminPage from "./pages/AdminPage/AdminPage";
-import Operators from "./pages/Operators/Operators";
-import Categories from "./pages/Categories/Categories";
-import useHandleActivity from "./hooks/useHandleActivity";
-import useSessionPolling from "./hooks/useSessionPolling";
-import useDisableContextMenu from "./hooks/useDisableContextMenu";
+import CategoriesPage from "./pages/Categories/Categories";
+import OperatorsPage from "./pages/Operators/Operators";
+import ProductsPage from "./pages/Products/Products";
+import SalesPage from "./pages/Sales/Sales";
+import Homepage from "./pages/Homepage/Homepage";
 
 export default function App() {
-  useHandleActivity();
-  useSessionPolling();
-  useDisableContextMenu();
+  const { loggedIn, activeOperator } = useAuth();
 
   return (
-    <Routes>
-      <Route element={<SessionManager />}>
-        <Route path="/" element={<HomePage />} />
-
-        <Route element={<SidebarLayout Sidebar={OperatorSidebar} />}>
-          <Route path="/sales" element={<Sales />} />
-          <Route path="/products" element={<Products />} />
-        </Route>
-
-        <Route element={<ProtectedLayout />}>
-          <Route element={<SidebarLayout Sidebar={AdminSidebar} />}>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Homepage />} />
+        {loggedIn && (
+          <Route
+            element={
+              <SidebarLayout
+                Sidebar={AdminSidebar}
+                activeOperatorMdoc={activeOperator ? activeOperator.id : null}
+              />
+            }
+          >
             <Route path="/admin" element={<AdminPage />} />
-            <Route path="/operators" element={<Operators />} />
-            <Route path="/categories" element={<Categories />} />
+            <Route path="/operators" element={<OperatorsPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
           </Route>
-        </Route>
-      </Route>
-    </Routes>
+        )}
+        {activeOperator && (
+          <Route
+            element={
+              <SidebarLayout
+                Sidebar={OperatorSidebar}
+                activeOperatorMdoc={activeOperator.id}
+              />
+            }
+          >
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/sales" element={<SalesPage />} />
+          </Route>
+        )}
+      </Routes>
+    </BrowserRouter>
   );
 }

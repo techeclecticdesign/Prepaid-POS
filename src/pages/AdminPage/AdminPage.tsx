@@ -1,9 +1,11 @@
+import Box from "@mui/material/Box";
+
 export default function AdminPage() {
   return (
-    <div className="min-h-screen flex">
-      <div className="mx-auto">
+    <Box className="min-h-screen flex">
+      <Box className="mx-auto">
         <img src="mock.png" />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
