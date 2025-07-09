@@ -8,6 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AppButton from "../../../components/AppButton";
 import AppSnackbar from "../../../components/AppSnackbar";
+import { useDialogAutofocus } from "../../../hooks/useDialogAutofocus";
 import {
   operatorSchema,
   type OperatorFormValues,
@@ -32,6 +33,7 @@ export default function AddOperatorDialog({
     useForm<OperatorFormValues>({
       resolver: zodResolver(operatorSchema),
     });
+  const { ref: inputRef, handleDialogEntered } = useDialogAutofocus(open);
 
   // wrap form submit to catch errors
   const wrappedSubmit = handleSubmit(async (vals) => {
@@ -52,7 +54,15 @@ export default function AddOperatorDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose}>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        slotProps={{
+          transition: {
+            onEntered: handleDialogEntered,
+          },
+        }}
+      >
         <form onSubmit={wrappedSubmit}>
           <DialogTitle>Add Operator</DialogTitle>
           <DialogContent className="space-y-4">
@@ -67,6 +77,7 @@ export default function AddOperatorDialog({
                     fullWidth
                     error={!!formState.errors.mdoc}
                     helperText={formState.errors.mdoc?.message}
+                    inputRef={inputRef}
                   />
                 )}
               />

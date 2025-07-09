@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -6,6 +6,7 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import AppSnackbar from "../../../components/AppSnackbar";
+import { useDialogAutofocus } from "../../../hooks/useDialogAutofocus";
 
 interface Props {
   open: boolean;
@@ -23,12 +24,7 @@ export default function AddCategoryDialog({
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Autofocus on modal open
-  const handleDialogEntered = () => {
-    inputRef.current?.focus();
-  };
+  const { ref: inputRef, handleDialogEntered } = useDialogAutofocus(open);
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,12 +46,6 @@ export default function AddCategoryDialog({
       return;
     }
   };
-
-  useEffect(() => {
-    if (!open && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  }, [open]);
 
   return (
     <>
