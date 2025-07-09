@@ -34,7 +34,7 @@ export default function ProductsFilters({
           value={category}
           label="Category"
           onChange={(e) => onCategoryChange(e.target.value)}
-          style={{ minWidth: 200 }}
+          style={{ minWidth: "13rem" }}
         >
           <MenuItem value="">
             <em>All</em>

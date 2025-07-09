@@ -50,7 +50,7 @@ export default function StaffLoginDialog({
             />
           </DialogContent>
           <DialogActions>
-            <AppButton type="submit" text="Submit" />
+            <AppButton type="submit" text="Submit" sx={{ width: "100%" }} />
           </DialogActions>
         </form>
       </Dialog>

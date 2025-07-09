@@ -76,7 +76,7 @@ export default function App() {
             key={o.id}
             text={o.name}
             variant="outlined"
-            sx={{ width: 250 }}
+            sx={{ width: "14rem" }}
             onClick={() => {
               setActiveOperator(o);
               navigate("/sales");
@@ -88,7 +88,7 @@ export default function App() {
           <AppButton
             onClick={() => setShowLogin(true)}
             text="Admin Login"
-            sx={{ width: 250 }}
+            sx={{ width: "14rem" }}
           />
         ) : (
           <AppButton onClick={logout} text="Log Out" />

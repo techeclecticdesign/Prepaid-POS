@@ -8,7 +8,7 @@ interface AppButtonProps extends ButtonProps {
 export default function AppButton({
   variant = "contained",
   color = "primary",
-  sx = { maxWidth: 250, width: "100%" },
+  sx = { maxWidth: "14rem", width: "100%" },
   text,
   ...rest
 }: AppButtonProps) {

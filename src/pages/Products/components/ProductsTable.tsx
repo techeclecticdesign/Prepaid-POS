@@ -10,13 +10,13 @@ export default function ProductsTable({ products, onProductClick }: Props) {
     <table className="min-w-full divide-y divide-gray-200">
       <thead>
         <tr>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th className="px-6 py-3 text-left text-xs 2xl:text-md font-medium text-gray-500 uppercase tracking-wider">
             Description
           </th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th className="px-6 py-3 text-left text-xs 2xl:text-md font-medium text-gray-500 uppercase tracking-wider">
             Category
           </th>
-          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <th className="px-6 py-3 text-right text-xs 2xl:text-md font-medium text-gray-500 uppercase tracking-wider">
             Price
           </th>
         </tr>
@@ -28,13 +28,13 @@ export default function ProductsTable({ products, onProductClick }: Props) {
             className="hover:bg-gray-50 cursor-pointer"
             onClick={() => onProductClick(p)}
           >
-            <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+            <td className="px-6 py-2 2xl:py-5 whitespace-nowrap text-sm 2xl:text-xl text-gray-900">
               {p.desc}
             </td>
-            <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900">
+            <td className="px-6 py-2 2xl:py-5 whitespace-nowrap text-sm 2xl:text-xl text-gray-900">
               {p.category}
             </td>
-            <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
+            <td className="px-6 py-2 2xl:py-5 whitespace-nowrap text-sm 2xl:text-xl text-gray-900 text-right">
               ${(p.price / 100).toFixed(2)}
             </td>
           </tr>

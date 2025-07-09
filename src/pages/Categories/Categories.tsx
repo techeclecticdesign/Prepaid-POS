@@ -26,7 +26,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="p-12 flex justify-center w-full h-full">
-      <div className="w-2/3">
+      <div className="w-110">
         <h1 className="text-4xl font-bold mb-8 text-center">Categories</h1>
 
         <div className="mb-12 text-center">

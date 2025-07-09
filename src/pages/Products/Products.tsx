@@ -45,7 +45,7 @@ export default function ProductsPage() {
       />
       <ProductsTable products={products} onProductClick={setEditing} />
 
-      <div className="flex justify-center mt-4">
+      <div className="flex justify-center mt-4 2xl:mt-12">
         <Pagination
           count={totalPages}
           page={page}
