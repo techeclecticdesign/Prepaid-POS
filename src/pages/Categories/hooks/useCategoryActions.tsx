@@ -2,13 +2,11 @@ import { invoke } from "@tauri-apps/api/core";
 
 export default function useCategoryActions() {
   const create = async (name: string): Promise<void> => {
-    console.log("Create");
-    await invoke("create_category", { name });
+    await invoke("create_category", { dto: { name } });
   };
 
   const remove = async (id: number): Promise<void> => {
-    console.log("Delete");
-    await invoke("delete_category", { id });
+    await invoke("delete_category", { dto: { id } });
   };
 
   return { create, remove };

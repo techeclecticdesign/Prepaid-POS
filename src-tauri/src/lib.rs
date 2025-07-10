@@ -90,7 +90,7 @@ pub fn run() {
             interface::commands::product::list_products_category,
             interface::commands::product::price_adjustment,
             interface::commands::product::delete_product,
-            interface::commands::product::update_item,
+            interface::commands::product::update_product,
             interface::commands::product::list_categories,
             interface::commands::product::delete_category,
             interface::commands::product::create_category,

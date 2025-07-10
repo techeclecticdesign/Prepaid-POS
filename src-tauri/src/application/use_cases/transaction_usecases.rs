@@ -87,7 +87,7 @@ mod tests {
     impl Default for InventoryTransaction {
         fn default() -> Self {
             Self {
-                id: 0,
+                id: Some(0),
                 upc: 0,
                 quantity_change: 0,
                 operator_mdoc: 0,

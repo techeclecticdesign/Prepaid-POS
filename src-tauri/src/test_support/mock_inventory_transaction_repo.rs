@@ -28,7 +28,7 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
             .lock()
             .unwrap()
             .iter()
-            .find(|x| x.id as i64 == id)
+            .find(|x| x.id.map(|v| v as i64) == Some(id))
             .cloned())
     }
 

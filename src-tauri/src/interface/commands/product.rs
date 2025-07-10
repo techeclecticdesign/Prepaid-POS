@@ -1,8 +1,10 @@
 use crate::common::error::AppError;
 use crate::interface::controllers::product_controller::ProductController;
-use crate::interface::dto::category_dto::CategoryDto;
+use crate::interface::dto::category_dto::{CategoryDto, CreateCategoryDto, DeleteCategoryDto};
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
-use crate::interface::dto::product_dto::{CreateProductDto, ProductDto, ProductSearchResult};
+use crate::interface::dto::product_dto::{
+    CreateProductDto, DeleteProductDto, ProductDto, ProductSearchResult, UpdateProductDto,
+};
 use std::sync::Arc;
 use tauri::State;
 
@@ -15,8 +17,11 @@ pub fn create_product(
 }
 
 #[tauri::command]
-pub fn delete_product(controller: State<Arc<ProductController>>, upc: i64) -> Result<(), AppError> {
-    controller.delete_product(upc)
+pub fn delete_product(
+    controller: State<Arc<ProductController>>,
+    dto: DeleteProductDto,
+) -> Result<(), AppError> {
+    controller.delete_product(dto)
 }
 
 #[tauri::command]
@@ -65,13 +70,11 @@ pub fn list_products_category(
 }
 
 #[tauri::command]
-pub fn update_item(
+pub fn update_product(
     controller: State<Arc<ProductController>>,
-    upc: i64,
-    desc: Option<String>,
-    category: Option<String>,
+    dto: UpdateProductDto,
 ) -> Result<(), AppError> {
-    controller.update_item(upc, desc, category)
+    controller.update_product(dto)
 }
 
 #[tauri::command]
@@ -101,14 +104,17 @@ pub fn list_categories(
 }
 
 #[tauri::command]
-pub fn delete_category(controller: State<Arc<ProductController>>, id: i64) -> Result<(), AppError> {
-    controller.delete_category(id)
+pub fn delete_category(
+    controller: State<Arc<ProductController>>,
+    dto: DeleteCategoryDto,
+) -> Result<(), AppError> {
+    controller.delete_category(dto)
 }
 
 #[tauri::command]
 pub fn create_category(
     controller: State<Arc<ProductController>>,
-    name: String,
+    dto: CreateCategoryDto,
 ) -> Result<(), AppError> {
-    controller.create_category(name)
+    controller.create_category(dto)
 }

@@ -2,6 +2,7 @@ use crate::application::common::db::atomic_tx;
 use crate::common::error::AppError;
 use crate::domain::models::{Category, PriceAdjustment, Product};
 use crate::domain::repos::{CategoryRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait};
+use crate::interface::dto::product_dto::UpdateProductDto;
 use chrono::Utc;
 use std::sync::{Arc, Mutex};
 
@@ -102,29 +103,16 @@ impl ProductUseCases {
             .ok_or_else(|| AppError::Unexpected("failed load price adj".into()))
     }
 
-    pub fn update_item(
-        &self,
-        upc: i64,
-        desc: Option<String>,
-        category: Option<String>,
-    ) -> Result<(), AppError> {
-        if desc.is_none() && category.is_none() {
-            return Err(AppError::Unexpected("no fields to update".into()));
-        }
-
+    pub fn update_product(&self, dto: UpdateProductDto) -> Result<(), AppError> {
         // load existing product
         let mut p = self
             .repo
-            .get_by_upc(upc)?
-            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
+            .get_by_upc(dto.upc)?
+            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", dto.upc)))?;
 
         // update
-        if let Some(d) = desc {
-            p.desc = d;
-        }
-        if let Some(c) = category {
-            p.category = c;
-        }
+        p.desc = dto.desc;
+        p.category = dto.category;
         p.updated = Some(Utc::now().naive_utc());
 
         self.repo.update_by_upc(&p)
@@ -341,7 +329,7 @@ mod tests {
     }
 
     #[test]
-    fn update_item_changes_only_specified_fields() -> anyhow::Result<()> {
+    fn update_product_changes_only_specified_fields() -> anyhow::Result<()> {
         let (uc, _op_repo, _prod_repo) = make_use_cases();
         uc.create_product(Product {
             upc: 42,
@@ -352,20 +340,25 @@ mod tests {
         })?;
 
         // update desc
-        uc.update_item(42, Some("NewDesc".into()), None)?;
+        uc.update_product(UpdateProductDto {
+            upc: 42,
+            desc: "NewDesc".into(),
+            category: "OldCat".into(),
+        })?;
         let p = uc.repo.get_by_upc(42)?.unwrap();
         assert_eq!(p.desc, "NewDesc");
         assert_eq!(p.category, "OldCat");
 
         // update category
-        uc.update_item(42, None, Some("NewCat".into()))?;
+        uc.update_product(UpdateProductDto {
+            upc: 42,
+            desc: "NewDesc".into(),
+            category: "NewCat".into(),
+        })?;
         let p2 = uc.repo.get_by_upc(42)?.unwrap();
         assert_eq!(p2.desc, "NewDesc");
         assert_eq!(p2.category, "NewCat");
 
-        // no fields -> error
-        let err = uc.update_item(42, None, None).unwrap_err();
-        assert!(err.to_string().contains("no fields to update"));
         Ok(())
     }
 

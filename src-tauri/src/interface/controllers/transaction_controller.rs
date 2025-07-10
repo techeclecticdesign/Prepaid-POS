@@ -1,7 +1,10 @@
 use crate::application::use_cases::transaction_usecases::TransactionUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::inventory_transaction::InventoryTransaction;
-use crate::interface::dto::inventory_transaction_dto::InventoryTransactionDto;
+use crate::interface::common::validators::validate_with_optional_dates;
+use crate::interface::dto::inventory_transaction_dto::{
+    CreateInventoryTransactionDto, ReadInventoryTransactionDto,
+};
 use crate::interface::presenters::inventory_transaction_presenter::InventoryTransactionPresenter;
 use std::sync::Arc;
 
@@ -18,10 +21,11 @@ impl TransactionController {
 
     pub fn inventory_adjustment(
         &self,
-        dto: InventoryTransactionDto,
-    ) -> Result<InventoryTransactionDto, AppError> {
+        dto: CreateInventoryTransactionDto,
+    ) -> Result<ReadInventoryTransactionDto, AppError> {
+        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
         let tx = InventoryTransaction {
-            id: 0, // new record, gets auto-assigned by db
+            id: Some(0), // new record, gets auto-assigned by db
             upc: dto.upc,
             quantity_change: dto.quantity_change,
             operator_mdoc: dto.operator_mdoc,
@@ -37,10 +41,11 @@ impl TransactionController {
 
     pub fn sale_transaction(
         &self,
-        dto: InventoryTransactionDto,
-    ) -> Result<InventoryTransactionDto, AppError> {
+        dto: CreateInventoryTransactionDto,
+    ) -> Result<ReadInventoryTransactionDto, AppError> {
+        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
         let tx = InventoryTransaction {
-            id: 0, // new record, gets auto-assigned by db
+            id: Some(0), // new record, gets auto-assigned by db
             upc: dto.upc,
             quantity_change: dto.quantity_change,
             operator_mdoc: dto.operator_mdoc,
@@ -56,10 +61,11 @@ impl TransactionController {
 
     pub fn stock_items(
         &self,
-        dto: InventoryTransactionDto,
-    ) -> Result<InventoryTransactionDto, AppError> {
+        dto: CreateInventoryTransactionDto,
+    ) -> Result<ReadInventoryTransactionDto, AppError> {
+        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
         let tx = InventoryTransaction {
-            id: 0, // new record, gets auto-assigned by db
+            id: Some(0), // new record, gets auto-assigned by db
             upc: dto.upc,
             quantity_change: dto.quantity_change,
             operator_mdoc: dto.operator_mdoc,
@@ -73,7 +79,7 @@ impl TransactionController {
         Ok(InventoryTransactionPresenter::to_dto(itx))
     }
 
-    pub fn list_inv_adjust_today(&self) -> Result<Vec<InventoryTransactionDto>, AppError> {
+    pub fn list_inv_adjust_today(&self) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
         let itxs = self.uc.list_inv_adjust_today()?;
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))
     }
@@ -81,24 +87,30 @@ impl TransactionController {
     pub fn list_inv_adjust_operator(
         &self,
         op: i32,
-    ) -> Result<Vec<InventoryTransactionDto>, AppError> {
+    ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
         let itxs = self.uc.list_inv_adjust_operator(op)?;
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))
     }
 
-    pub fn list_inv_adjust(&self) -> Result<Vec<InventoryTransactionDto>, AppError> {
+    pub fn list_inv_adjust(&self) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
         let itxs = self.uc.list_inv_adjust()?;
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))
     }
 
-    pub fn get_transaction(&self, id: i64) -> Result<Option<InventoryTransactionDto>, AppError> {
+    pub fn get_transaction(
+        &self,
+        id: i64,
+    ) -> Result<Option<ReadInventoryTransactionDto>, AppError> {
         Ok(self
             .uc
             .get_transaction(id)?
             .map(InventoryTransactionPresenter::to_dto))
     }
 
-    pub fn list_tx_for_product(&self, upc: i64) -> Result<Vec<InventoryTransactionDto>, AppError> {
+    pub fn list_tx_for_product(
+        &self,
+        upc: i64,
+    ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
         let itxs = self.uc.list_for_product(upc)?;
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))
     }
@@ -106,7 +118,7 @@ impl TransactionController {
     pub fn list_tx_for_customer(
         &self,
         customer_mdoc: i32,
-    ) -> Result<Vec<InventoryTransactionDto>, AppError> {
+    ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
         let itxs = self.uc.list_for_customer(customer_mdoc)?;
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))
     }

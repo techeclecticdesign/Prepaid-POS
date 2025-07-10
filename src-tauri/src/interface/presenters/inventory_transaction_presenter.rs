@@ -1,15 +1,15 @@
 use crate::domain::models::InventoryTransaction;
-use crate::interface::dto::inventory_transaction_dto::InventoryTransactionDto;
+use crate::interface::dto::inventory_transaction_dto::ReadInventoryTransactionDto;
 use chrono::{TimeZone, Utc};
 
 pub struct InventoryTransactionPresenter;
 
 impl InventoryTransactionPresenter {
-    pub fn to_dto(itx: InventoryTransaction) -> InventoryTransactionDto {
+    pub fn to_dto(itx: InventoryTransaction) -> ReadInventoryTransactionDto {
         let created_at = itx
             .created_at
             .map(|dt| Utc.from_utc_datetime(&dt).to_rfc3339());
-        InventoryTransactionDto {
+        ReadInventoryTransactionDto {
             id: itx.id,
             upc: itx.upc,
             quantity_change: itx.quantity_change,
@@ -21,7 +21,7 @@ impl InventoryTransactionPresenter {
         }
     }
 
-    pub fn to_dto_list(itxs: Vec<InventoryTransaction>) -> Vec<InventoryTransactionDto> {
+    pub fn to_dto_list(itxs: Vec<InventoryTransaction>) -> Vec<ReadInventoryTransactionDto> {
         itxs.into_iter().map(Self::to_dto).collect()
     }
 }

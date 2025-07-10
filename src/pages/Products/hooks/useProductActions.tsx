@@ -40,7 +40,7 @@ export default function useProductActions() {
   };
 
   const updateItem = (upc: number, desc: string, category: string) => {
-    return invoke("update_item", { upc, desc, category });
+    return invoke("update_product", { upc, desc, category });
   };
 
   const priceAdjustment = (dto: PriceAdjustmentDto) => {

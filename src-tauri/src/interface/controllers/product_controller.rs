@@ -2,13 +2,17 @@ use crate::application::use_cases::product_usecases::ProductUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::price_adjustment::PriceAdjustment;
 use crate::domain::models::product::Product;
-use crate::interface::dto::category_dto::CategoryDto;
+use crate::interface::common::validators::validate_with_optional_dates;
+use crate::interface::dto::category_dto::{CategoryDto, CreateCategoryDto, DeleteCategoryDto};
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
-use crate::interface::dto::product_dto::{CreateProductDto, ProductDto, ProductSearchResult};
+use crate::interface::dto::product_dto::{
+    CreateProductDto, DeleteProductDto, ProductDto, ProductSearchResult, UpdateProductDto,
+};
 use crate::interface::presenters::category_presenter::CategoryPresenter;
 use crate::interface::presenters::price_adjustment_presenter::PriceAdjustmentPresenter;
 use crate::interface::presenters::product_presenter::ProductPresenter;
 use std::sync::Arc;
+use validator::Validate;
 
 pub struct ProductController {
     uc: ProductUseCases,
@@ -27,6 +31,8 @@ impl ProductController {
     }
 
     pub fn create_product(&self, dto: CreateProductDto) -> Result<(), AppError> {
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
         let product = Product {
             upc: dto.upc,
             desc: dto.desc,
@@ -39,8 +45,10 @@ impl ProductController {
         self.uc.create_product(product)
     }
 
-    pub fn delete_product(&self, upc: i64) -> Result<(), AppError> {
-        self.uc.delete_product(upc)
+    pub fn delete_product(&self, dto: DeleteProductDto) -> Result<(), AppError> {
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
+        self.uc.delete_product(dto.upc)
     }
 
     pub fn list_products(&self) -> Result<Vec<ProductDto>, AppError> {
@@ -57,6 +65,7 @@ impl ProductController {
         &self,
         dto: PriceAdjustmentDto,
     ) -> Result<PriceAdjustmentDto, AppError> {
+        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
         let domain = PriceAdjustment {
             id: 0, // gets assigned during persistence
             operator_mdoc: dto.operator_mdoc,
@@ -70,13 +79,11 @@ impl ProductController {
         Ok(PriceAdjustmentPresenter::to_dto(pa))
     }
 
-    pub fn update_item(
-        &self,
-        upc: i64,
-        desc: Option<String>,
-        category: Option<String>,
-    ) -> Result<(), AppError> {
-        self.uc.update_item(upc, desc, category)
+    pub fn update_product(&self, dto: UpdateProductDto) -> Result<(), AppError> {
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
+        // map domain in use case. Need missing fields from repo & controller can't talk to repo
+        self.uc.update_product(dto)
     }
 
     pub fn search_products(
@@ -122,12 +129,16 @@ impl ProductController {
         let cats = self.uc.list_categories()?;
         Ok(CategoryPresenter::to_dto_list(cats))
     }
-    pub fn delete_category(&self, id: i64) -> Result<(), AppError> {
-        self.uc.delete_category(id)
+    pub fn delete_category(&self, dto: DeleteCategoryDto) -> Result<(), AppError> {
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
+        self.uc.delete_category(dto.id)
     }
 
-    pub fn create_category(&self, cat: String) -> Result<(), AppError> {
-        self.uc.create_category(cat)
+    pub fn create_category(&self, dto: CreateCategoryDto) -> Result<(), AppError> {
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
+        self.uc.create_category(dto.name)
     }
 }
 
