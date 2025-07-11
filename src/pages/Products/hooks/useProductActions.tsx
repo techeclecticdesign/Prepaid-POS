@@ -23,36 +23,40 @@ export interface CreateProductDto {
 }
 
 export default function useProductActions() {
-  const searchProducts = (
+  const searchProducts = async (
     search: string | null,
     category: string | null,
     page: number,
-  ) => {
-    return invoke<SearchProductsResponse>("search_products", {
+  ): Promise<SearchProductsResponse> => {
+    return await invoke<SearchProductsResponse>("search_products", {
       search,
       category,
       page,
     });
   };
 
-  const listCategories = () => {
-    return invoke<Category[]>("list_categories");
+  const listCategories = async (): Promise<Category[]> => {
+    return await invoke<Category[]>("list_categories");
   };
 
-  const updateItem = (upc: number, desc: string, category: string) => {
-    return invoke("update_product", { upc, desc, category });
+  const updateItem = async (
+    upc: number,
+    desc: string,
+    category: string,
+  ): Promise<void> => {
+    await invoke("update_product", { upc, desc, category });
   };
 
-  const priceAdjustment = (dto: PriceAdjustmentDto) => {
-    return invoke("price_adjustment", { dto });
+  const priceAdjustment = async (dto: PriceAdjustmentDto): Promise<void> => {
+    await invoke("price_adjustment", { dto });
   };
 
-  const createProduct = (dto: CreateProductDto) => {
-    return invoke("create_product", { dto });
+  const createProduct = async (dto: CreateProductDto): Promise<void> => {
+    await invoke("create_product", { dto });
   };
 
-  const removeProduct = (upc: number) => {
-    return invoke("delete_product", { upc });
+  const removeProduct = async (upc: number): Promise<void> => {
+    await invoke("delete_product", { upc });
   };
 
   return {
