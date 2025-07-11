@@ -9,7 +9,6 @@ pub struct OperatorUseCases {
 }
 
 impl OperatorUseCases {
-    /// Inject the repo
     pub fn new(repo: Arc<dyn OperatorRepoTrait>) -> Self {
         Self { repo }
     }
@@ -44,7 +43,6 @@ impl OperatorUseCases {
         res
     }
 
-    /// Update an existing operator
     pub fn update_operator(&self, op: &Operator) -> Result<(), AppError> {
         // Check if operator exists
         let existing = self.repo.get_by_id(op.id)?;

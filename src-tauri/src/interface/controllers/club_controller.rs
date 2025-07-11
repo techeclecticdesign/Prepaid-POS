@@ -1,0 +1,95 @@
+use crate::application::use_cases::club_usecases::ClubUseCases;
+use crate::common::error::AppError;
+use crate::interface::dto::{
+    club_import_dto::ClubImportReadDto, club_transaction_dto::ClubTransactionReadDto,
+    customer_dto::CustomerReadDto,
+};
+use crate::interface::presenters::club_presenter::ClubPresenter;
+use std::sync::Arc;
+
+pub struct ClubController {
+    uc: ClubUseCases,
+}
+
+impl ClubController {
+    pub fn new(
+        customer_repo: Arc<dyn crate::domain::repos::CustomerRepoTrait>,
+        tx_repo: Arc<dyn crate::domain::repos::ClubTransactionRepoTrait>,
+        import_repo: Arc<dyn crate::domain::repos::ClubImportRepoTrait>,
+    ) -> Self {
+        Self {
+            uc: ClubUseCases::new(customer_repo, tx_repo, import_repo),
+        }
+    }
+
+    pub fn list_customers(&self) -> Result<Vec<CustomerReadDto>, AppError> {
+        let domains = self.uc.list_customers()?;
+        Ok(ClubPresenter::to_customer_dto_list(domains))
+    }
+
+    pub fn get_customer(&self, mdoc: i32) -> Result<Option<CustomerReadDto>, AppError> {
+        let opt = self.uc.get_customer(mdoc)?;
+        Ok(opt.map(ClubPresenter::to_customer_dto))
+    }
+
+    pub fn list_club_transactions(&self) -> Result<Vec<ClubTransactionReadDto>, AppError> {
+        let domains = self.uc.list_club_transactions()?;
+        Ok(ClubPresenter::to_transaction_dto_list(domains))
+    }
+
+    pub fn get_club_transaction(
+        &self,
+        id: i32,
+    ) -> Result<Option<ClubTransactionReadDto>, AppError> {
+        let opt = self.uc.get_club_transaction(id)?;
+        Ok(opt.map(ClubPresenter::to_transaction_dto))
+    }
+
+    pub fn list_club_imports(&self) -> Result<Vec<ClubImportReadDto>, AppError> {
+        let domains = self.uc.list_club_imports()?;
+        Ok(ClubPresenter::to_import_dto_list(domains))
+    }
+
+    pub fn get_club_import(&self, id: i32) -> Result<Option<ClubImportReadDto>, AppError> {
+        let opt = self.uc.get_club_import(id)?;
+        Ok(opt.map(ClubPresenter::to_import_dto))
+    }
+}
+
+#[cfg(test)]
+mod smoke {
+    use super::*;
+    use crate::test_support::{
+        mock_club_import_repo::MockClubImportRepo, mock_club_tx_repo::MockClubTransactionRepo,
+        mock_customer_repo::MockCustomerRepo,
+    };
+    use std::sync::Arc;
+
+    fn make_controller() -> ClubController {
+        let c_repo = Arc::new(MockCustomerRepo::new());
+        let tx_repo = Arc::new(MockClubTransactionRepo::new());
+        let im_repo = Arc::new(MockClubImportRepo::new());
+        ClubController::new(c_repo, tx_repo, im_repo)
+    }
+
+    #[test]
+    fn smoke_list_customers() {
+        let ctrl = make_controller();
+        let out = ctrl.list_customers().unwrap();
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn smoke_list_transactions() {
+        let ctrl = make_controller();
+        let out = ctrl.list_club_transactions().unwrap();
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn smoke_list_imports() {
+        let ctrl = make_controller();
+        let out = ctrl.list_club_imports().unwrap();
+        assert!(out.is_empty());
+    }
+}

@@ -1,11 +1,19 @@
 pub mod category;
+pub mod club_import;
+pub mod club_transaction;
+pub mod customer;
 pub mod inventory_transaction;
 pub mod operator;
+pub mod parsed_pdf;
 pub mod price_adjustment;
 pub mod product;
 
 pub use category::Category;
+pub use club_import::ClubImport;
+pub use club_transaction::ClubTransaction;
+pub use customer::Customer;
 pub use inventory_transaction::InventoryTransaction;
 pub use operator::Operator;
+pub use parsed_pdf::ParsedPdf;
 pub use price_adjustment::PriceAdjustment;
 pub use product::Product;

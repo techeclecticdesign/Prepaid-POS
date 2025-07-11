@@ -2,34 +2,34 @@ use validator_derive::Validate;
 
 #[derive(serde::Deserialize, Validate)]
 pub struct CreateProductDto {
-    #[validate(range(min = 1, message = "new must be non-zero and positive"))]
+    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
     pub upc: i64,
 
-    #[validate(length(min = 1, message = "name cannot be empty"))]
+    #[validate(length(min = 1, message = "desc cannot be empty"))]
     pub desc: String,
 
-    #[validate(length(min = 1, message = "name cannot be empty"))]
+    #[validate(length(min = 1, message = "category cannot be empty"))]
     pub category: String,
 
-    #[validate(range(min = 1, message = "new must be non-zero and positive"))]
+    #[validate(range(min = 1, message = "price must be non-zero and positive"))]
     pub price: i32,
 }
 
 #[derive(serde::Deserialize, Validate)]
 pub struct UpdateProductDto {
-    #[validate(range(min = 1, message = "new must be non-zero and positive"))]
+    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
     pub upc: i64,
 
-    #[validate(length(min = 1, message = "name cannot be empty"))]
+    #[validate(length(min = 1, message = "desc cannot be empty"))]
     pub desc: String,
 
-    #[validate(length(min = 1, message = "name cannot be empty"))]
+    #[validate(length(min = 1, message = "category cannot be empty"))]
     pub category: String,
 }
 
 #[derive(serde::Deserialize, Validate)]
 pub struct DeleteProductDto {
-    #[validate(range(min = 1, message = "new must be non-zero and positive"))]
+    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
     pub upc: i64,
 }
 

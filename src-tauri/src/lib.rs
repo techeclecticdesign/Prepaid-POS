@@ -6,17 +6,18 @@ pub mod interface;
 pub mod test_support;
 
 use crate::domain::repos::{
-    CategoryRepoTrait, InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait,
-    ProductRepoTrait,
+    CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait,
+    InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
 };
 use crate::interface::controllers::{
-    operator_controller::OperatorController, product_controller::ProductController,
-    transaction_controller::TransactionController,
+    club_controller::ClubController, operator_controller::OperatorController,
+    product_controller::ProductController, transaction_controller::TransactionController,
 };
 use infrastructure::db::create_connection;
 use infrastructure::repos::{
-    SqliteCategoryRepo, SqliteInventoryTransactionRepo, SqliteOperatorRepo,
-    SqlitePriceAdjustmentRepo, SqliteProductRepo,
+    SqliteCategoryRepo, SqliteClubImportRepo, SqliteClubTransactionRepo, SqliteCustomerRepo,
+    SqliteInventoryTransactionRepo, SqliteOperatorRepo, SqlitePriceAdjustmentRepo,
+    SqliteProductRepo,
 };
 use std::sync::{Arc, RwLock};
 use tauri::{Builder, WindowEvent};
@@ -45,6 +46,12 @@ pub fn run() {
         Arc::new(SqlitePriceAdjustmentRepo::new(Arc::clone(&conn)));
     let inv_repo: Arc<dyn InventoryTransactionRepoTrait> =
         Arc::new(SqliteInventoryTransactionRepo::new(Arc::clone(&conn)));
+    let customer_repo: Arc<dyn CustomerRepoTrait> =
+        Arc::new(SqliteCustomerRepo::new(Arc::clone(&conn)));
+    let club_tx_repo: Arc<dyn ClubTransactionRepoTrait> =
+        Arc::new(SqliteClubTransactionRepo::new(Arc::clone(&conn)));
+    let club_import_repo: Arc<dyn ClubImportRepoTrait> =
+        Arc::new(SqliteClubImportRepo::new(Arc::clone(&conn)));
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
     let product_ctrl = Arc::new(ProductController::new(
         Arc::clone(&product_repo),
@@ -53,6 +60,11 @@ pub fn run() {
         Arc::clone(&conn),
     ));
     let tx_ctrl = Arc::new(TransactionController::new(Arc::clone(&inv_repo)));
+    let club_ctrl = Arc::new(ClubController::new(
+        Arc::clone(&customer_repo),
+        Arc::clone(&club_tx_repo),
+        Arc::clone(&club_import_repo),
+    ));
 
     // filter spammy tao / winit event loop spam in console
     std::env::set_var(
@@ -66,11 +78,15 @@ pub fn run() {
         .manage(op_ctrl)
         .manage(product_ctrl)
         .manage(tx_ctrl)
+        .manage(club_ctrl)
         .manage(RwLock::new(common::auth::AuthState::default()))
         .manage(op_repo)
         .manage(product_repo)
         .manage(price_repo)
         .manage(inv_repo)
+        .manage(club_import_repo)
+        .manage(club_tx_repo)
+        .manage(customer_repo)
         .invoke_handler(tauri::generate_handler![
             common::logger::process_frontend_error,
             interface::commands::auth::check_login_status,
@@ -104,6 +120,12 @@ pub fn run() {
             interface::commands::transaction::list_tx_for_product,
             interface::commands::transaction::sale_transaction,
             interface::commands::transaction::stock_items,
+            interface::commands::club::list_customers,
+            interface::commands::club::get_customer,
+            interface::commands::club::list_club_transactions,
+            interface::commands::club::get_club_transaction,
+            interface::commands::club::list_club_imports,
+            interface::commands::club::get_club_import,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {
