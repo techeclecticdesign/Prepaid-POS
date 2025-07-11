@@ -4,6 +4,7 @@ use crate::domain::models::{Category, PriceAdjustment, Product};
 use crate::domain::repos::{CategoryRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait};
 use crate::interface::dto::product_dto::UpdateProductDto;
 use chrono::Utc;
+use log::{error, info};
 use std::sync::{Arc, Mutex};
 
 pub struct ProductUseCases {
@@ -54,7 +55,15 @@ impl ProductUseCases {
             deleted: None,
             ..product
         };
-        self.repo.create(&new_product)
+        let res = self.repo.create(&new_product);
+        match &res {
+            Ok(()) => info!(
+                "product created: upc={} desc={}",
+                new_product.upc, new_product.desc
+            ),
+            Err(e) => error!("product create error: upc={} error={}", new_product.upc, e),
+        }
+        res
     }
 
     pub fn delete_product(&self, upc: i64) -> Result<(), AppError> {
@@ -63,7 +72,12 @@ impl ProductUseCases {
             .get_by_upc(upc)?
             .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
         p.deleted = Some(Utc::now().naive_utc());
-        self.repo.update_by_upc(&p)
+        let res = self.repo.update_by_upc(&p);
+        match &res {
+            Ok(()) => info!("product deleted: upc={}", upc),
+            Err(e) => error!("product delete error: upc={} error={}", upc, e),
+        }
+        res
     }
 
     pub fn list_products(&self) -> Result<Vec<Product>, AppError> {
@@ -98,9 +112,19 @@ impl ProductUseCases {
         })?;
 
         // now that TX is committed (and Mutex released), read back the row:
-        self.price_repo
-            .get_by_id(adj_id)?
-            .ok_or_else(|| AppError::Unexpected("failed load price adj".into()))
+        let adj_loaded = self.price_repo.get_by_id(adj_id)?;
+
+        match &adj_loaded {
+            Some(a) => log::info!(
+                "price adjustment recorded: upc={} old={} new={}",
+                a.upc,
+                a.old,
+                a.new
+            ),
+            None => log::error!("price adjustment not found after insert: id={}", adj_id),
+        }
+
+        adj_loaded.ok_or_else(|| AppError::Unexpected("failed load price adj".into()))
     }
 
     pub fn update_product(&self, dto: UpdateProductDto) -> Result<(), AppError> {
@@ -115,7 +139,15 @@ impl ProductUseCases {
         p.category = dto.category;
         p.updated = Some(Utc::now().naive_utc());
 
-        self.repo.update_by_upc(&p)
+        let res = self.repo.update_by_upc(&p);
+        match &res {
+            Ok(()) => info!(
+                "product updated: upc={} desc={} category={}",
+                p.upc, p.desc, p.category
+            ),
+            Err(e) => error!("product update error: upc={} error={}", p.upc, e),
+        }
+        res
     }
 
     pub fn list_price_adjust_today(&self) -> Result<Vec<PriceAdjustment>, AppError> {
@@ -153,7 +185,16 @@ impl ProductUseCases {
     }
 
     pub fn delete_category(&self, id: i64) -> Result<(), AppError> {
-        self.category_repo.soft_delete(id)
+        match self.category_repo.soft_delete(id) {
+            Ok(()) => {
+                info!("category deleted: id={}", id);
+                Ok(())
+            }
+            Err(e) => {
+                error!("category delete error: id={} error={}", id, e);
+                Err(e)
+            }
+        }
     }
 
     pub fn create_category(&self, cat: String) -> Result<(), AppError> {
@@ -169,7 +210,12 @@ impl ProductUseCases {
             )));
         }
         // create new category
-        self.category_repo.create(cat)
+        let res = self.category_repo.create(cat.clone());
+        match &res {
+            Ok(()) => info!("category created: name={}", cat),
+            Err(e) => error!("category create error: name={} error={}", cat, e),
+        }
+        res
     }
 
     pub fn count_products(

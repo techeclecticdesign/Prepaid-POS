@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
 use crate::domain::models::InventoryTransaction;
 use crate::domain::repos::InventoryTransactionRepoTrait;
+use log::{error, info};
 use std::sync::Arc;
 
 pub struct TransactionUseCases {
@@ -18,8 +19,18 @@ impl TransactionUseCases {
     ) -> Result<InventoryTransaction, AppError> {
         tx.created_at = Some(chrono::Utc::now().naive_utc());
 
-        self.inv_repo.create(&tx)?;
-        Ok(tx)
+        let res = self.inv_repo.create(&tx);
+        match &res {
+            Ok(()) => info!(
+                "inventory adjustment: upc={} change={} operator={} ",
+                tx.upc, tx.quantity_change, tx.operator_mdoc
+            ),
+            Err(e) => error!(
+                "inventory adjustment error: upc={} operator={} error={}",
+                tx.upc, tx.operator_mdoc, e
+            ),
+        };
+        res.map(|_| tx)
     }
 
     pub fn sale_transaction(
@@ -42,7 +53,12 @@ impl TransactionUseCases {
         tx.ref_order_id = None;
         tx.reference = Some("Stock Addition".to_string());
 
-        self.inventory_adjustment(tx)
+        let out = self.inventory_adjustment(tx)?;
+        info!(
+            "stock items: upc={} added={} operator={}",
+            out.upc, out.quantity_change, out.operator_mdoc
+        );
+        Ok(out)
     }
 
     pub fn list_inv_adjust_today(&self) -> Result<Vec<InventoryTransaction>, AppError> {
