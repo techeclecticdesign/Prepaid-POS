@@ -16,7 +16,10 @@ impl SqliteCategoryRepo {
 
 impl CategoryRepoTrait for SqliteCategoryRepo {
     fn list(&self) -> Result<Vec<Category>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         let mut stmt = conn.prepare("SELECT id, name, deleted FROM categories")?;
         let rows = stmt.query_map([], |r| {
             Ok(Category {
@@ -29,7 +32,10 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
     }
 
     fn list_active(&self) -> Result<Vec<Category>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         let mut stmt =
             conn.prepare("SELECT id, name, deleted FROM categories WHERE deleted IS NULL")?;
         let rows = stmt.query_map([], |r| {
@@ -43,7 +49,10 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
     }
 
     fn get_by_id(&self, id: i64) -> Result<Option<Category>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         let mut stmt = conn.prepare("SELECT id, name, deleted FROM categories WHERE id = ?1")?;
         let mut rows = stmt.query(params![id])?;
         if let Some(r) = rows.next()? {
@@ -58,13 +67,19 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
     }
 
     fn create(&self, c: String) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         conn.execute("INSERT INTO categories (name) VALUES (?1)", params![c])?;
         Ok(())
     }
 
     fn soft_delete(&self, id: i64) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         conn.execute(
             "UPDATE categories SET deleted = datetime('now') WHERE id = ?1",
             params![id],
@@ -73,7 +88,10 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
     }
 
     fn get_by_name(&self, name: &str) -> Result<Option<Category>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         let mut stmt = conn.prepare("SELECT id, name, deleted FROM categories WHERE name = ?1")?;
         let mut rows = stmt.query(params![name])?;
         if let Some(r) = rows.next()? {
@@ -88,7 +106,10 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
     }
 
     fn undelete(&self, id: i64) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         conn.execute(
             "UPDATE categories SET deleted = NULL WHERE id = ?1",
             params![id],

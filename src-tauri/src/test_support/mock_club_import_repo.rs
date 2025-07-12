@@ -35,4 +35,9 @@ impl ClubImportRepoTrait for MockClubImportRepo {
             .find(|imp| imp.id == id)
             .cloned())
     }
+
+    fn create(&self, import: &ClubImport) -> Result<(), AppError> {
+        self.store.lock().unwrap().push(import.clone());
+        Ok(())
+    }
 }

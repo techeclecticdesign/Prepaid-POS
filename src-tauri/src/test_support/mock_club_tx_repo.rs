@@ -35,4 +35,9 @@ impl ClubTransactionRepoTrait for MockClubTransactionRepo {
             .find(|tx| tx.id == id)
             .cloned())
     }
+
+    fn create(&self, tx: &ClubTransaction) -> Result<(), AppError> {
+        self.store.lock().unwrap().push(tx.clone());
+        Ok(())
+    }
 }

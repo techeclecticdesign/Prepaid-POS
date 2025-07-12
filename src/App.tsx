@@ -9,6 +9,7 @@ import OperatorsPage from "./pages/Operators/Operators";
 import ProductsPage from "./pages/Products/Products";
 import SalesPage from "./pages/Sales/Sales";
 import Homepage from "./pages/Homepage/Homepage";
+import ImportPage from "./pages/Import/Import";
 
 export default function App() {
   const { loggedIn, activeOperator } = useAuth();
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/operators" element={<OperatorsPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/import" element={<ImportPage />} />
           </Route>
         )}
         {activeOperator && (

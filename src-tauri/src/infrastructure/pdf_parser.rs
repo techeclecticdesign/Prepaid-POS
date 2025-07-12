@@ -1,17 +1,27 @@
 use crate::common::error::AppError;
-use serde_bytes::ByteBuf;
+use lopdf::Document;
+use std::fs;
 
-/// Defines how we parse PDF bytes → raw text
 pub trait PdfParser: Sync + Send {
-    fn parse(&self, bytes: ByteBuf) -> Result<String, AppError>;
+    fn parse(&self, filename: String) -> Result<String, AppError>;
 }
 
-/// A stub impl so we can wire up the layers; returns our magic word.
-pub struct StubPdfParser;
+pub struct LopdfParser;
 
-impl PdfParser for StubPdfParser {
-    fn parse(&self, _bytes: ByteBuf) -> Result<String, AppError> {
-        // in future swap this for lopdf logic
-        Ok("suckcess".into())
+impl PdfParser for LopdfParser {
+    fn parse(&self, filename: String) -> Result<String, AppError> {
+        let data = fs::read(&filename)
+            .map_err(|e| AppError::Unexpected(format!("fs::read error: {}", e)))?;
+
+        let doc = Document::load_mem(&data)
+            .map_err(|e| AppError::Unexpected(format!("PDF load error: {}", e)))?;
+
+        let page_numbers: Vec<u32> = doc.get_pages().keys().copied().collect();
+
+        let text = doc
+            .extract_text(&page_numbers)
+            .map_err(|e| AppError::Unexpected(format!("Text extraction error: {}", e)))?;
+
+        Ok(text)
     }
 }

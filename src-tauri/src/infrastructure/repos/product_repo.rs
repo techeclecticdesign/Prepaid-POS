@@ -108,7 +108,10 @@ impl ProductRepoTrait for SqliteProductRepo {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Product>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
 
         let mut sql = String::from(
             "SELECT upc, desc, category, price, updated, added, deleted
@@ -122,7 +125,10 @@ impl ProductRepoTrait for SqliteProductRepo {
             clauses.push("desc LIKE ?");
             let formatted = format!("%{}%", s);
             dynamic_params.push(formatted);
-            params.push(dynamic_params.last().unwrap());
+            let last = dynamic_params
+                .last()
+                .ok_or_else(|| AppError::Unexpected("Internal param error".into()))?;
+            params.push(last);
         }
         if let Some(ref c) = category {
             clauses.push("category = ?");
@@ -165,7 +171,10 @@ impl ProductRepoTrait for SqliteProductRepo {
         if let Some(ref s) = desc_like {
             clauses.push("desc LIKE ?");
             dyn_params.push(format!("%{}%", s));
-            params.push(dyn_params.last().unwrap());
+            let last = dyn_params
+                .last()
+                .ok_or_else(|| AppError::Unexpected("Internal param error".into()))?;
+            params.push(last);
         }
         if let Some(ref c) = category {
             clauses.push("category = ?");

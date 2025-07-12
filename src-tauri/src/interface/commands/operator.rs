@@ -31,7 +31,10 @@ pub fn create_operator(
     ctrl: State<'_, Arc<OperatorController>>,
     dto: OperatorDto,
 ) -> Result<(), AppError> {
-    let st = auth.read().unwrap();
+    let st = auth
+        .read()
+        .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
+
     if !st.logged_in {
         return Err(AppError::Unauthorized);
     }
@@ -47,7 +50,10 @@ pub fn update_operator(
     dto: OperatorDto,
 ) -> Result<(), AppError> {
     // Auth check
-    let st = auth.read().unwrap();
+    let st = auth
+        .read()
+        .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
+
     if !st.logged_in {
         return Err(AppError::Unauthorized);
     }

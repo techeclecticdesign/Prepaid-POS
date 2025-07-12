@@ -48,13 +48,13 @@ export default function AdminSidebar() {
         >
           Categories
         </Link>
-        <Typography
-          component="span"
-          className="cursor-not-allowed"
-          sx={{ color: "text.secondary" }}
+        <Link
+          to="/import"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
         >
-          Ipsum
-        </Typography>
+          Import
+        </Link>
         <Typography
           component="span"
           className="cursor-not-allowed"

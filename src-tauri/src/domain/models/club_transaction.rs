@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ClubTransaction {
     pub id: i32,
+    pub import_id: i32,
+    pub entity_name: String,
     pub mdoc: Option<i32>,
     pub tx_type: TransactionType,
     pub amount: i32,

@@ -53,4 +53,18 @@ impl ClubImportRepoTrait for SqliteClubImportRepo {
             Ok(None)
         }
     }
+
+    fn create(&self, import: &ClubImport) -> Result<(), AppError> {
+        let conn = self.conn.safe_lock()?;
+        conn.execute(
+            "INSERT INTO club_imports (date, activity_from, activity_to, source_file) VALUES (?1, ?2, ?3, ?4)",
+            params![
+                import.date,
+                import.activity_from,
+                import.activity_to,
+                import.source_file
+            ],
+        )?;
+        Ok(())
+    }
 }

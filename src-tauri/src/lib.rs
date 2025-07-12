@@ -9,11 +9,15 @@ use crate::domain::repos::{
     CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait,
     InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
 };
-use crate::interface::controllers::{
-    club_controller::ClubController, operator_controller::OperatorController,
-    product_controller::ProductController, transaction_controller::TransactionController,
-};
+
+use crate::interface::controllers::club_controller::ClubController;
+use crate::interface::controllers::operator_controller::OperatorController;
+use crate::interface::controllers::parse_pdf_controller::PdfParseController;
+use crate::interface::controllers::product_controller::ProductController;
+use crate::interface::controllers::transaction_controller::TransactionController;
+
 use infrastructure::db::create_connection;
+use infrastructure::pdf_parser::LopdfParser;
 use infrastructure::repos::{
     SqliteCategoryRepo, SqliteClubImportRepo, SqliteClubTransactionRepo, SqliteCustomerRepo,
     SqliteInventoryTransactionRepo, SqliteOperatorRepo, SqlitePriceAdjustmentRepo,
@@ -65,6 +69,12 @@ pub fn run() {
         Arc::clone(&club_tx_repo),
         Arc::clone(&club_import_repo),
     ));
+    let pdf_ctrl = Arc::new(PdfParseController::new(
+        Arc::new(LopdfParser),
+        Arc::clone(&club_import_repo),
+        Arc::clone(&club_tx_repo),
+        Arc::clone(&customer_repo),
+    ));
 
     // filter spammy tao / winit event loop spam in console
     std::env::set_var(
@@ -74,6 +84,7 @@ pub fn run() {
 
     Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         // put dependency injected objects in the Tauri DI container
         .manage(op_ctrl)
         .manage(product_ctrl)
@@ -87,6 +98,7 @@ pub fn run() {
         .manage(club_import_repo)
         .manage(club_tx_repo)
         .manage(customer_repo)
+        .manage(pdf_ctrl)
         .invoke_handler(tauri::generate_handler![
             common::logger::process_frontend_error,
             interface::commands::auth::check_login_status,
@@ -126,6 +138,7 @@ pub fn run() {
             interface::commands::club::get_club_transaction,
             interface::commands::club::list_club_imports,
             interface::commands::club::get_club_import,
+            interface::commands::parse_pdf::parse_pdf,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

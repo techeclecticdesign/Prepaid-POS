@@ -36,17 +36,21 @@ impl CustomerRepoTrait for MockCustomerRepo {
             .cloned())
     }
 
-    fn update_updated_date(
-        &self,
-        mdoc: i32,
-        new_updated: chrono::NaiveDateTime,
-    ) -> Result<(), AppError> {
+    fn update(&self, customer: &Customer) -> Result<(), AppError> {
         let mut store = self.store.lock().unwrap();
-        if let Some(c) = store.iter_mut().find(|c| c.mdoc == mdoc) {
-            c.updated = new_updated;
+        if let Some(existing) = store.iter_mut().find(|c| c.mdoc == customer.mdoc) {
+            *existing = customer.clone();
             Ok(())
         } else {
-            Err(AppError::NotFound(format!("Customer {} not found", mdoc)))
+            Err(AppError::NotFound(format!(
+                "Customer {} not found",
+                customer.mdoc
+            )))
         }
+    }
+
+    fn create(&self, customer: &Customer) -> Result<(), AppError> {
+        self.store.lock().unwrap().push(customer.clone());
+        Ok(())
     }
 }

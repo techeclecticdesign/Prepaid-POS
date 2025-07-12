@@ -48,15 +48,30 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
         }
     }
 
-    fn update_updated_date(
-        &self,
-        mdoc: i32,
-        new_updated: chrono::NaiveDateTime,
-    ) -> Result<(), AppError> {
+    fn update(&self, customer: &Customer) -> Result<(), AppError> {
         let conn = self.conn.safe_lock()?;
         conn.execute(
-            "UPDATE customer SET updated = ?1 WHERE mdoc = ?2",
-            params![new_updated, mdoc],
+            "UPDATE customer SET name = ?1, added = ?2, updated = ?3 WHERE mdoc = ?4",
+            params![
+                customer.name,
+                customer.added,
+                customer.updated,
+                customer.mdoc
+            ],
+        )?;
+        Ok(())
+    }
+
+    fn create(&self, customer: &Customer) -> Result<(), AppError> {
+        let conn = self.conn.safe_lock()?;
+        conn.execute(
+            "INSERT INTO customer (mdoc, name, added, updated) VALUES (?1, ?2, ?3, ?4)",
+            params![
+                customer.mdoc,
+                customer.name,
+                customer.added,
+                customer.updated
+            ],
         )?;
         Ok(())
     }
