@@ -67,7 +67,11 @@ export default function ProductsPage() {
           categories={categories.map((c) => c.name)}
           onClose={() => setEditing(null)}
           onSave={async (vals) => {
-            await updateItem(editing.upc, vals.desc, vals.category);
+            await updateItem({
+              upc: editing.upc,
+              desc: vals.desc,
+              category: vals.category,
+            });
             refetch();
           }}
           onPriceAdjust={async (oldCents, newCents) => {
@@ -88,10 +92,9 @@ export default function ProductsPage() {
         categories={categories.map((c) => c.name)}
         onClose={() => setCreating(false)}
         onCreate={async (vals) => {
-          const upcNum = Number(vals.upc);
           const priceCents = Math.round(Number(vals.price));
           await createProduct({
-            upc: upcNum,
+            upc: vals.upc as string,
             desc: vals.desc,
             category: vals.category,
             price: priceCents,

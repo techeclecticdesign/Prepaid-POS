@@ -1,5 +1,5 @@
 CREATE TABLE products (
-  upc     INTEGER PRIMARY KEY,
+  upc     TEXT PRIMARY KEY,
   desc    TEXT NOT NULL,
   category TEXT NOT NULL,
   price   INTEGER NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE products (
 
 CREATE TABLE inventory_transactions (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,
-  upc               INTEGER NOT NULL,     
+  upc               TEXT NOT NULL,     
   quantity_change   INTEGER NOT NULL,
   operator_mdoc     INTEGER NOT NULL,
   customer_mdoc     INTEGER,          
@@ -24,7 +24,7 @@ CREATE TABLE inventory_transactions (
 CREATE TABLE price_adjustments (
   id   INTEGER PRIMARY KEY AUTOINCREMENT,
   operator_mdoc INTEGER NOT NULL,
-  upc  INTEGER NOT NULL,
+  upc  TEXT NOT NULL,
   old  INTEGER NOT NULL,
   new  INTEGER NOT NULL,
   created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,

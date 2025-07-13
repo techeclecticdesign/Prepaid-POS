@@ -37,7 +37,7 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
         Ok(())
     }
 
-    fn list_for_product(&self, upc: i64) -> Result<Vec<InventoryTransaction>, AppError> {
+    fn list_for_product(&self, upc: String) -> Result<Vec<InventoryTransaction>, AppError> {
         Ok(self
             .store
             .lock()

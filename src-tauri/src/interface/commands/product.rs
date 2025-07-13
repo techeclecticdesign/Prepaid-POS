@@ -80,7 +80,7 @@ pub fn update_product(
 #[tauri::command]
 pub fn list_price_adjust_for_product(
     controller: State<Arc<ProductController>>,
-    upc: i64,
+    upc: String,
 ) -> Result<Vec<PriceAdjustmentDto>, AppError> {
     controller.list_price_adjust_for_product(upc)
 }

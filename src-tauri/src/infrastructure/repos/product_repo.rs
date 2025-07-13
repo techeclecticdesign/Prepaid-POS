@@ -16,7 +16,7 @@ impl SqliteProductRepo {
 }
 
 impl ProductRepoTrait for SqliteProductRepo {
-    fn get_by_upc(&self, upc: i64) -> Result<Option<Product>, AppError> {
+    fn get_by_upc(&self, upc: String) -> Result<Option<Product>, AppError> {
         let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT upc, desc, category, price, updated, added, deleted 
@@ -38,7 +38,7 @@ impl ProductRepoTrait for SqliteProductRepo {
         }
     }
 
-    fn get_price(&self, upc: i64) -> Result<i32, AppError> {
+    fn get_price(&self, upc: String) -> Result<i32, AppError> {
         let conn = self.conn.safe_lock()?;
         let price: i32 = conn.query_row(
             "SELECT price FROM products WHERE upc = ?1",

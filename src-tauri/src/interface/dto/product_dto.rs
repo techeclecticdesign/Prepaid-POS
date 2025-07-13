@@ -1,9 +1,10 @@
+use crate::interface::common::validators::validate_upc_str;
 use validator_derive::Validate;
 
 #[derive(serde::Deserialize, Validate)]
 pub struct CreateProductDto {
-    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
-    pub upc: i64,
+    #[validate(custom(function = "validate_upc_str"))]
+    pub upc: String,
 
     #[validate(length(min = 1, message = "desc cannot be empty"))]
     pub desc: String,
@@ -17,8 +18,8 @@ pub struct CreateProductDto {
 
 #[derive(serde::Deserialize, Validate)]
 pub struct UpdateProductDto {
-    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
-    pub upc: i64,
+    #[validate(custom(function = "validate_upc_str"))]
+    pub upc: String,
 
     #[validate(length(min = 1, message = "desc cannot be empty"))]
     pub desc: String,
@@ -29,13 +30,13 @@ pub struct UpdateProductDto {
 
 #[derive(serde::Deserialize, Validate)]
 pub struct DeleteProductDto {
-    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
-    pub upc: i64,
+    #[validate(custom(function = "validate_upc_str"))]
+    pub upc: String,
 }
 
 #[derive(serde::Serialize)]
 pub struct ProductDto {
-    pub upc: i64,
+    pub upc: String,
     pub desc: String,
     pub category: String,
     pub price: i32, // integer cents
@@ -55,7 +56,7 @@ mod tests {
     #[test]
     fn valid_create_product() {
         let dto = CreateProductDto {
-            upc: 111,
+            upc: "00000111".into(),
             desc: "Banana".into(),
             category: "Fruit".into(),
             price: 150,
@@ -66,7 +67,7 @@ mod tests {
     #[test]
     fn invalid_create_product_missing_fields() {
         let dto = CreateProductDto {
-            upc: 0,
+            upc: "0".into(),
             desc: "".into(),
             category: "".into(),
             price: 0,
@@ -76,5 +77,21 @@ mod tests {
         assert!(err.contains("desc"));
         assert!(err.contains("category"));
         assert!(err.contains("price"));
+    }
+
+    #[test]
+    fn invalid_create_product_upc_non_digit() {
+        // length is 12, but contains a letter -> length ok, numeric check fails
+        let dto = CreateProductDto {
+            upc: "12A456789012".into(),
+            desc: "Test".into(),
+            category: "Cat".into(),
+            price: 100,
+        };
+        let err = dto.validate().unwrap_err().to_string();
+        assert!(
+            err.contains("upc"),
+            "should catch invalid upc with non-digit character"
+        );
     }
 }

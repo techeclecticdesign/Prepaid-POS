@@ -1,10 +1,10 @@
-use crate::interface::common::validators::OptionalRfc3339;
+use crate::interface::common::validators::{validate_upc_str, OptionalRfc3339};
 use validator_derive::Validate;
 
 #[derive(serde::Deserialize, Validate)]
 pub struct CreateInventoryTransactionDto {
-    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
-    pub upc: i64,
+    #[validate(custom(function = "validate_upc_str"))]
+    pub upc: String,
 
     #[validate(range(min = 1, message = "quantity_change must be non-zero and positive"))]
     pub quantity_change: i32,
@@ -26,7 +26,7 @@ pub struct CreateInventoryTransactionDto {
 #[derive(serde::Serialize)]
 pub struct ReadInventoryTransactionDto {
     pub id: Option<i32>,
-    pub upc: i64,
+    pub upc: String,
     pub quantity_change: i32,
     pub reference: Option<String>,
     pub operator_mdoc: i32,
@@ -48,11 +48,12 @@ impl OptionalRfc3339 for CreateInventoryTransactionDto {
 mod tests {
     use super::*;
     use crate::interface::common::validators::validate_with_optional_dates;
+    use validator::Validate;
 
     #[test]
     fn valid_inv_tx() {
         let dto = CreateInventoryTransactionDto {
-            upc: 100,
+            upc: "000000000100".into(),
             quantity_change: 5,
             reference: Some("restock".into()),
             operator_mdoc: 1,
@@ -66,7 +67,7 @@ mod tests {
     #[test]
     fn invalid_inv_tx_zero_qty_and_upc() {
         let dto = CreateInventoryTransactionDto {
-            upc: 0,
+            upc: "0".into(),
             quantity_change: 0,
             reference: None,
             operator_mdoc: 0,
@@ -81,5 +82,24 @@ mod tests {
         assert!(err.contains("customer_mdoc"));
         assert!(err.contains("ref_order_id"));
         assert!(err.contains("rfc3339"));
+    }
+
+    #[test]
+    fn invalid_inv_tx_upc_non_digit() {
+        // UPC length ok, but contains punctuation → numeric check fails
+        let dto = CreateInventoryTransactionDto {
+            upc: "123-56789012".into(),
+            quantity_change: 5,
+            reference: Some("restock".into()),
+            operator_mdoc: 1,
+            customer_mdoc: None,
+            ref_order_id: None,
+            created_at: None,
+        };
+        let err = dto.validate().unwrap_err().to_string();
+        assert!(
+            err.contains("upc"),
+            "should catch invalid upc with non-digit character"
+        );
     }
 }

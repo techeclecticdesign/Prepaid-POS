@@ -1,5 +1,5 @@
 export default interface Product {
-  upc: number;
+  upc: string;
   desc: string;
   category: string;
   price: number;

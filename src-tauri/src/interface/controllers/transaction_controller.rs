@@ -109,7 +109,7 @@ impl TransactionController {
 
     pub fn list_tx_for_product(
         &self,
-        upc: i64,
+        upc: String,
     ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
         let itxs = self.uc.list_for_product(upc)?;
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))

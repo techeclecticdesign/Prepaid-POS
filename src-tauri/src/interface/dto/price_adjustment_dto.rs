@@ -1,10 +1,10 @@
-use crate::interface::common::validators::OptionalRfc3339;
+use crate::interface::common::validators::{validate_upc_str, OptionalRfc3339};
 use validator_derive::Validate;
 
 #[derive(serde::Serialize, serde::Deserialize, Validate)]
 pub struct PriceAdjustmentDto {
-    #[validate(range(min = 1, message = "upc must be non-zero and positive"))]
-    pub upc: i64,
+    #[validate(custom(function = "validate_upc_str"))]
+    pub upc: String,
 
     #[validate(range(min = 1, message = "old must be non-zero and positive"))]
     pub old: i32,
@@ -31,11 +31,12 @@ impl OptionalRfc3339 for PriceAdjustmentDto {
 mod tests {
     use super::*;
     use crate::interface::common::validators::validate_with_optional_dates;
+    use validator::Validate;
 
     #[test]
     fn valid_price_adjustment() {
         let dto = PriceAdjustmentDto {
-            upc: 1000,
+            upc: "000000001000".into(),
             old: 500,
             new: 600,
             operator_mdoc: 2,
@@ -47,7 +48,7 @@ mod tests {
     #[test]
     fn invalid_price_adjustment_zero_fields() {
         let dto = PriceAdjustmentDto {
-            upc: 0,
+            upc: "0".into(),
             old: 0,
             new: 0,
             operator_mdoc: 0,
@@ -59,5 +60,22 @@ mod tests {
         assert!(err.contains("new"));
         assert!(err.contains("operator_mdoc"));
         assert!(err.contains("rfc3339"));
+    }
+
+    #[test]
+    fn invalid_price_adjustment_upc_non_digit() {
+        // UPC length ok, but letter inside → regex check should fail
+        let dto = PriceAdjustmentDto {
+            upc: "123B56789012".into(),
+            old: 500,
+            new: 600,
+            operator_mdoc: 2,
+            created_at: None,
+        };
+        let err = dto.validate().unwrap_err().to_string();
+        assert!(
+            err.contains("upc"),
+            "should catch invalid upc with non-digit character"
+        );
     }
 }

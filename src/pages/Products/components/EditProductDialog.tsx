@@ -69,7 +69,7 @@ export default function EditProductDialog({
   };
 
   const handleDelete = async () => {
-    await removeProduct(product.upc);
+    await removeProduct({ upc: product.upc });
     onClose();
     refetch();
   };

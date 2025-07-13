@@ -1,14 +1,20 @@
 import { z } from "zod";
 
 export const createProductSchema = z.object({
-  upc: z.preprocess((v) => {
-    // allow form inputs (string) to be cast to number
-    if (typeof v === "string") {
-      const n = Number(v);
-      return isNaN(n) ? v : n;
-    }
-    return v;
-  }, z.number().int().positive("UPC must be a positive integer")),
+  upc: z.preprocess(
+    (v) => {
+      if (typeof v === "number") return v.toString();
+      if (typeof v === "string") return v.trim();
+      return v;
+    },
+    z
+      .string()
+      .nonempty("UPC is required")
+      .regex(
+        /^\d{8}$|^\d{12}$/,
+        "UPC must be numerical and either 8 or 12 digits",
+      ),
+  ),
   price: z.preprocess(
     (v) => {
       if (typeof v === "string") {

@@ -62,7 +62,7 @@ pub fn get_transaction(
 #[tauri::command]
 pub fn list_tx_for_product(
     controller: State<Arc<TransactionController>>,
-    upc: i64,
+    upc: String,
 ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
     controller.list_tx_for_product(upc)
 }

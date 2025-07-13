@@ -45,7 +45,7 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
             .cloned())
     }
 
-    fn list_for_product(&self, upc: i64) -> Result<Vec<PriceAdjustment>, AppError> {
+    fn list_for_product(&self, upc: String) -> Result<Vec<PriceAdjustment>, AppError> {
         Ok(self
             .store
             .lock()

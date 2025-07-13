@@ -9,17 +9,27 @@ export interface SearchProductsResponse {
 
 export interface PriceAdjustmentDto {
   operator_mdoc: number | undefined;
-  upc: number;
+  upc: string;
   new: number;
   old: number;
   created_at: null;
 }
 
 export interface CreateProductDto {
-  upc: number;
+  upc: string;
   desc: string;
   category: string;
   price: number;
+}
+
+export interface UpdateProductDto {
+  upc: string;
+  desc: string;
+  category: string;
+}
+
+export interface DeleteProductDto {
+  upc: string;
 }
 
 export default function useProductActions() {
@@ -39,12 +49,10 @@ export default function useProductActions() {
     return await invoke<Category[]>("list_categories");
   };
 
-  const updateItem = async (
-    upc: number,
-    desc: string,
-    category: string,
-  ): Promise<void> => {
-    await invoke("update_product", { upc, desc, category });
+  const updateItem = async (dto: UpdateProductDto): Promise<void> => {
+    await invoke("update_product", {
+      dto,
+    });
   };
 
   const priceAdjustment = async (dto: PriceAdjustmentDto): Promise<void> => {
@@ -55,8 +63,8 @@ export default function useProductActions() {
     await invoke("create_product", { dto });
   };
 
-  const removeProduct = async (upc: number): Promise<void> => {
-    await invoke("delete_product", { upc });
+  const removeProduct = async (dto: DeleteProductDto): Promise<void> => {
+    await invoke("delete_product", { dto });
   };
 
   return {

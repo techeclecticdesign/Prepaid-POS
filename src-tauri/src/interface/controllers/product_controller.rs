@@ -104,7 +104,7 @@ impl ProductController {
 
     pub fn list_price_adjust_for_product(
         &self,
-        upc: i64,
+        upc: String,
     ) -> Result<Vec<PriceAdjustmentDto>, AppError> {
         let pas = self.uc.list_price_adjust_for_product(upc)?;
         Ok(PriceAdjustmentPresenter::to_dto_list(pas))

@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 pub struct PriceAdjustment {
     pub id: i32, // auto‑assigned primary key
     pub operator_mdoc: i32,
-    pub upc: i64,
+    pub upc: String,
     pub old: i32,
     pub new: i32,
     pub created_at: Option<NaiveDateTime>,

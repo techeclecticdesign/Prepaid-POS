@@ -77,7 +77,7 @@ impl TransactionUseCases {
         self.inv_repo.get_by_id(id)
     }
 
-    pub fn list_for_product(&self, upc: i64) -> Result<Vec<InventoryTransaction>, AppError> {
+    pub fn list_for_product(&self, upc: String) -> Result<Vec<InventoryTransaction>, AppError> {
         self.inv_repo.list_for_product(upc)
     }
 
@@ -104,7 +104,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 id: Some(0),
-                upc: 0,
+                upc: "000000000000".into(),
                 quantity_change: 0,
                 operator_mdoc: 0,
                 customer_mdoc: None,
@@ -145,7 +145,7 @@ mod tests {
             stop: None,
         })?;
         prod_repo.create(&Product {
-            upc: 555,
+            upc: "000000000555".into(),
             desc: "Item".into(),
             category: "Cat".into(),
             price: 1000,
@@ -157,18 +157,18 @@ mod tests {
         // inventory adjust
         let itx1 = uc.inventory_adjustment(InventoryTransaction {
             operator_mdoc: 10,
-            upc: 555,
+            upc: "000000000555".into(),
             quantity_change: 5,
             ..Default::default()
         })?;
-        assert_eq!(itx1.upc, 555);
+        assert_eq!(itx1.upc, "000000000555");
         assert_eq!(itx1.quantity_change, 5);
 
         // sale transaction
         let itx2 = uc.sale_transaction(InventoryTransaction {
             operator_mdoc: 10,
             customer_mdoc: Some(20),
-            upc: 555,
+            upc: "000000000555".into(),
             quantity_change: -2,
             ..Default::default()
         })?;
@@ -180,7 +180,7 @@ mod tests {
         let itx3 = uc.stock_items(InventoryTransaction {
             operator_mdoc: 10,
             customer_mdoc: Some(20),
-            upc: 555,
+            upc: "000000000555".into(),
             quantity_change: 3,
             ..Default::default()
         })?;
@@ -191,7 +191,7 @@ mod tests {
         let err = uc
             .stock_items(InventoryTransaction {
                 operator_mdoc: 10,
-                upc: 555,
+                upc: "000000000555".into(),
                 quantity_change: 0,
                 ..Default::default()
             })
@@ -223,7 +223,7 @@ mod tests {
             stop: None,
         })?;
         prod_repo.create(&Product {
-            upc: 1,
+            upc: "000000000001".into(),
             desc: "X".into(),
             category: "Y".into(),
             price: 500,
@@ -235,14 +235,14 @@ mod tests {
         // create two adjustments
         uc.inventory_adjustment(InventoryTransaction {
             operator_mdoc: 1,
-            upc: 1,
+            upc: "000000000001".into(),
             quantity_change: 1,
             ..Default::default()
         })?;
 
         uc.inventory_adjustment(InventoryTransaction {
             operator_mdoc: 2,
-            upc: 1,
+            upc: "000000000001".into(),
             quantity_change: 2,
             ..Default::default()
         })?;

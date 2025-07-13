@@ -30,7 +30,7 @@ impl ProductUseCases {
     }
 
     pub fn create_product(&self, product: Product) -> Result<(), AppError> {
-        let maybe_existing = self.repo.get_by_upc(product.upc)?;
+        let maybe_existing = self.repo.get_by_upc(product.upc.clone())?;
         if let Some(existing) = maybe_existing {
             if existing.deleted.is_some() {
                 // Resurrect the product by updating it
@@ -66,10 +66,10 @@ impl ProductUseCases {
         res
     }
 
-    pub fn delete_product(&self, upc: i64) -> Result<(), AppError> {
+    pub fn delete_product(&self, upc: String) -> Result<(), AppError> {
         let mut p = self
             .repo
-            .get_by_upc(upc)?
+            .get_by_upc(upc.clone())?
             .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
         p.deleted = Some(Utc::now().naive_utc());
         let res = self.repo.update_by_upc(&p);
@@ -96,7 +96,7 @@ impl ProductUseCases {
     pub fn price_adjustment(&self, adj: PriceAdjustment) -> Result<PriceAdjustment, AppError> {
         let mut p = self
             .repo
-            .get_by_upc(adj.upc)?
+            .get_by_upc(adj.upc.clone())?
             .ok_or_else(|| AppError::NotFound(format!("Product {} not found", adj.upc)))?;
 
         let mut adj = adj;
@@ -131,7 +131,7 @@ impl ProductUseCases {
         // load existing product
         let mut p = self
             .repo
-            .get_by_upc(dto.upc)?
+            .get_by_upc(dto.upc.clone())?
             .ok_or_else(|| AppError::NotFound(format!("Product {} not found", dto.upc)))?;
 
         // update
@@ -164,7 +164,7 @@ impl ProductUseCases {
 
     pub fn list_price_adjust_for_product(
         &self,
-        upc: i64,
+        upc: String,
     ) -> Result<Vec<PriceAdjustment>, AppError> {
         self.price_repo.list_for_product(upc)
     }
@@ -242,7 +242,7 @@ mod tests {
     impl Default for Product {
         fn default() -> Self {
             Self {
-                upc: 0,
+                upc: "0".into(),
                 desc: String::new(),
                 category: String::new(),
                 price: 0,
@@ -274,7 +274,7 @@ mod tests {
         let category_repo = Arc::new(MockCategoryRepo::new());
         // insert 4 products
         repo.create(&Product {
-            upc: 1,
+            upc: "1".into(),
             desc: "Red apple".into(),
             category: "Fruit".into(),
             price: 100,
@@ -284,7 +284,7 @@ mod tests {
         })
         .unwrap();
         repo.create(&Product {
-            upc: 2,
+            upc: "2".into(),
             desc: "Green apple".into(),
             category: "Fruit".into(),
             price: 100,
@@ -294,7 +294,7 @@ mod tests {
         })
         .unwrap();
         repo.create(&Product {
-            upc: 3,
+            upc: "3".into(),
             desc: "Yellow banana".into(),
             category: "Fruit".into(),
             price: 200,
@@ -304,7 +304,7 @@ mod tests {
         })
         .unwrap();
         repo.create(&Product {
-            upc: 4,
+            upc: "4".into(),
             desc: "Blueberry".into(),
             category: "Berry".into(),
             price: 50,
@@ -330,21 +330,21 @@ mod tests {
         assert!(uc.list_products()?.is_empty());
 
         uc.create_product(Product {
-            upc: 100,
+            upc: "100".into(),
             desc: "Widget".into(),
             category: "Gadgets".into(),
             price: 1000,
             ..Default::default()
         })?;
         uc.create_product(Product {
-            upc: 200,
+            upc: "200".into(),
             desc: "Gizmo".into(),
             category: "Gadgets".into(),
             price: 2000,
             ..Default::default()
         })?;
         uc.create_product(Product {
-            upc: 300,
+            upc: "300".into(),
             desc: "Thing".into(),
             category: "Stuff".into(),
             price: 1500,
@@ -357,16 +357,16 @@ mod tests {
         // filter by category
         let gadgets = uc.list_products_by_category("Gadgets".into())?;
         assert_eq!(
-            gadgets.iter().map(|p| p.upc).collect::<Vec<_>>(),
-            vec![100, 200]
+            gadgets.iter().map(|p| &p.upc).collect::<Vec<_>>(),
+            vec!["100", "200"]
         );
 
         // remove one product
-        uc.delete_product(200)?;
+        uc.delete_product("200".into())?;
         let post = uc.list_products()?;
         assert!(post
             .iter()
-            .find(|p| p.upc == 200)
+            .find(|p| p.upc == "200")
             .unwrap()
             .deleted
             .is_some());
@@ -378,7 +378,7 @@ mod tests {
     fn update_product_changes_only_specified_fields() -> anyhow::Result<()> {
         let (uc, _op_repo, _prod_repo) = make_use_cases();
         uc.create_product(Product {
-            upc: 42,
+            upc: "42".into(),
             desc: "OldDesc".into(),
             category: "OldCat".into(),
             price: 500,
@@ -387,21 +387,21 @@ mod tests {
 
         // update desc
         uc.update_product(UpdateProductDto {
-            upc: 42,
+            upc: "42".into(),
             desc: "NewDesc".into(),
             category: "OldCat".into(),
         })?;
-        let p = uc.repo.get_by_upc(42)?.unwrap();
+        let p = uc.repo.get_by_upc("42".into())?.unwrap();
         assert_eq!(p.desc, "NewDesc");
         assert_eq!(p.category, "OldCat");
 
         // update category
         uc.update_product(UpdateProductDto {
-            upc: 42,
+            upc: "42".into(),
             desc: "NewDesc".into(),
             category: "NewCat".into(),
         })?;
-        let p2 = uc.repo.get_by_upc(42)?.unwrap();
+        let p2 = uc.repo.get_by_upc("42".into())?.unwrap();
         assert_eq!(p2.desc, "NewDesc");
         assert_eq!(p2.category, "NewCat");
 
@@ -422,7 +422,7 @@ mod tests {
 
         // product must exist
         uc.create_product(Product {
-            upc: 7,
+            upc: "7".into(),
             desc: "Priced".into(),
             category: "Cat".into(),
             price: 1234,
@@ -433,17 +433,17 @@ mod tests {
         let adj = uc.price_adjustment(PriceAdjustment {
             id: 0,
             operator_mdoc: 1,
-            upc: 7,
+            upc: "7".into(),
             old: 1234,
             new: 2000,
             created_at: Some(Utc::now().naive_utc()),
         })?;
-        assert_eq!(adj.upc, 7);
+        assert_eq!(adj.upc, "7");
         assert_eq!(adj.old, 1234);
         assert_eq!(adj.new, 2000);
 
         // verify update
-        let p = uc.repo.get_by_upc(7)?.unwrap();
+        let p = uc.repo.get_by_upc("7".into())?.unwrap();
         assert_eq!(p.price, 2000);
 
         // listing adjustments
@@ -458,7 +458,7 @@ mod tests {
 
         // Seed with two price adjustments for same product
         uc.create_product(Product {
-            upc: 1,
+            upc: "1".into(),
             desc: "Item".into(),
             category: "Cat".into(),
             price: 1000,
@@ -467,7 +467,7 @@ mod tests {
         uc.price_adjustment(PriceAdjustment {
             id: 0,
             operator_mdoc: 1,
-            upc: 1,
+            upc: "1".into(),
             old: 1000,
             new: 1100,
             created_at: Some(Utc::now().naive_utc()),
@@ -475,15 +475,15 @@ mod tests {
         uc.price_adjustment(PriceAdjustment {
             id: 0,
             operator_mdoc: 1,
-            upc: 1,
+            upc: "1".into(),
             old: 1100,
             new: 1200,
             created_at: Some(Utc::now().naive_utc()),
         })?;
 
-        let list = uc.list_price_adjust_for_product(1)?;
+        let list = uc.list_price_adjust_for_product("1".into())?;
         assert_eq!(list.len(), 2);
-        assert!(list.iter().all(|pa| pa.upc == 1));
+        assert!(list.iter().all(|pa| pa.upc == "1"));
 
         Ok(())
     }

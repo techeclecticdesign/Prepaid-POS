@@ -22,7 +22,7 @@ impl Default for MockProductRepo {
 }
 
 impl ProductRepoTrait for MockProductRepo {
-    fn get_price(&self, upc: i64) -> Result<i32, AppError> {
+    fn get_price(&self, upc: String) -> Result<i32, AppError> {
         let guard = self.store.lock().unwrap();
         let p = guard
             .iter()
@@ -31,7 +31,7 @@ impl ProductRepoTrait for MockProductRepo {
         Ok(p.price)
     }
 
-    fn get_by_upc(&self, upc: i64) -> Result<Option<Product>, AppError> {
+    fn get_by_upc(&self, upc: String) -> Result<Option<Product>, AppError> {
         Ok(self
             .store
             .lock()

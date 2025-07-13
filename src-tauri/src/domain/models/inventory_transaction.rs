@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct InventoryTransaction {
     pub id: Option<i32>, // auto‑assigned PK
-    pub upc: i64,
+    pub upc: String,
     pub quantity_change: i32,
     pub operator_mdoc: i32,
     pub customer_mdoc: Option<i32>,

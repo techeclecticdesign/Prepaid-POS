@@ -102,7 +102,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
         Ok(items)
     }
 
-    fn list_for_product(&self, upc: i64) -> Result<Vec<InventoryTransaction>, AppError> {
+    fn list_for_product(&self, upc: String) -> Result<Vec<InventoryTransaction>, AppError> {
         let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \

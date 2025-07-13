@@ -7,7 +7,6 @@ export default function useCategories() {
 
   const refresh = async () => {
     const list = await invoke<Category[]>("list_categories");
-    console.log(list);
     setCategories(list);
   };
 
