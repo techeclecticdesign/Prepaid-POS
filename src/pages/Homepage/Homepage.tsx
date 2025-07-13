@@ -1,16 +1,23 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import BarcodeScanner from "../../lib/barcode";
 import AppButton from "../../components/AppButton";
 import StaffLoginDialog from "./components/StaffLoginDialog";
+import LegacyDataDialog from "./components/LegacyDataDialog";
 import { useAuth } from "../../AuthProvider";
 import useOperators from "../../hooks/useOperators";
+import { useLegacyDataCheck } from "./hooks/useLegacyDataCheck";
 import type Operator from "../../models/Operator";
 
 export default function App() {
-  const { operators } = useOperators();
+  const { operators, isLoading: isLoadingOperators } = useOperators();
+  const { shouldPromptForLegacyData, acknowledgePrompt } = useLegacyDataCheck(
+    operators,
+    isLoadingOperators,
+  );
+
   const operatorsRef = useRef<Operator[]>(operators);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { loggedIn, login, logout } = useAuth();
@@ -18,6 +25,15 @@ export default function App() {
   const [scanError, setScanError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { setActiveOperator } = useAuth();
+
+  const [showLegacyDataDialog, setShowLegacyDataDialog] = useState(false);
+
+  // show the dialog when the hook indicates it should
+  useEffect(() => {
+    if (shouldPromptForLegacyData) {
+      setShowLegacyDataDialog(true);
+    }
+  }, [shouldPromptForLegacyData]);
 
   const currentOperators = operators.filter(
     (o) => o.stop === null || new Date(o.start) > new Date(o.stop),
@@ -59,9 +75,18 @@ export default function App() {
     return () => {};
   }, []);
 
-  useEffect(() => {
-    operatorsRef.current = operators;
-  }, [operators]);
+  const handleLegacyDataOk = () => {
+    console.log("User chose to import legacy data.");
+    setShowLegacyDataDialog(false);
+    acknowledgePrompt();
+    // TODO: refresh operators after import
+  };
+
+  const handleLegacyDataCancel = () => {
+    console.log("User cancelled legacy data import.");
+    setShowLegacyDataDialog(false);
+    acknowledgePrompt();
+  };
 
   return (
     <Box className="min-h-screen flex flex-col items-center justify-start">
@@ -86,18 +111,21 @@ export default function App() {
         Click your name or scan your ID to get started.
       </Typography>
       <Box className="flex flex-col gap-4 mt-20">
-        {currentOperators.map((o) => (
-          <AppButton
-            key={o.id}
-            text={o.name}
-            variant="outlined"
-            sx={{ width: "14rem" }}
-            onClick={() => {
-              setActiveOperator(o);
-              navigate("/sales");
-            }}
-          />
-        ))}
+        {/* Display operator buttons only if operators are loaded and not empty */}
+        {!isLoadingOperators && currentOperators.length > 0
+          ? currentOperators.map((o) => (
+              <AppButton
+                key={o.id}
+                text={o.name}
+                variant="outlined"
+                sx={{ width: "14rem" }}
+                onClick={() => {
+                  setActiveOperator(o);
+                  navigate("/sales");
+                }}
+              />
+            ))
+          : null}
         {!loggedIn ? (
           <AppButton
             onClick={() => setShowLogin(true)}
@@ -118,6 +146,12 @@ export default function App() {
             navigate("/admin");
           }
         }}
+      />
+
+      <LegacyDataDialog
+        open={showLegacyDataDialog}
+        onClose={handleLegacyDataCancel}
+        onConfirm={handleLegacyDataOk}
       />
     </Box>
   );

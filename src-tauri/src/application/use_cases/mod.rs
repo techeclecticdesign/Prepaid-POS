@@ -1,4 +1,5 @@
 pub mod club_usecases;
+pub mod legacy_migration_usecases;
 pub mod operator_usecases;
 pub mod pdf_parse_usecases;
 pub mod product_usecases;

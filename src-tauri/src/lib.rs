@@ -11,6 +11,7 @@ use crate::domain::repos::{
 };
 
 use crate::interface::controllers::club_controller::ClubController;
+use crate::interface::controllers::legacy_migration_controller::LegacyMigrationController;
 use crate::interface::controllers::operator_controller::OperatorController;
 use crate::interface::controllers::parse_pdf_controller::PdfParseController;
 use crate::interface::controllers::product_controller::ProductController;
@@ -69,6 +70,7 @@ pub fn run() {
         Arc::clone(&club_tx_repo),
         Arc::clone(&club_import_repo),
     ));
+    let legacy_ctrl = Arc::new(LegacyMigrationController::new());
     let pdf_ctrl = Arc::new(PdfParseController::new(
         Arc::new(LopdfParser),
         Arc::clone(&club_import_repo),
@@ -98,6 +100,7 @@ pub fn run() {
         .manage(club_import_repo)
         .manage(club_tx_repo)
         .manage(customer_repo)
+        .manage(legacy_ctrl)
         .manage(pdf_ctrl)
         .invoke_handler(tauri::generate_handler![
             common::logger::process_frontend_error,
@@ -138,6 +141,7 @@ pub fn run() {
             interface::commands::club::get_club_transaction,
             interface::commands::club::list_club_imports,
             interface::commands::club::get_club_import,
+            interface::commands::legacy_migration::has_legacy_data,
             interface::commands::parse_pdf::parse_pdf,
         ])
         .on_window_event(|_window, event| {

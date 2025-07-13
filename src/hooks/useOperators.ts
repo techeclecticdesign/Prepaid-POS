@@ -4,13 +4,17 @@ import type Operator from "../models/Operator";
 
 export default function useOperators() {
   const [operators, setOperators] = useState<Operator[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const refresh = async (): Promise<void> => {
     try {
+      setIsLoading(true);
       const result = await invoke<Operator[]>("list_operators");
       setOperators(result);
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -21,5 +25,6 @@ export default function useOperators() {
   return {
     operators,
     refresh,
+    isLoading,
   };
 }
