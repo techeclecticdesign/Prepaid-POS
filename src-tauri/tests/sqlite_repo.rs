@@ -11,7 +11,7 @@ fn make_repo() -> SqliteOperatorRepo {
         .unwrap()
         .execute_batch(
             "CREATE TABLE operators (
-            id   INTEGER PRIMARY KEY,
+            mdoc   INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             start TEXT NOT NULL,
             stop  TEXT
@@ -26,20 +26,20 @@ fn sqlite_repo_crud() {
     let repo = make_repo();
 
     let op = Operator {
-        id: 1,
+        mdoc: 1,
         name: "Test".into(),
         start: Some(chrono::Utc::now().naive_utc()),
         stop: None,
     };
     repo.create(&op).unwrap();
 
-    let got = repo.get_by_id(1).unwrap().unwrap();
+    let got = repo.get_by_mdoc(1).unwrap().unwrap();
     assert_eq!(got.name, "Test");
 
     let mut upd = got.clone();
     upd.name = "Test 2".into();
-    repo.update_by_id(&upd).unwrap();
-    assert_eq!(repo.get_by_id(1).unwrap().unwrap().name, "Test 2");
+    repo.update_by_mdoc(&upd).unwrap();
+    assert_eq!(repo.get_by_mdoc(1).unwrap().unwrap().name, "Test 2");
 
     let all = repo.list().unwrap();
     assert_eq!(all.len(), 1);

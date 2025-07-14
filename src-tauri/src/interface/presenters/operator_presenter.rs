@@ -8,7 +8,7 @@ impl OperatorPresenter {
     pub fn to_dto_list(ops: Vec<Operator>) -> Vec<OperatorDto> {
         ops.into_iter()
             .map(|o| OperatorDto {
-                id: o.id,
+                mdoc: o.mdoc,
                 name: o.name,
                 start: o
                     .start

@@ -18,7 +18,7 @@ CREATE TABLE inventory_transactions (
   reference         TEXT,                      
   created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(upc) REFERENCES products(upc),
-  FOREIGN KEY (operator_mdoc) REFERENCES operators(id)
+  FOREIGN KEY (operator_mdoc) REFERENCES operators(mdoc)
 );
 
 CREATE TABLE price_adjustments (
@@ -29,5 +29,5 @@ CREATE TABLE price_adjustments (
   new  INTEGER NOT NULL,
   created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(upc) REFERENCES products(upc),
-  FOREIGN KEY (operator_mdoc) REFERENCES operators(id)
+  FOREIGN KEY (operator_mdoc) REFERENCES operators(mdoc)
 );

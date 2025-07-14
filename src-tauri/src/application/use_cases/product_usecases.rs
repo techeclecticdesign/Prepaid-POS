@@ -414,7 +414,7 @@ mod tests {
 
         // make sure the operator exists
         operator_repo.create(&Operator {
-            id: 1,
+            mdoc: 1,
             name: "Cashier".into(),
             start: Some(Utc::now().naive_utc()),
             stop: None,

@@ -76,7 +76,7 @@ export default function ProductsPage() {
           }}
           onPriceAdjust={async (oldCents, newCents) => {
             await priceAdjustment({
-              operator_mdoc: activeOperator?.id,
+              operator_mdoc: activeOperator!.mdoc,
               upc: editing.upc,
               new: newCents,
               old: oldCents,

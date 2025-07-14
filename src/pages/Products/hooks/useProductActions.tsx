@@ -8,7 +8,7 @@ export interface SearchProductsResponse {
 }
 
 export interface PriceAdjustmentDto {
-  operator_mdoc: number | undefined;
+  operator_mdoc: number;
   upc: string;
   new: number;
   old: number;

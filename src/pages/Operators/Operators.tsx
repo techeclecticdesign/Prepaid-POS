@@ -22,7 +22,7 @@ export default function OperatorsPage() {
     const parsed = operatorSchema.parse(vals);
     const now = new Date().toISOString();
     await create({
-      id: parsed.mdoc,
+      mdoc: parsed.mdoc,
       name: parsed.name,
       start: now,
       stop: null,
@@ -35,7 +35,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      id: selected.id,
+      mdoc: selected.id,
       name: selected.name,
       start: selected.start,
       stop: now,
@@ -47,7 +47,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      id: selected.id,
+      mdoc: selected.id,
       name: selected.name,
       start: now,
       stop: null,

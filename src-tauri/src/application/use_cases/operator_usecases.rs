@@ -17,8 +17,8 @@ impl OperatorUseCases {
         self.repo.list()
     }
 
-    pub fn get_operator(&self, id: i32) -> Result<Option<Operator>, AppError> {
-        self.repo.get_by_id(id)
+    pub fn get_operator(&self, mdoc: i32) -> Result<Option<Operator>, AppError> {
+        self.repo.get_by_mdoc(mdoc)
     }
 
     pub fn create_operator(&self, op: &Operator) -> Result<(), AppError> {
@@ -26,37 +26,37 @@ impl OperatorUseCases {
             warn!("create failed: name empty (name={})", op.name);
             return Err(AppError::Unexpected("Operator name cannot be empty".into()));
         }
-        // Check if any operator already has this id
-        let existing = self.repo.list()?.into_iter().find(|o| o.id == op.id);
+        // Check if any operator already has this mdoc
+        let existing = self.repo.list()?.into_iter().find(|o| o.mdoc == op.mdoc);
         if existing.is_some() {
-            warn!("create failed: duplicate id {}", op.id);
+            warn!("create failed: duplicate mdoc {}", op.mdoc);
             return Err(AppError::Unexpected(format!(
-                "Operator id '{}' already exists",
-                op.id
+                "Operator mdoc '{}' already exists",
+                op.mdoc
             )));
         }
         let res = self.repo.create(op);
         match &res {
-            Ok(()) => info!("operator created: id={} name={}", op.id, op.name),
-            Err(e) => error!("operator create error: id={} error={}", op.id, e),
+            Ok(()) => info!("operator created: mdoc={} name={}", op.mdoc, op.name),
+            Err(e) => error!("operator create error: mdoc={} error={}", op.mdoc, e),
         }
         res
     }
 
     pub fn update_operator(&self, op: &Operator) -> Result<(), AppError> {
         // Check if operator exists
-        let existing = self.repo.get_by_id(op.id)?;
+        let existing = self.repo.get_by_mdoc(op.mdoc)?;
         if existing.is_none() {
-            warn!("update failed: not found (id={})", op.id);
+            warn!("update failed: not found (mdoc={})", op.mdoc);
             return Err(AppError::NotFound(format!(
-                "Cannot update: Operator with id {} not found",
-                op.id
+                "Cannot update: Operator with mdoc {} not found",
+                op.mdoc
             )));
         }
-        let res = self.repo.update_by_id(op);
+        let res = self.repo.update_by_mdoc(op);
         match &res {
-            Ok(()) => info!("operator updated: id={} name={}", op.id, op.name),
-            Err(e) => error!("operator update error: id={} error={}", op.id, e),
+            Ok(()) => info!("operator updated: mdoc={} name={}", op.mdoc, op.name),
+            Err(e) => error!("operator update error: mdoc={} error={}", op.mdoc, e),
         }
         res
     }
@@ -78,7 +78,7 @@ mod tests {
 
         // create operator
         let op = Operator {
-            id: 1,
+            mdoc: 1,
             name: "Alice".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
@@ -101,7 +101,7 @@ mod tests {
         let uc = OperatorUseCases::new(mock.clone());
 
         let op1 = Operator {
-            id: 1,
+            mdoc: 1,
             name: "Sibley".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
@@ -109,13 +109,13 @@ mod tests {
         uc.create_operator(&op1).unwrap();
 
         let op_dup = Operator {
-            id: 1,
+            mdoc: 1,
             name: "Bubar".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         };
         let err = uc.create_operator(&op_dup).unwrap_err();
-        assert!(err.to_string().contains("Operator id '1' already exists"));
+        assert!(err.to_string().contains("Operator mdoc '1' already exists"));
     }
 
     #[test]
@@ -124,13 +124,13 @@ mod tests {
         let uc = OperatorUseCases::new(mock.clone());
 
         let op = Operator {
-            id: 99,
+            mdoc: 99,
             name: "Ghost".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         };
         let err = uc.update_operator(&op).unwrap_err();
-        assert!(err.to_string().contains("Operator with id 99 not found"));
+        assert!(err.to_string().contains("Operator with mdoc 99 not found"));
     }
 
     #[test]
@@ -139,7 +139,7 @@ mod tests {
         let uc = OperatorUseCases::new(mock.clone());
 
         let op = Operator {
-            id: 1,
+            mdoc: 1,
             name: "".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,

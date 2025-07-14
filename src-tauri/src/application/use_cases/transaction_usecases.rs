@@ -139,7 +139,7 @@ mod tests {
 
         // seed FK tables
         op_repo.create(&Operator {
-            id: 10,
+            mdoc: 10,
             name: "Op1".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
@@ -211,13 +211,13 @@ mod tests {
 
         // seed FK tables
         op_repo.create(&Operator {
-            id: 1,
+            mdoc: 1,
             name: "Op1".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         })?;
         op_repo.create(&Operator {
-            id: 2,
+            mdoc: 2,
             name: "Op2".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,

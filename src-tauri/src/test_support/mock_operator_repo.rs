@@ -23,22 +23,22 @@ impl Default for MockOperatorRepo {
 }
 
 impl OperatorRepoTrait for MockOperatorRepo {
-    fn get_by_id(&self, id: i32) -> Result<Option<Operator>, AppError> {
+    fn get_by_mdoc(&self, mdoc: i32) -> Result<Option<Operator>, AppError> {
         Ok(self
             .store
             .lock()
             .unwrap()
             .iter()
-            .find(|o| o.id == id)
+            .find(|o| o.mdoc == mdoc)
             .cloned())
     }
     fn create(&self, operator: &Operator) -> Result<(), AppError> {
         self.store.lock().unwrap().push(operator.clone());
         Ok(())
     }
-    fn update_by_id(&self, operator: &Operator) -> Result<(), AppError> {
+    fn update_by_mdoc(&self, operator: &Operator) -> Result<(), AppError> {
         let mut guard = self.store.lock().unwrap();
-        if let Some(e) = guard.iter_mut().find(|o| o.id == operator.id) {
+        if let Some(e) = guard.iter_mut().find(|o| o.mdoc == operator.mdoc) {
             *e = operator.clone();
         }
         Ok(())

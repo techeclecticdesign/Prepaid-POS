@@ -4,7 +4,7 @@ use validator_derive::Validate;
 #[derive(serde::Serialize, serde::Deserialize, Validate)]
 pub struct OperatorDto {
     #[validate(range(min = 1, message = "id must be non-zero and positive"))]
-    pub id: i32,
+    pub mdoc: i32,
 
     #[validate(length(min = 1, message = "name cannot be empty"))]
     pub name: String,
@@ -24,7 +24,7 @@ mod tests {
     #[test]
     fn valid_operator() {
         let dto = OperatorDto {
-            id: 7,
+            mdoc: 7,
             name: "Alice".into(),
             start: None,
             stop: Some("2025-07-09T12:00:00+00:00".into()),
@@ -35,7 +35,7 @@ mod tests {
     #[test]
     fn invalid_operator_empty_name_and_bad_date() {
         let dto = OperatorDto {
-            id: 0,
+            mdoc: 0,
             name: "".into(),
             start: Some("oops".into()),
             stop: None,

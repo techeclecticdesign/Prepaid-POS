@@ -38,7 +38,7 @@ impl OperatorController {
             None => None,
         };
         let op = Operator {
-            id: dto.id,
+            mdoc: dto.mdoc,
             name: dto.name,
             start,
             stop,
@@ -58,7 +58,7 @@ impl OperatorController {
             None => None,
         };
         let op = Operator {
-            id: dto.id,
+            mdoc: dto.mdoc,
             name: dto.name,
             start,
             stop,

@@ -1,5 +1,5 @@
 export default interface Operator {
-  id: number;
+  mdoc: number;
   name: string;
   start: string;
   stop: string | null;
