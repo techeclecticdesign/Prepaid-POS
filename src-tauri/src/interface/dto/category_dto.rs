@@ -1,4 +1,4 @@
-use crate::interface::common::validators::OptionalRfc3339;
+use crate::interface::common::validators::validate_optional_rfc3339_str;
 use validator_derive::Validate;
 
 #[derive(serde::Deserialize, Validate)]
@@ -21,22 +21,14 @@ pub struct CategoryDto {
     #[validate(length(min = 1, message = "name cannot be empty"))]
     pub name: String,
 
+    #[validate(custom(function = "validate_optional_rfc3339_str"))]
     pub deleted: Option<String>, // RFC3339 if soft-deleted
-}
-
-impl OptionalRfc3339 for CategoryDto {
-    fn optional_dates(&self) -> Vec<(&'static str, &String)> {
-        self.deleted
-            .as_ref()
-            .map(|s| vec![("deleted", s)])
-            .unwrap_or_default()
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interface::common::validators::validate_with_optional_dates;
+    use validator::Validate;
 
     #[test]
     fn valid_category() {
@@ -45,7 +37,7 @@ mod tests {
             name: "Widgets".into(),
             deleted: None,
         };
-        assert!(validate_with_optional_dates(&dto).is_ok());
+        assert!(dto.validate().is_ok());
     }
 
     #[test]
@@ -55,7 +47,7 @@ mod tests {
             name: "".into(),
             deleted: None,
         };
-        let err = validate_with_optional_dates(&dto).unwrap_err().to_string();
+        let err = dto.validate().unwrap_err().to_string();
         assert!(err.contains("id"));
         assert!(err.contains("name"));
     }

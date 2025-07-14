@@ -1,4 +1,4 @@
-use crate::interface::common::validators::{validate_upc_str, OptionalRfc3339};
+use crate::interface::common::validators::{validate_optional_rfc3339_str, validate_upc_str};
 use validator_derive::Validate;
 
 #[derive(serde::Serialize, serde::Deserialize, Validate)]
@@ -15,22 +15,13 @@ pub struct PriceAdjustmentDto {
     #[validate(range(min = 1, message = "operator_mdoc must be non-zero and positive"))]
     pub operator_mdoc: i32,
 
+    #[validate(custom(function = "validate_optional_rfc3339_str"))]
     pub created_at: Option<String>, // RFC3339
-}
-
-impl OptionalRfc3339 for PriceAdjustmentDto {
-    fn optional_dates(&self) -> Vec<(&'static str, &String)> {
-        self.created_at
-            .as_ref()
-            .map(|s| vec![("created_at", s)])
-            .unwrap_or_default()
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interface::common::validators::validate_with_optional_dates;
     use validator::Validate;
 
     #[test]
@@ -42,7 +33,7 @@ mod tests {
             operator_mdoc: 2,
             created_at: None,
         };
-        assert!(validate_with_optional_dates(&dto).is_ok());
+        assert!(dto.validate().is_ok());
     }
 
     #[test]
@@ -54,12 +45,18 @@ mod tests {
             operator_mdoc: 0,
             created_at: Some("bad".into()),
         };
-        let err = validate_with_optional_dates(&dto).unwrap_err().to_string();
-        assert!(err.contains("upc"));
-        assert!(err.contains("old"));
-        assert!(err.contains("new"));
-        assert!(err.contains("operator_mdoc"));
-        assert!(err.contains("rfc3339"));
+        let errs = dto.validate().unwrap_err();
+        println!("Validation errors: {:?}", errs);
+
+        let err_map = errs.field_errors();
+        assert!(err_map.contains_key("upc"));
+        assert!(err_map.contains_key("old"));
+        assert!(err_map.contains_key("new"));
+        assert!(err_map.contains_key("operator_mdoc"));
+        assert!(err_map.contains_key("created_at"));
+
+        let created_at_errors = err_map.get("created_at").unwrap();
+        assert!(created_at_errors.iter().any(|e| e.code == "rfc3339"));
     }
 
     #[test]

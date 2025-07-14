@@ -1,4 +1,4 @@
-use crate::interface::common::validators::OptionalRfc3339;
+use crate::interface::common::validators::validate_optional_rfc3339_str;
 use validator_derive::Validate;
 
 #[derive(serde::Serialize, serde::Deserialize, Validate)]
@@ -9,28 +9,17 @@ pub struct OperatorDto {
     #[validate(length(min = 1, message = "name cannot be empty"))]
     pub name: String,
 
+    #[validate(custom(function = "validate_optional_rfc3339_str"))]
     pub start: Option<String>, // RFC 3339 timestamp
 
+    #[validate(custom(function = "validate_optional_rfc3339_str"))]
     pub stop: Option<String>, // RFC 3339 timestamp
-}
-
-impl OptionalRfc3339 for OperatorDto {
-    fn optional_dates(&self) -> Vec<(&'static str, &String)> {
-        let mut out = Vec::new();
-        if let Some(s) = &self.start {
-            out.push(("start", s));
-        }
-        if let Some(s) = &self.stop {
-            out.push(("stop", s));
-        }
-        out
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interface::common::validators::validate_with_optional_dates;
+    use validator::Validate;
 
     #[test]
     fn valid_operator() {
@@ -40,7 +29,7 @@ mod tests {
             start: None,
             stop: Some("2025-07-09T12:00:00+00:00".into()),
         };
-        assert!(validate_with_optional_dates(&dto).is_ok());
+        assert!(dto.validate().is_ok());
     }
 
     #[test]
@@ -51,9 +40,9 @@ mod tests {
             start: Some("oops".into()),
             stop: None,
         };
-        let err = validate_with_optional_dates(&dto).unwrap_err().to_string();
+        let err = dto.validate().unwrap_err().to_string();
         assert!(err.contains("id"));
         assert!(err.contains("name"));
-        assert!(err.contains("rfc3339"));
+        assert!(err.contains("start"));
     }
 }

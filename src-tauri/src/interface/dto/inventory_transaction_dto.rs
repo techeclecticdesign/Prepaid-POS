@@ -1,4 +1,4 @@
-use crate::interface::common::validators::{validate_upc_str, OptionalRfc3339};
+use crate::interface::common::validators::{validate_optional_rfc3339_str, validate_upc_str};
 use validator_derive::Validate;
 
 #[derive(serde::Deserialize, Validate)]
@@ -20,6 +20,7 @@ pub struct CreateInventoryTransactionDto {
     #[validate(range(min = 1, message = "ref_order_id must be non-zero and positive"))]
     pub ref_order_id: Option<i32>,
 
+    #[validate(custom(function = "validate_optional_rfc3339_str"))]
     pub created_at: Option<String>, // RFC3339
 }
 
@@ -35,19 +36,9 @@ pub struct ReadInventoryTransactionDto {
     pub created_at: Option<String>, // RFC3339
 }
 
-impl OptionalRfc3339 for CreateInventoryTransactionDto {
-    fn optional_dates(&self) -> Vec<(&'static str, &String)> {
-        self.created_at
-            .as_ref()
-            .map(|s| vec![("created_at", s)])
-            .unwrap_or_default()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::interface::common::validators::validate_with_optional_dates;
     use validator::Validate;
 
     #[test]
@@ -61,7 +52,7 @@ mod tests {
             ref_order_id: None,
             created_at: None,
         };
-        assert!(validate_with_optional_dates(&dto).is_ok());
+        assert!(dto.validate().is_ok());
     }
 
     #[test]
@@ -75,13 +66,13 @@ mod tests {
             ref_order_id: Some(0),
             created_at: Some("not-a-date".into()),
         };
-        let err = validate_with_optional_dates(&dto).unwrap_err().to_string();
+        let err = dto.validate().unwrap_err().to_string();
         assert!(err.contains("upc"));
         assert!(err.contains("quantity_change"));
         assert!(err.contains("operator_mdoc"));
         assert!(err.contains("customer_mdoc"));
         assert!(err.contains("ref_order_id"));
-        assert!(err.contains("rfc3339"));
+        assert!(err.contains("created_at"));
     }
 
     #[test]

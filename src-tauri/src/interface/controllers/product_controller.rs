@@ -2,7 +2,6 @@ use crate::application::use_cases::product_usecases::ProductUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::price_adjustment::PriceAdjustment;
 use crate::domain::models::product::Product;
-use crate::interface::common::validators::validate_with_optional_dates;
 use crate::interface::dto::category_dto::{CategoryDto, CreateCategoryDto, DeleteCategoryDto};
 use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
 use crate::interface::dto::product_dto::{
@@ -65,7 +64,8 @@ impl ProductController {
         &self,
         dto: PriceAdjustmentDto,
     ) -> Result<PriceAdjustmentDto, AppError> {
-        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
         let domain = PriceAdjustment {
             id: 0, // gets assigned during persistence
             operator_mdoc: dto.operator_mdoc,

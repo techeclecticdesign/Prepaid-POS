@@ -1,12 +1,12 @@
 use crate::application::use_cases::transaction_usecases::TransactionUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::inventory_transaction::InventoryTransaction;
-use crate::interface::common::validators::validate_with_optional_dates;
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, ReadInventoryTransactionDto,
 };
 use crate::interface::presenters::inventory_transaction_presenter::InventoryTransactionPresenter;
 use std::sync::Arc;
+use validator::Validate;
 
 pub struct TransactionController {
     uc: TransactionUseCases,
@@ -23,7 +23,8 @@ impl TransactionController {
         &self,
         dto: CreateInventoryTransactionDto,
     ) -> Result<ReadInventoryTransactionDto, AppError> {
-        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
         let tx = InventoryTransaction {
             id: Some(0), // new record, gets auto-assigned by db
             upc: dto.upc,
@@ -43,7 +44,8 @@ impl TransactionController {
         &self,
         dto: CreateInventoryTransactionDto,
     ) -> Result<ReadInventoryTransactionDto, AppError> {
-        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
         let tx = InventoryTransaction {
             id: Some(0), // new record, gets auto-assigned by db
             upc: dto.upc,
@@ -63,7 +65,8 @@ impl TransactionController {
         &self,
         dto: CreateInventoryTransactionDto,
     ) -> Result<ReadInventoryTransactionDto, AppError> {
-        validate_with_optional_dates(&dto).map_err(|e| AppError::Validation(format!("{}", e)))?;
+        dto.validate()
+            .map_err(|e| AppError::Validation(e.to_string()))?;
         let tx = InventoryTransaction {
             id: Some(0), // new record, gets auto-assigned by db
             upc: dto.upc,
