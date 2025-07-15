@@ -9,10 +9,12 @@ import LegacyDataDialog from "./components/LegacyDataDialog";
 import { useAuth } from "../../AuthProvider";
 import useOperators from "../../hooks/useOperators";
 import { useLegacyDataCheck } from "./hooks/useLegacyDataCheck";
+import useLegacyDataActions from "./hooks/useLegacyDataActions";
 import type Operator from "../../models/Operator";
 
 export default function App() {
-  const { operators, isLoading: isLoadingOperators } = useOperators();
+  const { operators, isLoading: isLoadingOperators, refresh } = useOperators();
+  const { importLegacyData } = useLegacyDataActions();
   const { shouldPromptForLegacyData, acknowledgePrompt } = useLegacyDataCheck(
     operators,
     isLoadingOperators,
@@ -48,7 +50,7 @@ export default function App() {
       return;
     }
     const scanNum = Number.parseInt(scan, 10);
-    const matched = operatorsRef.current.find((o) => o.id === scanNum);
+    const matched = operatorsRef.current.find((o) => o.mdoc === scanNum);
     if (!matched) {
       setScanError("Scan input does not match any operator MDOC.");
       if (errorTimerRef.current) {
@@ -75,11 +77,11 @@ export default function App() {
     return () => {};
   }, []);
 
-  const handleLegacyDataOk = () => {
-    console.log("User chose to import legacy data.");
+  const handleLegacyDataOk = async () => {
+    await importLegacyData();
     setShowLegacyDataDialog(false);
     acknowledgePrompt();
-    // TODO: refresh operators after import
+    refresh();
   };
 
   const handleLegacyDataCancel = () => {
@@ -115,7 +117,7 @@ export default function App() {
         {!isLoadingOperators && currentOperators.length > 0
           ? currentOperators.map((o) => (
               <AppButton
-                key={o.id}
+                key={o.mdoc}
                 text={o.name}
                 variant="outlined"
                 sx={{ width: "14rem" }}

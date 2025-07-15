@@ -70,7 +70,15 @@ pub fn run() {
         Arc::clone(&club_tx_repo),
         Arc::clone(&club_import_repo),
     ));
-    let legacy_ctrl = Arc::new(LegacyMigrationController::new());
+    let legacy_ctrl = Arc::new(LegacyMigrationController::new(
+        Arc::clone(&op_repo),
+        Arc::clone(&product_repo),
+        Arc::clone(&category_repo),
+        Arc::clone(&customer_repo),
+        Arc::clone(&club_tx_repo),
+        Arc::clone(&club_import_repo),
+        Arc::clone(&inv_repo),
+    ));
     let pdf_ctrl = Arc::new(PdfParseController::new(
         Arc::new(LopdfParser),
         Arc::clone(&club_import_repo),
@@ -142,6 +150,7 @@ pub fn run() {
             interface::commands::club::list_club_imports,
             interface::commands::club::get_club_import,
             interface::commands::legacy_migration::has_legacy_data,
+            interface::commands::legacy_migration::do_legacy_data_import,
             interface::commands::parse_pdf::parse_pdf,
         ])
         .on_window_event(|_window, event| {

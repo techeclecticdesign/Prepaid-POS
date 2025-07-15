@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import useLegacyDataActions from "./useLegacyDataActions";
 import type Operator from "../../../models/Operator";
 
 interface UseLegacyDataCheckResult {
@@ -11,6 +11,7 @@ export function useLegacyDataCheck(
   operators: Operator[],
   isLoadingOperators: boolean,
 ): UseLegacyDataCheckResult {
+  const { checkLegacyDataExists } = useLegacyDataActions();
   const [shouldPrompt, setShouldPrompt] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
 
@@ -19,7 +20,7 @@ export function useLegacyDataCheck(
     if (!isLoadingOperators && operators.length === 0 && !hasChecked) {
       const checkLegacyData = async () => {
         try {
-          const hasLegacy = await invoke<boolean>("has_legacy_data");
+          const hasLegacy = await checkLegacyDataExists();
           if (hasLegacy) {
             setShouldPrompt(true);
           }
@@ -31,7 +32,7 @@ export function useLegacyDataCheck(
       };
       void checkLegacyData();
     }
-  }, [isLoadingOperators, operators.length, hasChecked]);
+  }, [isLoadingOperators, operators.length, hasChecked, checkLegacyDataExists]);
 
   const acknowledgePrompt = () => {
     setShouldPrompt(false);
