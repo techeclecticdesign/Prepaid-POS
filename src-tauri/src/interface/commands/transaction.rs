@@ -1,8 +1,12 @@
 use crate::common::error::AppError;
 use crate::interface::controllers::transaction_controller::TransactionController;
+use crate::interface::dto::customer_transaction_dto::CustomerTransactionDto;
+use crate::interface::dto::customer_tx_detail_dto::CreateCustomerTxDetailDto;
+use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, ReadInventoryTransactionDto,
 };
+use crate::interface::presenters::customer_transaction_presenter::CustomerTransactionPresenter;
 use std::sync::Arc;
 use tauri::State;
 
@@ -72,4 +76,46 @@ pub fn list_tx_for_customer(
     customer_mdoc: i32,
 ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
     controller.list_tx_for_customer(customer_mdoc)
+}
+
+#[tauri::command]
+pub fn list_sales(
+    controller: State<'_, Arc<TransactionController>>,
+) -> Result<Vec<CustomerTransactionDto>, AppError> {
+    let txs = controller.list_sales()?;
+    Ok(CustomerTransactionPresenter::to_dto_list(txs))
+}
+
+#[tauri::command]
+pub fn get_sale(
+    controller: State<'_, Arc<TransactionController>>,
+    id: i32,
+) -> Result<Option<CustomerTransactionDto>, AppError> {
+    let opt = controller.get_sale(id)?;
+    Ok(opt.map(|t| CustomerTransactionPresenter::to_dto_list(vec![t]).remove(0)))
+}
+
+#[tauri::command]
+pub fn make_sale(
+    controller: State<'_, Arc<TransactionController>>,
+    dto: CustomerTransactionDto,
+) -> Result<CustomerTransactionDto, AppError> {
+    controller.make_sale(dto.clone())?;
+    Ok(dto)
+}
+
+#[tauri::command]
+pub fn make_sale_line_item(
+    controller: State<'_, Arc<TransactionController>>,
+    dto: CreateCustomerTxDetailDto,
+) -> Result<(), AppError> {
+    controller.make_sale_line_item(dto)
+}
+
+#[tauri::command]
+pub fn list_order_details(
+    controller: State<'_, Arc<TransactionController>>,
+    order_id: i32,
+) -> Result<Vec<CustomerTxDetailDto>, AppError> {
+    controller.list_order_details(order_id)
 }

@@ -2,6 +2,8 @@ pub mod mock_category_repo;
 pub mod mock_club_import_repo;
 pub mod mock_club_tx_repo;
 pub mod mock_customer_repo;
+pub mod mock_customer_tx_detail_repo;
+pub mod mock_customer_tx_repo;
 pub mod mock_inventory_transaction_repo;
 pub mod mock_operator_repo;
 pub mod mock_price_adjustment_repo;

@@ -5,9 +5,11 @@ pub mod infrastructure;
 pub mod interface;
 pub mod test_support;
 
+use crate::application::use_cases::legacy_migration_usecases::LegacyMigrationDeps;
 use crate::domain::repos::{
     CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait,
-    InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
+    CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
+    OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
 };
 
 use crate::interface::controllers::club_controller::ClubController;
@@ -21,8 +23,8 @@ use infrastructure::db::create_connection;
 use infrastructure::pdf_parser::LopdfParser;
 use infrastructure::repos::{
     SqliteCategoryRepo, SqliteClubImportRepo, SqliteClubTransactionRepo, SqliteCustomerRepo,
-    SqliteInventoryTransactionRepo, SqliteOperatorRepo, SqlitePriceAdjustmentRepo,
-    SqliteProductRepo,
+    SqliteCustomerTransactionRepo, SqliteCustomerTxDetailRepo, SqliteInventoryTransactionRepo,
+    SqliteOperatorRepo, SqlitePriceAdjustmentRepo, SqliteProductRepo,
 };
 use std::sync::{Arc, RwLock};
 use tauri::{Builder, WindowEvent};
@@ -57,6 +59,10 @@ pub fn run() {
         Arc::new(SqliteClubTransactionRepo::new(Arc::clone(&conn)));
     let club_import_repo: Arc<dyn ClubImportRepoTrait> =
         Arc::new(SqliteClubImportRepo::new(Arc::clone(&conn)));
+    let cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait> =
+        Arc::new(SqliteCustomerTransactionRepo::new(Arc::clone(&conn)));
+    let detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
+        Arc::new(SqliteCustomerTxDetailRepo::new(Arc::clone(&conn)));
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
     let product_ctrl = Arc::new(ProductController::new(
         Arc::clone(&product_repo),
@@ -64,21 +70,27 @@ pub fn run() {
         Arc::clone(&category_repo),
         Arc::clone(&conn),
     ));
-    let tx_ctrl = Arc::new(TransactionController::new(Arc::clone(&inv_repo)));
+    let tx_ctrl = Arc::new(TransactionController::new(
+        Arc::clone(&inv_repo),
+        Arc::clone(&cust_tx_repo),
+        Arc::clone(&detail_repo),
+    ));
     let club_ctrl = Arc::new(ClubController::new(
         Arc::clone(&customer_repo),
         Arc::clone(&club_tx_repo),
         Arc::clone(&club_import_repo),
     ));
-    let legacy_ctrl = Arc::new(LegacyMigrationController::new(
-        Arc::clone(&op_repo),
-        Arc::clone(&product_repo),
-        Arc::clone(&category_repo),
-        Arc::clone(&customer_repo),
-        Arc::clone(&club_tx_repo),
-        Arc::clone(&club_import_repo),
-        Arc::clone(&inv_repo),
-    ));
+    let legacy_ctrl = Arc::new(LegacyMigrationController::new(LegacyMigrationDeps {
+        op_repo: Arc::clone(&op_repo),
+        product_repo: Arc::clone(&product_repo),
+        category_repo: Arc::clone(&category_repo),
+        customer_repo: Arc::clone(&customer_repo),
+        club_transaction_repo: Arc::clone(&club_tx_repo),
+        club_imports_repo: Arc::clone(&club_import_repo),
+        inv_repo: Arc::clone(&inv_repo),
+        customer_transaction_repo: Arc::clone(&cust_tx_repo),
+        customer_tx_detail_repo: Arc::clone(&detail_repo),
+    }));
     let pdf_ctrl = Arc::new(PdfParseController::new(
         Arc::new(LopdfParser),
         Arc::clone(&club_import_repo),
@@ -143,6 +155,9 @@ pub fn run() {
             interface::commands::transaction::list_tx_for_product,
             interface::commands::transaction::sale_transaction,
             interface::commands::transaction::stock_items,
+            interface::commands::transaction::list_sales,
+            interface::commands::transaction::get_sale,
+            interface::commands::transaction::make_sale,
             interface::commands::club::list_customers,
             interface::commands::club::get_customer,
             interface::commands::club::list_club_transactions,

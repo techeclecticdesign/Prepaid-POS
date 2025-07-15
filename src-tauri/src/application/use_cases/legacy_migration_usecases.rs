@@ -1,11 +1,13 @@
 use crate::common::error::AppError;
 use crate::domain::models::club_transaction::TransactionType;
 use crate::domain::models::{
-    ClubImport, ClubTransaction, Customer, InventoryTransaction, Operator, Product,
+    ClubImport, ClubTransaction, Customer, CustomerTransaction, CustomerTxDetail,
+    InventoryTransaction, Operator, Product,
 };
 use crate::domain::repos::{
     CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait,
-    InventoryTransactionRepoTrait, OperatorRepoTrait, ProductRepoTrait,
+    CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
+    OperatorRepoTrait, ProductRepoTrait,
 };
 use log::warn;
 use odbc_api::{Cursor, Environment, Nullable};
@@ -13,37 +15,105 @@ use odbc_sys::Timestamp;
 use std::path::Path;
 use std::sync::Arc;
 
+// SELECT lngOperatorMdoc, txtOperatorName, datStart, datStop FROM tblOperator
+type RawOperatorRow = (
+    Option<i32>,       // mdoc
+    Option<String>,    // name
+    Option<Timestamp>, // start
+    Option<Timestamp>, // stop
+);
+
+// SELECT txtProductUPC, txtProductCategory, txtProductDescription,
+//        curProductPrice, datUpdated, datAdded, datDeleted
+type RawProductRow = (
+    Option<String>,    // upc
+    Option<String>,    // category
+    Option<String>,    // desc
+    Option<f64>,       // price
+    Option<Timestamp>, // updated
+    Option<Timestamp>, // added
+    Option<Timestamp>, // deleted
+);
+
+// SELECT DISTINCT txtProductCategory FROM tblProduct
+type RawCategoryRow<S> = Option<S>;
+
+// SELECT lngCustomerMDOC, txtCustomerName, datAdded FROM tblCustomer
+type RawCustomerRow = (
+    Option<i32>,       // mdoc
+    Option<String>,    // name
+    Option<Timestamp>, // added
+);
+
+// SELECT idnClubStatement, txtAccountActivity, txtFileName, datImported FROM tblClubStatement
+type RawClubImportRow = (
+    Option<i32>,       // id
+    Option<String>,    // activity
+    Option<String>,    // source_file
+    Option<Timestamp>, // imported
+);
+
+// SELECT idnRecord, nClubStatement, txtReceivedFrom, txtTransaction, curAmount, datPosted
+type RawClubTransactionRow = (
+    Option<i32>,       // id
+    Option<i32>,       // import_id
+    Option<String>,    // received_from
+    Option<String>,    // tx_type
+    Option<f64>,       // amount
+    Option<Timestamp>, // posted
+);
+
+// SELECT lngOrderId, lngCustomerMdoc, lngOperatorMdoc, datEntry, txtOrderNote FROM tblCustomerOrder
+type RawCustomerOrderRow = (
+    Option<i32>,       // legacy_id
+    Option<i32>,       // customer_mdoc
+    Option<i32>,       // operator_mdoc
+    Option<Timestamp>, // entry
+    Option<String>,    // note
+);
+
+// SELECT lngOrderId, txtRefNum, txtNote, txtProductUPC,
+//        lngInventoryAdjustment, datPosted, lngCustomerMdoc, lngOperatorMdoc
+type RawInventoryRow = (
+    Option<i32>,       // ref_order_id
+    Option<String>,    // refnum
+    Option<String>,    // note
+    Option<String>,    // upc
+    Option<f64>,       // adjustment
+    Option<Timestamp>, // posted
+    Option<i32>,       // customer_mdoc
+    Option<i32>,       // operator_mdoc
+);
+
+// SELECT idnOrderDetailId, lngOrderId, txtProductUPC, lngQty, curProductPrice FROM tblCustomerOrderDetail
+pub type RawCustomerOrderDetailRow = (
+    Option<i32>,    // legacy idnOrderDetailId (ignored)
+    Option<i32>,    // legacy lngOrderId
+    Option<String>, // legacy txtProductUPC
+    Option<i32>,    // legacy lngQty
+    Option<f64>,    // legacy curProductPrice
+);
+pub struct LegacyMigrationDeps {
+    pub op_repo: Arc<dyn OperatorRepoTrait>,
+    pub product_repo: Arc<dyn ProductRepoTrait>,
+    pub category_repo: Arc<dyn CategoryRepoTrait>,
+    pub customer_repo: Arc<dyn CustomerRepoTrait>,
+    pub club_transaction_repo: Arc<dyn ClubTransactionRepoTrait>,
+    pub club_imports_repo: Arc<dyn ClubImportRepoTrait>,
+    pub inv_repo: Arc<dyn InventoryTransactionRepoTrait>,
+    pub customer_transaction_repo: Arc<dyn CustomerTransactionRepoTrait>,
+    pub customer_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
+}
+
 pub struct LegacyMigrationUseCases {
-    op_repo: Arc<dyn OperatorRepoTrait>,
-    product_repo: Arc<dyn ProductRepoTrait>,
-    category_repo: Arc<dyn CategoryRepoTrait>,
-    customer_repo: Arc<dyn CustomerRepoTrait>,
-    club_transaction_repo: Arc<dyn ClubTransactionRepoTrait>,
-    club_imports_repo: Arc<dyn ClubImportRepoTrait>,
-    inv_repo: Arc<dyn InventoryTransactionRepoTrait>,
+    pub deps: LegacyMigrationDeps,
 }
 
 /* Note: to keep migrations testable they use two functions, one fetches the legacy data into rows,
  * the other does the parsing of these rows, maps to domain models, and persists to repo. */
 impl LegacyMigrationUseCases {
-    pub fn new(
-        op_repo: Arc<dyn OperatorRepoTrait>,
-        product_repo: Arc<dyn ProductRepoTrait>,
-        category_repo: Arc<dyn CategoryRepoTrait>,
-        customer_repo: Arc<dyn CustomerRepoTrait>,
-        club_transaction_repo: Arc<dyn ClubTransactionRepoTrait>,
-        club_imports_repo: Arc<dyn ClubImportRepoTrait>,
-        inv_repo: Arc<dyn InventoryTransactionRepoTrait>,
-    ) -> Self {
-        Self {
-            op_repo,
-            product_repo,
-            category_repo,
-            customer_repo,
-            club_transaction_repo,
-            club_imports_repo,
-            inv_repo,
-        }
+    pub fn new(deps: LegacyMigrationDeps) -> Self {
+        Self { deps }
     }
 
     pub fn has_legacy_data(&self) -> Result<bool, AppError> {
@@ -67,11 +137,13 @@ impl LegacyMigrationUseCases {
         self.migrate_club_imports(&conn)?;
         self.migrate_club_transactions(&conn)?;
         self.migrate_inventory_transactions(&conn)?;
+        self.migrate_customer_orders(&conn)?;
+        self.migrate_customer_order_details(&conn)?;
 
         Ok(true)
     }
 
-    // helper to convert ODBC Timestamp → NaiveDateTime
+    // helper to convert ODBC Timestamp -> NaiveDateTime
     pub(crate) fn ts_to_naive(ts: Timestamp) -> Result<chrono::NaiveDateTime, AppError> {
         let date = chrono::NaiveDate::from_ymd_opt(ts.year as i32, ts.month as u32, ts.day as u32)
             .ok_or_else(|| AppError::Unexpected("invalid date".into()))?;
@@ -88,13 +160,7 @@ impl LegacyMigrationUseCases {
     // Migrate operators from tblOperator
     pub fn migrate_operators(&self, conn: &odbc_api::Connection<'_>) -> Result<(), AppError> {
         // collect raw row data
-        type Raw = (
-            Option<i32>,       // mdoc
-            Option<String>,    // name
-            Option<Timestamp>, // start
-            Option<Timestamp>, // stop
-        );
-        let mut raws: Vec<Raw> = Vec::new();
+        let mut raws: Vec<RawOperatorRow> = Vec::new();
 
         let mut cursor = conn
             .execute(
@@ -160,14 +226,7 @@ impl LegacyMigrationUseCases {
     // Testable logic for operators migrations
     pub(crate) fn migrate_operators_from_rows<I>(&self, raw_rows: I) -> Result<(), AppError>
     where
-        I: IntoIterator<
-            Item = (
-                Option<i32>,       // mdoc
-                Option<String>,    // name
-                Option<Timestamp>, // start
-                Option<Timestamp>, // stop
-            ),
-        >,
+        I: IntoIterator<Item = RawOperatorRow>,
     {
         for (mdoc_opt, name_opt, start_opt, stop_opt) in raw_rows {
             let mdoc = match mdoc_opt {
@@ -194,7 +253,7 @@ impl LegacyMigrationUseCases {
                 continue;
             }
             // skip duplicates
-            if let Ok(Some(_)) = self.op_repo.get_by_mdoc(mdoc) {
+            if let Ok(Some(_)) = self.deps.op_repo.get_by_mdoc(mdoc) {
                 warn!("skip operator row: duplicate mdoc {}", mdoc);
                 continue;
             }
@@ -215,7 +274,7 @@ impl LegacyMigrationUseCases {
                 start: Some(start),
                 stop,
             };
-            self.op_repo.create(&op)?;
+            self.deps.op_repo.create(&op)?;
         }
         Ok(())
     }
@@ -223,7 +282,7 @@ impl LegacyMigrationUseCases {
     // Migrate products from tblProduct
     pub fn migrate_products(&self, conn: &odbc_api::Connection<'_>) -> Result<(), AppError> {
         // collect raw rows: (upc, category, desc, price, updated, added, deleted)
-        let mut raws = Vec::new();
+        let mut raws: Vec<RawProductRow> = Vec::new();
         let mut cursor = conn
             .execute(
                 "SELECT txtProductUPC, txtProductCategory, txtProductDescription, \
@@ -308,17 +367,7 @@ impl LegacyMigrationUseCases {
     // Testable logic for products migrations
     pub(crate) fn migrate_products_from_rows<I>(&self, raw_rows: I) -> Result<(), AppError>
     where
-        I: IntoIterator<
-            Item = (
-                Option<String>,    // upc
-                Option<String>,    // category
-                Option<String>,    // desc
-                Option<f64>,       // price
-                Option<Timestamp>, // added
-                Option<Timestamp>, // updated
-                Option<Timestamp>, // deleted
-            ),
-        >,
+        I: IntoIterator<Item = RawProductRow>,
     {
         for (upc_opt, cat_opt, desc_opt, price_opt, upd_opt, add_opt, del_opt) in raw_rows {
             let upc = match upc_opt {
@@ -402,7 +451,7 @@ impl LegacyMigrationUseCases {
                 added: Some(added),
                 deleted,
             };
-            self.product_repo.create(&prod)?;
+            self.deps.product_repo.create(&prod)?;
         }
         Ok(())
     }
@@ -410,7 +459,7 @@ impl LegacyMigrationUseCases {
     // Migrate categories from tblProduct
     pub fn migrate_categories(&self, conn: &odbc_api::Connection<'_>) -> Result<(), AppError> {
         // Build a Vec<Option<String>> of each category raw value
-        let mut rows = Vec::new();
+        let mut rows: Vec<RawCategoryRow<String>> = Vec::new();
         let mut cursor = conn
             .execute(
                 "SELECT DISTINCT txtProductCategory FROM tblProduct",
@@ -439,7 +488,7 @@ impl LegacyMigrationUseCases {
     // Testable logic for categories migrations
     pub(crate) fn migrate_categories_from_rows<I, S>(&self, raw_rows: I) -> Result<(), AppError>
     where
-        I: IntoIterator<Item = Option<S>>,
+        I: IntoIterator<Item = RawCategoryRow<S>>,
         S: AsRef<str>,
     {
         for opt in raw_rows {
@@ -449,7 +498,7 @@ impl LegacyMigrationUseCases {
                     warn!("skip category row: empty name");
                     continue;
                 }
-                self.category_repo.create(name.to_string())?;
+                self.deps.category_repo.create(name.to_string())?;
             } else {
                 warn!("skip category row: null buffer");
             }
@@ -460,7 +509,7 @@ impl LegacyMigrationUseCases {
     // Migrate customers from tblCustomer
     pub fn migrate_customers(&self, conn: &odbc_api::Connection<'_>) -> Result<(), AppError> {
         // collect raw rows: (mdoc, name, added_timestamp)
-        let mut raws = Vec::new();
+        let mut raws: Vec<RawCustomerRow> = Vec::new();
         let mut mdoc_buf = Nullable::<i32>::null();
         let mut name_buf = Vec::<u8>::new();
         let mut added_buf = Nullable::<Timestamp>::null();
@@ -503,7 +552,7 @@ impl LegacyMigrationUseCases {
     // Testable logic for customer migrations
     pub(crate) fn migrate_customers_from_rows<I>(&self, raw_rows: I) -> Result<(), AppError>
     where
-        I: IntoIterator<Item = (Option<i32>, Option<String>, Option<Timestamp>)>,
+        I: IntoIterator<Item = RawCustomerRow>,
     {
         for (mdoc_opt, name_opt, added_opt) in raw_rows {
             let mdoc = match mdoc_opt {
@@ -541,7 +590,7 @@ impl LegacyMigrationUseCases {
                 added: dt,
                 updated: dt,
             };
-            self.customer_repo.create(&cust)?;
+            self.deps.customer_repo.create(&cust)?;
         }
         Ok(())
     }
@@ -549,7 +598,7 @@ impl LegacyMigrationUseCases {
     // Migrate club statements from tblClubStatement
     pub fn migrate_club_imports(&self, conn: &odbc_api::Connection<'_>) -> Result<(), AppError> {
         // collect raw rows: (id, activity, file, imported_ts)
-        let mut raws = Vec::new();
+        let mut raws: Vec<RawClubImportRow> = Vec::new();
         let mut cursor = conn
             .execute(
                 "SELECT idnClubStatement, txtAccountActivity, txtFileName, datImported FROM tblClubStatement",
@@ -598,14 +647,7 @@ impl LegacyMigrationUseCases {
     // Testable logic for ClubImport migrations
     pub(crate) fn migrate_club_imports_from_rows<I>(&self, raw_rows: I) -> Result<(), AppError>
     where
-        I: IntoIterator<
-            Item = (
-                Option<i32>,       // id
-                Option<String>,    // activity
-                Option<String>,    // source_file
-                Option<Timestamp>, // imported timestamp
-            ),
-        >,
+        I: IntoIterator<Item = RawClubImportRow>,
     {
         for (id_opt, act_opt, file_opt, imp_opt) in raw_rows {
             let id = match id_opt {
@@ -668,7 +710,7 @@ impl LegacyMigrationUseCases {
                 source_file,
                 date,
             };
-            self.club_imports_repo.create(&stmt)?;
+            self.deps.club_imports_repo.create(&stmt)?;
         }
         Ok(())
     }
@@ -678,7 +720,7 @@ impl LegacyMigrationUseCases {
         &self,
         conn: &odbc_api::Connection<'_>,
     ) -> Result<(), AppError> {
-        let mut raws = Vec::new();
+        let mut raws: Vec<RawClubTransactionRow> = Vec::new();
         let mut cursor = conn
             .execute(
                 "SELECT idnRecord, nClubStatement, txtReceivedFrom, txtTransaction, curAmount, datPosted \
@@ -740,16 +782,7 @@ impl LegacyMigrationUseCases {
     // Testable logic for ClubTransaction migrations
     pub(crate) fn migrate_club_transactions_from_rows<I>(&self, raw_rows: I) -> Result<(), AppError>
     where
-        I: IntoIterator<
-            Item = (
-                Option<i32>,       // id
-                Option<i32>,       // import_id
-                Option<String>,    // received_from
-                Option<String>,    // transaction
-                Option<f64>,       // amount
-                Option<Timestamp>, // posted timestamp
-            ),
-        >,
+        I: IntoIterator<Item = RawClubTransactionRow>,
     {
         let re_paren = regex::Regex::new(r"\((\d+)\)")
             .map_err(|e| AppError::Unexpected(format!("invalid re_paren: {}", e)))?;
@@ -857,7 +890,7 @@ impl LegacyMigrationUseCases {
                 amount,
                 date,
             };
-            self.club_transaction_repo.create(&detail)?;
+            self.deps.club_transaction_repo.create(&detail)?;
         }
         Ok(())
     }
@@ -868,7 +901,7 @@ impl LegacyMigrationUseCases {
         conn: &odbc_api::Connection<'_>,
     ) -> Result<(), AppError> {
         // raw tuple: (order_id, refnum, note, upc, adjustment, posted_ts, cust_mdoc, op_mdoc)
-        let mut raws = Vec::new();
+        let mut raws: Vec<RawInventoryRow> = Vec::new();
         let mut cursor = conn
             .execute(
                 "SELECT lngOrderId, txtRefNum, txtNote, txtProductUPC, \
@@ -949,18 +982,7 @@ impl LegacyMigrationUseCases {
         raw_rows: I,
     ) -> Result<(), AppError>
     where
-        I: IntoIterator<
-            Item = (
-                Option<i32>,       // ref_order_id
-                Option<String>,    // refnum
-                Option<String>,    // note
-                Option<String>,    // upc
-                Option<f64>,       // adjustment in dollars
-                Option<Timestamp>, // posted timestamp
-                Option<i32>,       // customer_mdoc
-                Option<i32>,       // operator_mdoc
-            ),
-        >,
+        I: IntoIterator<Item = RawInventoryRow>,
     {
         for (ord_opt, ref_opt, note_opt, upc_opt, adj_opt, ts_opt, cust_opt, op_opt) in raw_rows {
             // ref_order_id must be >0
@@ -1022,8 +1044,306 @@ impl LegacyMigrationUseCases {
                 customer_mdoc,
                 operator_mdoc,
             };
-            self.inv_repo.create(&itx)?;
+            self.deps.inv_repo.create(&itx)?;
         }
+        Ok(())
+    }
+
+    // Migrate customer orders from tblCustomerOrder
+    pub fn migrate_customer_orders(&self, conn: &odbc_api::Connection<'_>) -> Result<(), AppError> {
+        let mut raws: Vec<RawCustomerOrderRow> = Vec::new();
+
+        let mut cursor = conn
+            .execute(
+                "SELECT idnOrderId, lngCustomerMdoc, lngOperatorMdoc, datEntry, txtOrderNote \
+                 FROM tblCustomerOrder",
+                (),
+                None::<usize>,
+            )
+            .map_err(|e| AppError::Unexpected(e.to_string()))?
+            .ok_or_else(|| AppError::Unexpected("No result set from tblCustomerOrder".into()))?;
+
+        while let Some(mut row) = cursor
+            .next_row()
+            .map_err(|e| AppError::Unexpected(e.to_string()))?
+        {
+            // idnOrderId (we don't actually use it in the new auto‑increment PK)
+            let mut order_buf = Nullable::<i32>::null();
+            let _ = row.get_data(1, &mut order_buf);
+
+            // customer_mdoc
+            let mut cust_buf = Nullable::<i32>::null();
+            let cust_opt = match row.get_data(2, &mut cust_buf) {
+                Ok(_) => cust_buf.into_opt(),
+                Err(e) => {
+                    warn!("skip order row: bad customer_mdoc: {}", e);
+                    continue;
+                }
+            };
+
+            // operator_mdoc
+            let mut op_buf = Nullable::<i32>::null();
+            let op_opt = match row.get_data(3, &mut op_buf) {
+                Ok(_) => op_buf.into_opt(),
+                Err(e) => {
+                    warn!("skip order row: bad operator_mdoc: {}", e);
+                    continue;
+                }
+            };
+
+            // entry timestamp
+            let mut dt_buf = Nullable::<Timestamp>::null();
+            let dt_opt = match row.get_data(4, &mut dt_buf) {
+                Ok(_) => dt_buf.into_opt(),
+                Err(e) => {
+                    warn!("skip order row: bad entry date: {}", e);
+                    continue;
+                }
+            };
+
+            // note text
+            let mut note_buf = Vec::<u8>::new();
+            let note_opt = match row.get_text(5, &mut note_buf) {
+                Ok(_) => Some(String::from_utf8_lossy(&note_buf).to_string()),
+                Err(e) => {
+                    warn!("skip order row: bad note text: {}", e);
+                    continue;
+                }
+            };
+
+            raws.push((order_buf.into_opt(), cust_opt, op_opt, dt_opt, note_opt));
+        }
+
+        self.migrate_customer_orders_from_rows(raws)
+    }
+
+    // Testable logic: validate & insert each row
+    pub(crate) fn migrate_customer_orders_from_rows<I>(&self, raw_rows: I) -> Result<(), AppError>
+    where
+        I: IntoIterator<Item = RawCustomerOrderRow>,
+    {
+        for (order_opt, cust_opt, op_opt, dt_opt, note_opt) in raw_rows {
+            // customer_mdoc > 0
+            let customer_mdoc = match cust_opt {
+                Some(n) if n > 0 => n,
+                Some(n) => {
+                    warn!("skip customer_order: invalid customer_mdoc <= 0 ({})", n);
+                    continue;
+                }
+                None => {
+                    warn!("skip customer_order: missing customer_mdoc");
+                    continue;
+                }
+            };
+
+            // operator_mdoc > 0
+            let operator_mdoc = match op_opt {
+                Some(n) if n > 0 => n,
+                Some(n) => {
+                    warn!("skip customer_order: invalid operator_mdoc <= 0 ({})", n);
+                    continue;
+                }
+                None => {
+                    warn!("skip customer_order: missing operator_mdoc");
+                    continue;
+                }
+            };
+
+            // date required
+            let date = match dt_opt {
+                Some(ts) => Self::ts_to_naive(ts)?,
+                None => {
+                    warn!("skip customer_order: missing entry date");
+                    continue;
+                }
+            };
+
+            // note: optional, empty→None
+            let note = note_opt
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
+
+            // use the legacy order_id as the FK
+            let order_id = match order_opt {
+                Some(n) if n > 0 => n,
+                Some(n) => {
+                    warn!("skip customer_order: invalid order_id <= 0 ({})", n);
+                    continue;
+                }
+                None => {
+                    warn!("skip customer_order: missing order_id");
+                    continue;
+                }
+            };
+            let tx = CustomerTransaction {
+                order_id,
+                customer_mdoc,
+                operator_mdoc,
+                date: Some(date),
+                note,
+            };
+
+            self.deps.customer_transaction_repo.create(&tx)?;
+        }
+
+        Ok(())
+    }
+
+    // Migrate customer order details from tblCustomerOrderDetail
+    pub fn migrate_customer_order_details(
+        &self,
+        conn: &odbc_api::Connection<'_>,
+    ) -> Result<(), AppError> {
+        let mut raws: Vec<RawCustomerOrderDetailRow> = Vec::new();
+
+        let mut cursor = conn
+            .execute(
+                "SELECT idnOrderDetailId, lngOrderId, txtProductUPC, lngQty, curProductPrice \
+                 FROM tblCustomerOrderDetail",
+                (),
+                None::<usize>,
+            )
+            .map_err(|e| AppError::Unexpected(e.to_string()))?
+            .ok_or_else(|| {
+                AppError::Unexpected("No result set from tblCustomerOrderDetail".into())
+            })?;
+
+        while let Some(mut row) = cursor
+            .next_row()
+            .map_err(|e| AppError::Unexpected(e.to_string()))?
+        {
+            // legacy idnOrderDetailId (we'll ignore it)
+            let mut detail_buf = Nullable::<i32>::null();
+            let _ = row.get_data(1, &mut detail_buf);
+
+            // order_id (foreign key)
+            let mut order_buf = Nullable::<i32>::null();
+            let order_opt = match row.get_data(2, &mut order_buf) {
+                Ok(_) => order_buf.into_opt(),
+                Err(e) => {
+                    warn!("skip detail row: bad order_id: {}", e);
+                    continue;
+                }
+            };
+
+            // upc
+            let mut upc_buf = Vec::<u8>::new();
+            let upc_opt = match row.get_text(3, &mut upc_buf) {
+                Ok(_) => Some(String::from_utf8_lossy(&upc_buf).to_string()),
+                Err(e) => {
+                    warn!("skip detail row: bad UPC text: {}", e);
+                    continue;
+                }
+            };
+
+            // quantity
+            let mut qty_buf = Nullable::<i32>::null();
+            let qty_opt = match row.get_data(4, &mut qty_buf) {
+                Ok(_) => qty_buf.into_opt(),
+                Err(e) => {
+                    warn!("skip detail row: bad qty: {}", e);
+                    continue;
+                }
+            };
+
+            // price
+            let mut price_buf = Nullable::<f64>::null();
+            let price_opt = match row.get_data(5, &mut price_buf) {
+                Ok(_) => price_buf.into_opt(),
+                Err(e) => {
+                    warn!("skip detail row: bad price: {}", e);
+                    continue;
+                }
+            };
+
+            raws.push((
+                detail_buf.into_opt(),
+                order_opt,
+                upc_opt,
+                qty_opt,
+                price_opt,
+            ));
+        }
+
+        self.migrate_customer_order_details_from_rows(raws)
+    }
+
+    // Testable logic for customer order details
+    pub(crate) fn migrate_customer_order_details_from_rows<I>(
+        &self,
+        raw_rows: I,
+    ) -> Result<(), AppError>
+    where
+        I: IntoIterator<Item = RawCustomerOrderDetailRow>,
+    {
+        for (_legacy_id, order_opt, upc_opt, qty_opt, price_opt) in raw_rows {
+            // order_id > 0
+            let order_id = match order_opt {
+                Some(n) if n > 0 => n,
+                Some(n) => {
+                    warn!("skip detail: invalid order_id <= 0 ({})", n);
+                    continue;
+                }
+                None => {
+                    warn!("skip detail: missing order_id");
+                    continue;
+                }
+            };
+
+            // upc: must be exactly 8 or 12 numerical characters
+            let upc = match upc_opt {
+                Some(s)
+                    if (s.trim().len() == 8 || s.trim().len() == 12)
+                        && s.trim().chars().all(|c| c.is_ascii_digit()) =>
+                {
+                    s.trim().to_string()
+                }
+                _ => {
+                    warn!("skip detail {}: missing or bad UPC", order_id);
+                    continue;
+                }
+            };
+
+            // quantity ≥ 0
+            let quantity = match qty_opt {
+                Some(n) if n >= 0 => n,
+                Some(n) => {
+                    warn!("skip detail {}: negative qty ({})", order_id, n);
+                    continue;
+                }
+                None => {
+                    warn!("skip detail {}: missing qty", order_id);
+                    continue;
+                }
+            };
+
+            // price must be > 0
+            let price_cents = match price_opt {
+                Some(p) => {
+                    let c = (p * 100.0).round() as i32;
+                    if c <= 0 {
+                        warn!("skip detail {}: non-positive price_cents ({})", order_id, c);
+                        continue;
+                    }
+                    c
+                }
+                None => {
+                    warn!("skip detail {}: missing price", order_id);
+                    continue;
+                }
+            };
+
+            let detail = CustomerTxDetail {
+                detail_id: 0, // auto‐assigned PK
+                order_id,
+                upc,
+                quantity,
+                price: price_cents,
+            };
+
+            self.deps.customer_tx_detail_repo.create(&detail)?;
+        }
+
         Ok(())
     }
 }
@@ -1035,6 +1355,8 @@ mod tests {
     use crate::test_support::mock_club_import_repo::MockClubImportRepo;
     use crate::test_support::mock_club_tx_repo::MockClubTransactionRepo;
     use crate::test_support::mock_customer_repo::MockCustomerRepo;
+    use crate::test_support::mock_customer_tx_detail_repo::MockCustomerTxDetailRepo;
+    use crate::test_support::mock_customer_tx_repo::MockCustomerTransactionRepo;
     use crate::test_support::mock_inventory_transaction_repo::MockInventoryTransactionRepo;
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
@@ -1042,7 +1364,7 @@ mod tests {
     use odbc_sys::Timestamp;
     use std::sync::Arc;
 
-    impl Default for LegacyMigrationUseCases {
+    impl Default for LegacyMigrationDeps {
         fn default() -> Self {
             Self {
                 op_repo: Arc::new(MockOperatorRepo::new()),
@@ -1052,20 +1374,15 @@ mod tests {
                 club_transaction_repo: Arc::new(MockClubTransactionRepo::new()),
                 club_imports_repo: Arc::new(MockClubImportRepo::new()),
                 inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
+                customer_transaction_repo: Arc::new(MockCustomerTransactionRepo::new()),
+                customer_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
             }
         }
     }
 
     fn make_usecase() -> LegacyMigrationUseCases {
-        LegacyMigrationUseCases {
-            op_repo: Arc::new(MockOperatorRepo::new()),
-            category_repo: Arc::new(MockCategoryRepo::new()),
-            product_repo: Arc::new(MockProductRepo::new()),
-            customer_repo: Arc::new(MockCustomerRepo::new()),
-            club_transaction_repo: Arc::new(MockClubTransactionRepo::new()),
-            club_imports_repo: Arc::new(MockClubImportRepo::new()),
-            inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
-        }
+        let deps = LegacyMigrationDeps::default();
+        LegacyMigrationUseCases::new(deps)
     }
 
     // ts_to_naive tests
@@ -1119,13 +1436,17 @@ mod tests {
     fn migrate_categories_from_rows_works() {
         let repo = Arc::new(MockCategoryRepo::new());
         let usecase = LegacyMigrationUseCases {
-            category_repo: repo.clone(),
-            op_repo: Arc::new(MockOperatorRepo::new()),
-            product_repo: Arc::new(MockProductRepo::new()),
-            customer_repo: Arc::new(MockCustomerRepo::new()),
-            club_transaction_repo: Arc::new(MockClubTransactionRepo::new()),
-            club_imports_repo: Arc::new(MockClubImportRepo::new()),
-            inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
+            deps: LegacyMigrationDeps {
+                category_repo: repo.clone(),
+                op_repo: Arc::new(MockOperatorRepo::new()),
+                product_repo: Arc::new(MockProductRepo::new()),
+                customer_repo: Arc::new(MockCustomerRepo::new()),
+                club_transaction_repo: Arc::new(MockClubTransactionRepo::new()),
+                club_imports_repo: Arc::new(MockClubImportRepo::new()),
+                inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
+                customer_transaction_repo: Arc::new(MockCustomerTransactionRepo::new()),
+                customer_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
+            },
         };
 
         // simulate ODBC result: Some, whitespace, None
@@ -1158,7 +1479,7 @@ mod tests {
             .migrate_operators_from_rows(rows)
             .expect("valid row must succeed");
 
-        let ops = usecase.op_repo.list().unwrap();
+        let ops = usecase.deps.op_repo.list().unwrap();
         assert_eq!(ops.len(), 1);
         assert_eq!(ops[0].mdoc, 1);
         assert_eq!(ops[0].name, "Alice");
@@ -1186,7 +1507,7 @@ mod tests {
             .migrate_operators_from_rows(rows)
             .expect("bad mdoc should be skipped");
 
-        let ops = usecase.op_repo.list().unwrap();
+        let ops = usecase.deps.op_repo.list().unwrap();
         assert!(ops.is_empty());
     }
 
@@ -1208,7 +1529,7 @@ mod tests {
             .migrate_operators_from_rows(rows)
             .expect("empty name should be skipped");
 
-        let ops = usecase.op_repo.list().unwrap();
+        let ops = usecase.deps.op_repo.list().unwrap();
         assert!(ops.is_empty());
     }
 
@@ -1231,7 +1552,7 @@ mod tests {
             start: Some(LegacyMigrationUseCases::ts_to_naive(ts0).unwrap()),
             stop: None,
         };
-        usecase.op_repo.create(&existing).unwrap();
+        usecase.deps.op_repo.create(&existing).unwrap();
 
         let ts = Timestamp {
             year: 2025,
@@ -1248,7 +1569,7 @@ mod tests {
             .migrate_operators_from_rows(rows)
             .expect("duplicate mdoc should be skipped");
 
-        let ops = usecase.op_repo.list().unwrap();
+        let ops = usecase.deps.op_repo.list().unwrap();
         // still only the original operator
         assert_eq!(ops.len(), 1);
         assert_eq!(ops[0].mdoc, 3);
@@ -1278,7 +1599,7 @@ mod tests {
             Some(ts),
         )];
         usecase.migrate_products_from_rows(raw).unwrap();
-        let prods = usecase.product_repo.list().unwrap();
+        let prods = usecase.deps.product_repo.list().unwrap();
         assert_eq!(prods.len(), 1);
         let p = &prods[0];
         assert_eq!(p.upc, "12345678");
@@ -1326,7 +1647,7 @@ mod tests {
             ),
         ];
         usecase.migrate_products_from_rows(raws).unwrap();
-        assert!(usecase.product_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.product_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -1364,7 +1685,7 @@ mod tests {
             ),
         ];
         usecase.migrate_products_from_rows(raws).unwrap();
-        assert!(usecase.product_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.product_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -1400,7 +1721,7 @@ mod tests {
             ),
         ];
         usecase.migrate_products_from_rows(raws).unwrap();
-        assert!(usecase.product_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.product_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -1438,7 +1759,7 @@ mod tests {
             ),
         ];
         usecase.migrate_products_from_rows(raws).unwrap();
-        assert!(usecase.product_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.product_repo.list().unwrap().is_empty());
     }
 
     // Customer migration tests
@@ -1460,7 +1781,7 @@ mod tests {
             .migrate_customers_from_rows(raw)
             .expect("valid row should succeed");
 
-        let list = usecase.customer_repo.list().unwrap();
+        let list = usecase.deps.customer_repo.list().unwrap();
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].mdoc, 42);
         assert_eq!(list[0].name, "Alice");
@@ -1490,7 +1811,7 @@ mod tests {
             .migrate_customers_from_rows(raws)
             .expect("bad mdoc should be skipped");
 
-        assert!(usecase.customer_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.customer_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -1514,7 +1835,7 @@ mod tests {
             .migrate_customers_from_rows(raws)
             .expect("rows should be processed");
 
-        let list = usecase.customer_repo.list().unwrap();
+        let list = usecase.deps.customer_repo.list().unwrap();
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].mdoc, 6);
         assert_eq!(list[0].name, "Dave");
@@ -1531,7 +1852,7 @@ mod tests {
             .migrate_customers_from_rows(raws)
             .expect("missing date should be skipped");
 
-        assert!(usecase.customer_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.customer_repo.list().unwrap().is_empty());
     }
 
     // Club imports migration tests
@@ -1558,7 +1879,7 @@ mod tests {
             .migrate_club_imports_from_rows(raw)
             .expect("valid row should succeed");
 
-        let stored = usecase.club_imports_repo.list().unwrap();
+        let stored = usecase.deps.club_imports_repo.list().unwrap();
         assert_eq!(stored.len(), 1);
         let stmt = &stored[0];
         assert_eq!(stmt.id, 10);
@@ -1612,7 +1933,7 @@ mod tests {
             .migrate_club_imports_from_rows(raws)
             .expect("bad id should be skipped");
 
-        assert!(usecase.club_imports_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.club_imports_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -1641,7 +1962,7 @@ mod tests {
             .migrate_club_imports_from_rows(raws)
             .expect("bad activity rows skipped");
 
-        assert!(usecase.club_imports_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.club_imports_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -1667,7 +1988,7 @@ mod tests {
             .migrate_club_imports_from_rows(raws)
             .expect("empty file skipped");
 
-        assert!(usecase.club_imports_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.club_imports_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -1684,7 +2005,7 @@ mod tests {
             .migrate_club_imports_from_rows(raws)
             .expect("missing import date skipped");
 
-        assert!(usecase.club_imports_repo.list().unwrap().is_empty());
+        assert!(usecase.deps.club_imports_repo.list().unwrap().is_empty());
     }
 
     // Club transaction migration tests
@@ -1710,7 +2031,7 @@ mod tests {
         )];
 
         usecase.migrate_club_transactions_from_rows(raws).unwrap();
-        let stored = usecase.club_transaction_repo.list().unwrap();
+        let stored = usecase.deps.club_transaction_repo.list().unwrap();
         assert_eq!(stored.len(), 1);
         let d = &stored[0];
         assert_eq!(d.id, 1);
@@ -1747,7 +2068,12 @@ mod tests {
         )];
 
         usecase.migrate_club_transactions_from_rows(raws).unwrap();
-        assert!(usecase.club_transaction_repo.list().unwrap().is_empty());
+        assert!(usecase
+            .deps
+            .club_transaction_repo
+            .list()
+            .unwrap()
+            .is_empty());
     }
 
     #[test]
@@ -1782,7 +2108,7 @@ mod tests {
         ];
 
         usecase.migrate_club_transactions_from_rows(raws).unwrap();
-        let list = usecase.club_transaction_repo.list().unwrap();
+        let list = usecase.deps.club_transaction_repo.list().unwrap();
         assert_eq!(list.len(), 2);
         let first = &list[0];
         assert_eq!(first.id, 3);
@@ -1832,7 +2158,12 @@ mod tests {
         ];
 
         usecase.migrate_club_transactions_from_rows(raws).unwrap();
-        assert!(usecase.club_transaction_repo.list().unwrap().is_empty());
+        assert!(usecase
+            .deps
+            .club_transaction_repo
+            .list()
+            .unwrap()
+            .is_empty());
     }
 
     // Inventory transaction migration tests
@@ -1860,7 +2191,7 @@ mod tests {
         )];
 
         uc.migrate_inventory_transactions_from_rows(raws).unwrap();
-        let stored = uc.inv_repo.list().unwrap();
+        let stored = uc.deps.inv_repo.list().unwrap();
         assert_eq!(stored.len(), 1);
         let tx = &stored[0];
         assert_eq!(tx.ref_order_id, Some(42));
@@ -1924,7 +2255,7 @@ mod tests {
         ];
 
         uc.migrate_inventory_transactions_from_rows(raws).unwrap();
-        let list = uc.inv_repo.list().unwrap();
+        let list = uc.deps.inv_repo.list().unwrap();
         assert_eq!(list.len(), 3);
 
         assert_eq!(list[0].reference.as_ref().unwrap(), "R2");
@@ -1970,7 +2301,7 @@ mod tests {
         ];
 
         uc.migrate_inventory_transactions_from_rows(raws).unwrap();
-        assert!(uc.inv_repo.list().unwrap().is_empty());
+        assert!(uc.deps.inv_repo.list().unwrap().is_empty());
     }
 
     #[test]
@@ -2011,6 +2342,175 @@ mod tests {
         ];
 
         uc.migrate_inventory_transactions_from_rows(raws).unwrap();
-        assert!(uc.inv_repo.list().unwrap().is_empty());
+        assert!(uc.deps.inv_repo.list().unwrap().is_empty());
+    }
+
+    // Customer order migration tests
+    #[test]
+    fn orders_happy_path_and_note_variants() {
+        let uc = make_usecase();
+        let ts = Timestamp {
+            year: 2025,
+            month: 7,
+            day: 15,
+            hour: 12,
+            minute: 0,
+            second: 0,
+            fraction: 0,
+        };
+        // RawCustomerOrderRow = (Option<i32>,Option<i32>,Option<i32>,Option<Timestamp>,Option<String>)
+        let raws = vec![
+            // all present, non‑empty note
+            (
+                Some(10),
+                Some(1),
+                Some(2),
+                Some(ts.clone()),
+                Some(" hello ".into()),
+            ),
+            // empty note → None
+            (
+                Some(11),
+                Some(3),
+                Some(4),
+                Some(ts.clone()),
+                Some("   ".into()),
+            ),
+        ];
+        uc.migrate_customer_orders_from_rows(raws).unwrap();
+        let saved = uc.deps.customer_transaction_repo.list().unwrap();
+        assert_eq!(saved.len(), 2);
+        // first
+        assert_eq!(saved[0].order_id, 10);
+        assert_eq!(saved[0].customer_mdoc, 1);
+        assert_eq!(saved[0].operator_mdoc, 2);
+        assert_eq!(saved[0].date.unwrap().to_string(), "2025-07-15 12:00:00");
+        assert_eq!(saved[0].note.as_ref().unwrap(), "hello");
+        // second: note None
+        assert_eq!(saved[1].order_id, 11);
+        assert!(saved[1].note.is_none());
+    }
+    #[test]
+    fn orders_skip_missing_or_invalid_fields() {
+        let uc = make_usecase();
+        let ts = Timestamp {
+            year: 2025,
+            month: 7,
+            day: 15,
+            hour: 12,
+            minute: 0,
+            second: 0,
+            fraction: 0,
+        };
+        let raws = vec![
+            // missing customer_mdoc
+            (Some(1), None, Some(2), Some(ts.clone()), None),
+            // invalid operator_mdoc <= 0
+            (Some(2), Some(1), Some(0), Some(ts.clone()), None),
+            // missing date
+            (Some(3), Some(1), Some(2), None, None),
+        ];
+        uc.migrate_customer_orders_from_rows(raws).unwrap();
+        assert!(uc.deps.customer_transaction_repo.list().unwrap().is_empty());
+    }
+    // Customer order detail migration tests
+    #[test]
+    fn migrate_customer_orders_creates_only_valid() {
+        let uc = make_usecase();
+        let ts = Timestamp {
+            year: 2025,
+            month: 7,
+            day: 15,
+            hour: 9,
+            minute: 30,
+            second: 0,
+            fraction: 0,
+        };
+        // RawCustomerOrderRow = (Option<i32>, Option<i32>, Option<i32>, Option<Timestamp>, Option<String>)
+        let raws = vec![
+            // valid
+            (Some(10), Some(1), Some(2), Some(ts), Some(" note ".into())),
+            // missing order_id
+            (None, Some(1), Some(2), Some(ts), Some("x".into())),
+            // invalid cust_mdoc
+            (Some(11), Some(0), Some(2), Some(ts), Some("x".into())),
+            // missing op_mdoc
+            (Some(12), Some(1), None, Some(ts), Some("x".into())),
+            // missing date
+            (Some(13), Some(1), Some(2), None, Some("x".into())),
+            // empty note => None
+            (Some(14), Some(3), Some(4), Some(ts), Some("   ".into())),
+        ];
+
+        uc.migrate_customer_orders_from_rows(raws).unwrap();
+        let list = uc.deps.customer_transaction_repo.list().unwrap();
+        // only two survived: the first valid, and the last with empty note
+        assert_eq!(list.len(), 2);
+        assert_eq!(list[0].order_id, 10);
+        assert_eq!(list[0].customer_mdoc, 1);
+        assert_eq!(list[0].operator_mdoc, 2);
+        assert_eq!(
+            list[0].date,
+            Some(NaiveDateTime::new(
+                NaiveDate::from_ymd_opt(2025, 7, 15).unwrap(),
+                NaiveTime::from_hms_opt(9, 30, 0).unwrap()
+            ))
+        );
+        assert_eq!(list[0].note.as_deref(), Some("note"));
+        assert_eq!(list[1].order_id, 14);
+        assert_eq!(list[1].note, None);
+    }
+
+    #[test]
+    fn migrate_customer_order_details_creates_only_valid() {
+        let uc = make_usecase();
+        let raws = vec![
+            // valid row: order_id=5, upc len8 digits, qty=0, price=$1.23
+            (
+                Some(1),
+                Some(5),
+                Some("12345678".into()),
+                Some(0),
+                Some(1.23),
+            ),
+            // bad order_id
+            (
+                Some(2),
+                Some(0),
+                Some("12345678".into()),
+                Some(1),
+                Some(1.23),
+            ),
+            // bad upc
+            (Some(3), Some(6), Some("ABC".into()), Some(1), Some(1.23)),
+            // negative qty
+            (
+                Some(4),
+                Some(7),
+                Some("87654321".into()),
+                Some(-1),
+                Some(1.23),
+            ),
+            // zero price
+            (
+                Some(5),
+                Some(8),
+                Some("87654321".into()),
+                Some(1),
+                Some(0.0),
+            ),
+        ];
+
+        uc.migrate_customer_order_details_from_rows(raws).unwrap();
+
+        // Only the valid row with order_id = 5 should be in the repo:
+        let list = uc.deps.customer_tx_detail_repo.list_by_order(5).unwrap();
+
+        assert_eq!(list.len(), 1);
+        let det = &list[0];
+        assert_eq!(det.order_id, 5);
+        assert_eq!(det.upc, "12345678");
+        assert_eq!(det.quantity, 0);
+        assert_eq!(det.price, 123); // 1.23 * 100
     }
 }

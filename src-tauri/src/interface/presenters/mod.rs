@@ -1,5 +1,7 @@
 pub mod category_presenter;
 pub mod club_presenter;
+pub mod customer_transaction_presenter;
+pub mod customer_tx_detail_presenter;
 pub mod inventory_transaction_presenter;
 pub mod operator_presenter;
 pub mod price_adjustment_presenter;
