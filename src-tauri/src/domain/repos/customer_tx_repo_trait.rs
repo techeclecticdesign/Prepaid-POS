@@ -5,4 +5,13 @@ pub trait CustomerTransactionRepoTrait: Send + Sync {
     fn create(&self, tx: &CustomerTransaction) -> Result<(), AppError>;
     fn get(&self, order_id: i32) -> Result<Option<CustomerTransaction>, AppError>;
     fn list(&self) -> Result<Vec<CustomerTransaction>, AppError>;
+    fn search(
+        &self,
+        limit: i64,
+        offset: i64,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<CustomerTransaction>, AppError>;
+
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
 }

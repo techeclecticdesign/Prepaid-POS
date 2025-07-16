@@ -1,5 +1,5 @@
 use crate::common::error::AppError;
-use crate::domain::models::InventoryTransaction;
+use crate::domain::models::{CustomerTransaction, CustomerTxDetail, InventoryTransaction};
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use crate::domain::repos::CustomerTxDetailRepoTrait;
 use crate::domain::repos::InventoryTransactionRepoTrait;
@@ -93,6 +93,25 @@ impl TransactionUseCases {
         self.inv_repo.list_for_product(upc)
     }
 
+    pub fn search_inventory_transactions(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<InventoryTransaction>, AppError> {
+        let limit = 10;
+        let offset = (page.saturating_sub(1) as i64) * limit;
+        self.inv_repo.search(limit, offset, date, search)
+    }
+
+    pub fn count_inventory_transactions(
+        &self,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<u32, AppError> {
+        self.inv_repo.count(date, search).map(|c| c as u32)
+    }
+
     pub fn list_for_customer(
         &self,
         customer_mdoc: i32,
@@ -100,10 +119,7 @@ impl TransactionUseCases {
         self.inv_repo.list_for_customer(customer_mdoc)
     }
 
-    pub fn make_sale(
-        &self,
-        mut tx: crate::domain::models::CustomerTransaction,
-    ) -> Result<(), AppError> {
+    pub fn make_sale(&self, mut tx: CustomerTransaction) -> Result<(), AppError> {
         // stamp entry time
         tx.date = Some(chrono::Utc::now().naive_utc());
         // If a specific order_id is requested, ensure it's unique
@@ -128,21 +144,15 @@ impl TransactionUseCases {
         res
     }
 
-    pub fn list_sales(&self) -> Result<Vec<crate::domain::models::CustomerTransaction>, AppError> {
+    pub fn list_sales(&self) -> Result<Vec<CustomerTransaction>, AppError> {
         self.cust_tx_repo.list()
     }
 
-    pub fn get_sale(
-        &self,
-        order_id: i32,
-    ) -> Result<Option<crate::domain::models::CustomerTransaction>, AppError> {
+    pub fn get_sale(&self, order_id: i32) -> Result<Option<CustomerTransaction>, AppError> {
         self.cust_tx_repo.get(order_id)
     }
 
-    pub fn make_sale_line_item(
-        &self,
-        detail: &crate::domain::models::customer_tx_detail::CustomerTxDetail,
-    ) -> Result<(), AppError> {
+    pub fn make_sale_line_item(&self, detail: &CustomerTxDetail) -> Result<(), AppError> {
         let res = self.detail_repo.create(detail);
         match &res {
             Ok(()) => info!(
@@ -157,11 +167,27 @@ impl TransactionUseCases {
         res
     }
 
-    pub fn list_order_details(
-        &self,
-        order_id: i32,
-    ) -> Result<Vec<crate::domain::models::customer_tx_detail::CustomerTxDetail>, AppError> {
+    pub fn list_order_details(&self, order_id: i32) -> Result<Vec<CustomerTxDetail>, AppError> {
         self.detail_repo.list_by_order(order_id)
+    }
+
+    pub fn search_customer_transactions(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<CustomerTransaction>, AppError> {
+        let limit = 10;
+        let offset = (page.saturating_sub(1) as i64) * limit;
+        self.cust_tx_repo.search(limit, offset, date, search)
+    }
+
+    pub fn count_customer_transactions(
+        &self,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<u32, AppError> {
+        self.cust_tx_repo.count(date, search).map(|c| c as u32)
     }
 }
 

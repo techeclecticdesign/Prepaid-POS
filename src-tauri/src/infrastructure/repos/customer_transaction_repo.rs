@@ -81,6 +81,94 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
             .collect::<Result<Vec<_>, _>>()?;
         Ok(txs)
     }
+
+    fn search(
+        &self,
+        limit: i64,
+        offset: i64,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<CustomerTransaction>, AppError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
+        let mut sql = "\
+            SELECT order_id, customer_mdoc, operator_mdoc, date, note \
+            FROM customer_transaction WHERE 1=1\
+        "
+        .to_string();
+        let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+        let mut string_params: Vec<String> = Vec::new();
+
+        // date filter
+        if let Some(ref d) = date {
+            sql.push_str(" AND date(date)=date(?)");
+            params.push(d);
+        }
+        // search on multiple fields
+        if let Some(ref s) = search {
+            sql.push_str(" AND (customer_mdoc LIKE ? OR operator_mdoc LIKE ? OR order_id LIKE ? OR note LIKE ?)");
+            let pat = format!("%{}%", s);
+            string_params.push(pat);
+            let p = string_params.last().ok_or_else(|| {
+                AppError::Unexpected("customer_transaction pattern missing".into())
+            })?;
+            // push four times for each placeholder
+            params.push(p);
+            params.push(p);
+            params.push(p);
+            params.push(p);
+        }
+
+        // ordering + pagination
+        sql.push_str(" ORDER BY date DESC LIMIT ? OFFSET ?");
+        params.push(&limit);
+        params.push(&offset);
+
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params.as_slice(), |r| {
+            Ok(CustomerTransaction {
+                order_id: r.get(0)?,
+                customer_mdoc: r.get(1)?,
+                operator_mdoc: r.get(2)?,
+                date: r.get(3)?,
+                note: r.get(4)?,
+            })
+        })?;
+        rows.collect::<Result<_, _>>().map_err(Into::into)
+    }
+
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
+        let mut sql = "SELECT COUNT(*) FROM customer_transaction WHERE 1=1".to_string();
+        let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+        let mut string_params: Vec<String> = Vec::new();
+
+        if let Some(ref d) = date {
+            sql.push_str(" AND date(date)=date(?)");
+            params.push(d);
+        }
+        if let Some(ref s) = search {
+            sql.push_str(" AND (customer_mdoc LIKE ? OR operator_mdoc LIKE ? OR order_id LIKE ? OR note LIKE ?)");
+            let pat = format!("%{}%", s);
+            string_params.push(pat);
+            let p = string_params.last().ok_or_else(|| {
+                AppError::Unexpected("customer_transaction count pattern missing".into())
+            })?;
+            params.push(p);
+            params.push(p);
+            params.push(p);
+            params.push(p);
+        }
+
+        let mut stmt = conn.prepare(&sql)?;
+        stmt.query_row(params.as_slice(), |r| r.get(0))
+            .map_err(Into::into)
+    }
 }
 
 #[cfg(test)]

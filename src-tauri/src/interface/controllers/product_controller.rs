@@ -3,7 +3,9 @@ use crate::common::error::AppError;
 use crate::domain::models::price_adjustment::PriceAdjustment;
 use crate::domain::models::product::Product;
 use crate::interface::dto::category_dto::{CategoryDto, CreateCategoryDto, DeleteCategoryDto};
-use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
+use crate::interface::dto::price_adjustment_dto::{
+    PriceAdjustmentDto, PriceAdjustmentSearchResult,
+};
 use crate::interface::dto::product_dto::{
     CreateProductDto, DeleteProductDto, ProductDto, ProductSearchResult, UpdateProductDto,
 };
@@ -99,6 +101,22 @@ impl ProductController {
         Ok(ProductSearchResult {
             products: ProductPresenter::to_dto_list(products),
             total_count,
+        })
+    }
+
+    pub fn search_price_adjustments(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<PriceAdjustmentSearchResult, AppError> {
+        let adjustments = self
+            .uc
+            .search_price_adjustments(page, date.clone(), search.clone())?;
+        let total = self.uc.count_price_adjustments(date, search)?;
+        Ok(PriceAdjustmentSearchResult {
+            adjustments: PriceAdjustmentPresenter::to_dto_list(adjustments),
+            total_count: total,
         })
     }
 

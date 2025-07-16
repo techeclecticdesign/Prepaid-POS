@@ -13,4 +13,12 @@ pub trait PriceAdjustmentRepoTrait: Send + Sync {
     fn list_for_operator(&self, operator_mdoc: i32) -> Result<Vec<PriceAdjustment>, AppError>;
     fn list_for_today(&self) -> Result<Vec<PriceAdjustment>, AppError>;
     fn list(&self) -> Result<Vec<PriceAdjustment>, AppError>;
+    fn search(
+        &self,
+        limit: i64,
+        offset: i64,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<PriceAdjustment>, AppError>;
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
 }

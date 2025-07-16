@@ -180,6 +180,25 @@ impl ProductUseCases {
         self.repo.search(search, category, limit, offset)
     }
 
+    pub fn search_price_adjustments(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<PriceAdjustment>, AppError> {
+        let limit = 10;
+        let offset = (page.saturating_sub(1) as i64) * limit;
+        self.price_repo.search(limit, offset, date, search)
+    }
+
+    pub fn count_price_adjustments(
+        &self,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<u32, AppError> {
+        self.repo.count(date, search)
+    }
+
     pub fn list_categories(&self) -> Result<Vec<Category>, AppError> {
         self.category_repo.list_active()
     }

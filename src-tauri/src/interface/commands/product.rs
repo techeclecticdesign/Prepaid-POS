@@ -1,7 +1,9 @@
 use crate::common::error::AppError;
 use crate::interface::controllers::product_controller::ProductController;
 use crate::interface::dto::category_dto::{CategoryDto, CreateCategoryDto, DeleteCategoryDto};
-use crate::interface::dto::price_adjustment_dto::PriceAdjustmentDto;
+use crate::interface::dto::price_adjustment_dto::{
+    PriceAdjustmentDto, PriceAdjustmentSearchResult,
+};
 use crate::interface::dto::product_dto::{
     CreateProductDto, DeleteProductDto, ProductDto, ProductSearchResult, UpdateProductDto,
 };
@@ -94,6 +96,17 @@ pub fn search_products(
 ) -> Result<ProductSearchResult, AppError> {
     let page = page.unwrap_or(1);
     controller.search_products(search, category, page)
+}
+
+#[tauri::command]
+pub fn search_price_adjustments(
+    controller: State<Arc<ProductController>>,
+    page: Option<u32>,
+    date: Option<String>,
+    search: Option<String>,
+) -> Result<PriceAdjustmentSearchResult, AppError> {
+    let page = page.unwrap_or(1);
+    controller.search_price_adjustments(page, date, search)
 }
 
 #[tauri::command]

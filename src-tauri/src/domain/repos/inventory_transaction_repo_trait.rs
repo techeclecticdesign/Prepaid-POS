@@ -9,4 +9,12 @@ pub trait InventoryTransactionRepoTrait: Send + Sync {
     fn list_for_customer(&self, customer_mdoc: i32) -> Result<Vec<InventoryTransaction>, AppError>;
     fn list_for_today(&self) -> Result<Vec<InventoryTransaction>, AppError>;
     fn list(&self) -> Result<Vec<InventoryTransaction>, AppError>;
+    fn search(
+        &self,
+        limit: i64,
+        offset: i64,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<InventoryTransaction>, AppError>;
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
 }

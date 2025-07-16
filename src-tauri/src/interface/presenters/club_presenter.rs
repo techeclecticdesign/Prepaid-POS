@@ -1,50 +1,37 @@
-use crate::domain::models::{ClubImport, ClubTransaction, Customer};
+use crate::domain::models::{ClubImport, ClubTransaction};
 use crate::interface::dto::{
     club_import_dto::ClubImportReadDto, club_transaction_dto::ClubTransactionReadDto,
-    customer_dto::CustomerReadDto,
 };
+use chrono::{TimeZone, Utc};
 
 pub struct ClubPresenter;
 
 impl ClubPresenter {
-    pub fn to_customer_dto(c: Customer) -> CustomerReadDto {
-        CustomerReadDto {
-            mdoc: c.mdoc,
-            name: c.name,
-            added: c.added,
-            updated: c.updated,
-        }
-    }
-
-    pub fn to_customer_dto_list(cs: Vec<Customer>) -> Vec<CustomerReadDto> {
-        cs.into_iter().map(Self::to_customer_dto).collect()
-    }
-
-    pub fn to_transaction_dto(tx: ClubTransaction) -> ClubTransactionReadDto {
-        ClubTransactionReadDto {
-            id: tx.id,
-            mdoc: tx.mdoc,
-            tx_type: tx.tx_type,
-            amount: tx.amount,
-            date: tx.date,
-        }
-    }
-
-    pub fn to_transaction_dto_list(txs: Vec<ClubTransaction>) -> Vec<ClubTransactionReadDto> {
-        txs.into_iter().map(Self::to_transaction_dto).collect()
-    }
-
-    pub fn to_import_dto(i: ClubImport) -> ClubImportReadDto {
+    pub fn to_import_dto(ci: ClubImport) -> ClubImportReadDto {
         ClubImportReadDto {
-            id: i.id,
-            date: i.date,
-            activity_from: i.activity_from,
-            activity_to: i.activity_to,
-            source_file: i.source_file,
+            id: ci.id,
+            date: Utc.from_utc_datetime(&ci.date).to_rfc3339(),
+            activity_from: Utc.from_utc_datetime(&ci.activity_from).to_rfc3339(),
+            activity_to: Utc.from_utc_datetime(&ci.activity_to).to_rfc3339(),
+            source_file: ci.source_file,
         }
     }
 
-    pub fn to_import_dto_list(is: Vec<ClubImport>) -> Vec<ClubImportReadDto> {
-        is.into_iter().map(Self::to_import_dto).collect()
+    pub fn to_import_dto_list(cis: Vec<ClubImport>) -> Vec<ClubImportReadDto> {
+        cis.into_iter().map(Self::to_import_dto).collect()
+    }
+
+    pub fn to_transaction_dto(ct: ClubTransaction) -> ClubTransactionReadDto {
+        ClubTransactionReadDto {
+            id: ct.id,
+            mdoc: ct.mdoc,
+            tx_type: ct.tx_type,
+            amount: ct.amount,
+            date: Utc.from_utc_datetime(&ct.date).to_rfc3339(),
+        }
+    }
+
+    pub fn to_transaction_dto_list(cts: Vec<ClubTransaction>) -> Vec<ClubTransactionReadDto> {
+        cts.into_iter().map(Self::to_transaction_dto).collect()
     }
 }

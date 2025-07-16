@@ -1,21 +1,27 @@
 use crate::interface::common::validators::validate_optional_rfc3339_str;
+use serde::{Deserialize, Serialize};
 use validator_derive::Validate;
 
-#[derive(serde::Serialize, serde::Deserialize, Validate, Clone)]
+#[derive(Serialize, Deserialize, Validate, Clone)]
 pub struct CustomerTransactionDto {
     #[validate(range(min = 1, message = "order_id must be non-zero and positive"))]
-    pub order_id: i32, // renamed from order_id
+    pub order_id: i32,
 
     #[validate(range(min = 1, message = "customer_mdoc must be non-zero and positive"))]
-    pub customer_mdoc: i32, // renamed from customer_mdoc
-
+    pub customer_mdoc: i32,
     #[validate(range(min = 1, message = "operator_mdoc must be non-zero and positive"))]
-    pub operator_mdoc: i32, // renamed from operator_mdoc
+    pub operator_mdoc: i32,
 
     #[validate(custom(function = "validate_optional_rfc3339_str"))]
     pub date: Option<String>, // RFC3339 string, optional
 
-    pub note: Option<String>, // no extra validation
+    pub note: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct CustomerTransactionSearchResult {
+    pub items: Vec<CustomerTransactionDto>,
+    pub total_count: u32,
 }
 
 #[cfg(test)]

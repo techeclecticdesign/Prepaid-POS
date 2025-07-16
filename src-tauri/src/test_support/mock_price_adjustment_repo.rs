@@ -74,4 +74,72 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
     fn list(&self) -> Result<Vec<PriceAdjustment>, AppError> {
         Ok(self.store.lock().unwrap().clone())
     }
+
+    fn search(
+        &self,
+        limit: i64,
+        offset: i64,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<PriceAdjustment>, AppError> {
+        let guard = self.store.lock().unwrap();
+
+        let mut adjustments: Vec<PriceAdjustment> = guard
+            .iter()
+            .filter(|a| {
+                // Date filter
+                let date_match = date
+                    .as_ref()
+                    .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+                    .map(|parsed| a.created_at.map(|dt| dt.date() == parsed).unwrap_or(false))
+                    .unwrap_or(true);
+
+                // Search filter
+                let search_match = search
+                    .as_ref()
+                    .map(|s| {
+                        let s = s.as_str();
+                        a.upc.contains(s) || a.operator_mdoc.to_string().contains(s)
+                    })
+                    .unwrap_or(true);
+
+                date_match && search_match
+            })
+            .cloned()
+            .collect();
+
+        // Sort newest first
+        adjustments.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+        let start = offset as usize;
+        let end = (start + limit as usize).min(adjustments.len());
+        Ok(adjustments.get(start..end).unwrap_or(&[]).to_vec())
+    }
+
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+        let guard = self.store.lock().unwrap();
+
+        let count = guard
+            .iter()
+            .filter(|a| {
+                let date_match = date
+                    .as_ref()
+                    .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+                    .map(|parsed| a.created_at.map(|dt| dt.date() == parsed).unwrap_or(false))
+                    .unwrap_or(true);
+
+                let search_match = search
+                    .as_ref()
+                    .map(|s| {
+                        let s = s.as_str();
+                        a.upc.contains(s) || a.operator_mdoc.to_string().contains(s)
+                    })
+                    .unwrap_or(true);
+
+                date_match && search_match
+            })
+            .count();
+
+        Ok(count as i64)
+    }
 }

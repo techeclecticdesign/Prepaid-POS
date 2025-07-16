@@ -41,4 +41,76 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
     fn list(&self) -> Result<Vec<CustomerTransaction>, AppError> {
         Ok(self.store.lock().unwrap().clone())
     }
+
+    fn search(
+        &self,
+        limit: i64,
+        offset: i64,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<CustomerTransaction>, AppError> {
+        let mut items = self
+            .store
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|ct| {
+                let date_match = date
+                    .as_ref()
+                    .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+                    .map(|parsed| ct.date.map(|dt| dt.date() == parsed).unwrap_or(false))
+                    .unwrap_or(true);
+
+                let search_match = search
+                    .as_ref()
+                    .map(|s| {
+                        let s = s.as_str();
+                        ct.customer_mdoc.to_string().contains(s)
+                            || ct.operator_mdoc.to_string().contains(s)
+                            || ct.order_id.to_string().contains(s)
+                            || ct.note.as_ref().map(|n| n.contains(s)).unwrap_or(false)
+                    })
+                    .unwrap_or(true);
+
+                date_match && search_match
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+
+        items.sort_by(|a, b| b.date.cmp(&a.date));
+        let start = offset as usize;
+        let end = (start + limit as usize).min(items.len());
+        Ok(items.get(start..end).unwrap_or(&[]).to_vec())
+    }
+
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+        let count = self
+            .store
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|ct| {
+                let date_match = date
+                    .as_ref()
+                    .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+                    .map(|parsed| ct.date.map(|dt| dt.date() == parsed).unwrap_or(false))
+                    .unwrap_or(true);
+
+                let search_match = search
+                    .as_ref()
+                    .map(|s| {
+                        let s = s.as_str();
+                        ct.customer_mdoc.to_string().contains(s)
+                            || ct.operator_mdoc.to_string().contains(s)
+                            || ct.order_id.to_string().contains(s)
+                            || ct.note.as_ref().map(|n| n.contains(s)).unwrap_or(false)
+                    })
+                    .unwrap_or(true);
+
+                date_match && search_match
+            })
+            .count();
+
+        Ok(count as i64)
+    }
 }

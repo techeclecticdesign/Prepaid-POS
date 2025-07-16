@@ -1,10 +1,13 @@
 use crate::application::use_cases::club_usecases::ClubUseCases;
 use crate::common::error::AppError;
+use crate::interface::dto::club_import_dto::ClubImportSearchResult;
 use crate::interface::dto::{
-    club_import_dto::ClubImportReadDto, club_transaction_dto::ClubTransactionReadDto,
-    customer_dto::CustomerReadDto,
+    club_import_dto::ClubImportReadDto,
+    club_transaction_dto::ClubTransactionReadDto,
+    customer_dto::{CustomerReadDto, CustomerSearchResult},
 };
 use crate::interface::presenters::club_presenter::ClubPresenter;
+use crate::interface::presenters::customer_presenter::CustomerPresenter;
 use std::sync::Arc;
 
 pub struct ClubController {
@@ -24,12 +27,25 @@ impl ClubController {
 
     pub fn list_customers(&self) -> Result<Vec<CustomerReadDto>, AppError> {
         let domains = self.uc.list_customers()?;
-        Ok(ClubPresenter::to_customer_dto_list(domains))
+        Ok(CustomerPresenter::to_dto_list(domains))
     }
 
     pub fn get_customer(&self, mdoc: i32) -> Result<Option<CustomerReadDto>, AppError> {
         let opt = self.uc.get_customer(mdoc)?;
-        Ok(opt.map(ClubPresenter::to_customer_dto))
+        Ok(opt.map(CustomerPresenter::to_dto))
+    }
+
+    pub fn search_customers(
+        &self,
+        page: u32,
+        search: Option<String>,
+    ) -> Result<CustomerSearchResult, AppError> {
+        let items = self.uc.search_customers(page, search.clone())?;
+        let total = self.uc.count_customers(search)?;
+        Ok(CustomerSearchResult {
+            customers: CustomerPresenter::to_dto_list(items),
+            total_count: total,
+        })
     }
 
     pub fn list_club_transactions(&self) -> Result<Vec<ClubTransactionReadDto>, AppError> {
@@ -53,6 +69,22 @@ impl ClubController {
     pub fn get_club_import(&self, id: i32) -> Result<Option<ClubImportReadDto>, AppError> {
         let opt = self.uc.get_club_import(id)?;
         Ok(opt.map(ClubPresenter::to_import_dto))
+    }
+
+    pub fn search_club_imports(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<ClubImportSearchResult, AppError> {
+        let items = self
+            .uc
+            .search_club_imports(page, date.clone(), search.clone())?;
+        let total = self.uc.count_club_imports(date, search)?;
+        Ok(ClubImportSearchResult {
+            items: ClubPresenter::to_import_dto_list(items),
+            total_count: total,
+        })
     }
 }
 

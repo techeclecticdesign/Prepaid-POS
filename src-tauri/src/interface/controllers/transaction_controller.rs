@@ -4,12 +4,14 @@ use crate::domain::models::customer_transaction::CustomerTransaction;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::inventory_transaction::InventoryTransaction;
 use crate::interface::common::date_utils::parse_rfc3339;
-use crate::interface::dto::customer_transaction_dto::CustomerTransactionDto;
+use crate::interface::dto::customer_transaction_dto::{
+    CustomerTransactionDto, CustomerTransactionSearchResult,
+};
 use crate::interface::dto::customer_tx_detail_dto::{
     CreateCustomerTxDetailDto, CustomerTxDetailDto,
 };
 use crate::interface::dto::inventory_transaction_dto::{
-    CreateInventoryTransactionDto, ReadInventoryTransactionDto,
+    CreateInventoryTransactionDto, InventoryTransactionSearchResult, ReadInventoryTransactionDto,
 };
 use crate::interface::presenters::customer_transaction_presenter::CustomerTransactionPresenter;
 use crate::interface::presenters::customer_tx_detail_presenter::CustomerTxDetailPresenter;
@@ -131,6 +133,22 @@ impl TransactionController {
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))
     }
 
+    pub fn search_inventory_transactions(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<InventoryTransactionSearchResult, AppError> {
+        let items = self
+            .uc
+            .search_inventory_transactions(page, date.clone(), search.clone())?;
+        let total = self.uc.count_inventory_transactions(date, search)?;
+        Ok(InventoryTransactionSearchResult {
+            transactions: InventoryTransactionPresenter::to_dto_list(items),
+            total_count: total,
+        })
+    }
+
     pub fn list_tx_for_customer(
         &self,
         customer_mdoc: i32,
@@ -185,6 +203,22 @@ impl TransactionController {
     pub fn list_order_details(&self, order_id: i32) -> Result<Vec<CustomerTxDetailDto>, AppError> {
         let dets = self.uc.list_order_details(order_id)?;
         Ok(CustomerTxDetailPresenter::to_dto_list(dets))
+    }
+
+    pub fn search_customer_transactions(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<CustomerTransactionSearchResult, AppError> {
+        let items = self
+            .uc
+            .search_customer_transactions(page, date.clone(), search.clone())?;
+        let total = self.uc.count_customer_transactions(date, search)?;
+        Ok(CustomerTransactionSearchResult {
+            items: CustomerTransactionPresenter::to_dto_list(items),
+            total_count: total,
+        })
     }
 }
 

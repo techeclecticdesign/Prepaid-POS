@@ -1,5 +1,4 @@
 use crate::domain::models::club_transaction::TransactionType;
-use chrono::NaiveDateTime;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -8,5 +7,5 @@ pub struct ClubTransactionReadDto {
     pub mdoc: Option<i32>,
     pub tx_type: TransactionType,
     pub amount: i32,
-    pub date: NaiveDateTime,
+    pub date: String,
 }

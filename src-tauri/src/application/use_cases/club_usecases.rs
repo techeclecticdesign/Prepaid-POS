@@ -30,6 +30,20 @@ impl ClubUseCases {
         self.customer_repo.get_by_mdoc(mdoc)
     }
 
+    pub fn search_customers(
+        &self,
+        page: u32,
+        search: Option<String>,
+    ) -> Result<Vec<Customer>, AppError> {
+        let limit = 10;
+        let offset = (page.saturating_sub(1) as i64) * limit;
+        self.customer_repo.search(limit, offset, search)
+    }
+
+    pub fn count_customers(&self, search: Option<String>) -> Result<u32, AppError> {
+        self.customer_repo.count(search).map(|c| c as u32)
+    }
+
     pub fn list_club_transactions(&self) -> Result<Vec<ClubTransaction>, AppError> {
         self.tx_repo.list()
     }
@@ -44,6 +58,25 @@ impl ClubUseCases {
 
     pub fn get_club_import(&self, id: i32) -> Result<Option<ClubImport>, AppError> {
         self.import_repo.get_by_id(id)
+    }
+
+    pub fn search_club_imports(
+        &self,
+        page: u32,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<Vec<ClubImport>, AppError> {
+        let limit = 10;
+        let offset = (page.saturating_sub(1) as i64) * limit;
+        self.import_repo.search(limit, offset, date, search)
+    }
+
+    pub fn count_club_imports(
+        &self,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<u32, AppError> {
+        self.import_repo.count(date, search).map(|c| c as u32)
     }
 }
 

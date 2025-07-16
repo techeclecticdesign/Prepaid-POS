@@ -1,7 +1,8 @@
 use crate::interface::common::validators::{validate_optional_rfc3339_str, validate_upc_str};
+use serde::{Deserialize, Serialize};
 use validator_derive::Validate;
 
-#[derive(serde::Serialize, serde::Deserialize, Validate)]
+#[derive(Serialize, Deserialize, Validate)]
 pub struct PriceAdjustmentDto {
     #[validate(custom(function = "validate_upc_str"))]
     pub upc: String,
@@ -17,6 +18,12 @@ pub struct PriceAdjustmentDto {
 
     #[validate(custom(function = "validate_optional_rfc3339_str"))]
     pub created_at: Option<String>, // RFC3339
+}
+
+#[derive(Serialize)]
+pub struct PriceAdjustmentSearchResult {
+    pub adjustments: Vec<PriceAdjustmentDto>,
+    pub total_count: u32,
 }
 
 #[cfg(test)]

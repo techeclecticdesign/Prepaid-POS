@@ -1,10 +1,12 @@
 use crate::common::error::AppError;
 use crate::interface::controllers::transaction_controller::TransactionController;
-use crate::interface::dto::customer_transaction_dto::CustomerTransactionDto;
+use crate::interface::dto::customer_transaction_dto::{
+    CustomerTransactionDto, CustomerTransactionSearchResult,
+};
 use crate::interface::dto::customer_tx_detail_dto::CreateCustomerTxDetailDto;
 use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 use crate::interface::dto::inventory_transaction_dto::{
-    CreateInventoryTransactionDto, ReadInventoryTransactionDto,
+    CreateInventoryTransactionDto, InventoryTransactionSearchResult, ReadInventoryTransactionDto,
 };
 use std::sync::Arc;
 use tauri::State;
@@ -62,6 +64,7 @@ pub fn get_transaction(
 ) -> Result<Option<ReadInventoryTransactionDto>, AppError> {
     controller.get_transaction(id)
 }
+
 #[tauri::command]
 pub fn list_tx_for_product(
     controller: State<Arc<TransactionController>>,
@@ -69,6 +72,18 @@ pub fn list_tx_for_product(
 ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
     controller.list_tx_for_product(upc)
 }
+
+#[tauri::command]
+pub fn search_inventory_transactions(
+    controller: State<Arc<TransactionController>>,
+    page: Option<u32>,
+    date: Option<String>,
+    search: Option<String>,
+) -> Result<InventoryTransactionSearchResult, AppError> {
+    let page = page.unwrap_or(1);
+    controller.search_inventory_transactions(page, date, search)
+}
+
 #[tauri::command]
 pub fn list_tx_for_customer(
     controller: State<Arc<TransactionController>>,
@@ -115,4 +130,15 @@ pub fn list_order_details(
     order_id: i32,
 ) -> Result<Vec<CustomerTxDetailDto>, AppError> {
     controller.list_order_details(order_id)
+}
+
+#[tauri::command]
+pub fn search_customer_transactions(
+    controller: State<Arc<TransactionController>>,
+    page: Option<u32>,
+    date: Option<String>,
+    search: Option<String>,
+) -> Result<CustomerTransactionSearchResult, AppError> {
+    let page = page.unwrap_or(1);
+    controller.search_customer_transactions(page, date, search)
 }
