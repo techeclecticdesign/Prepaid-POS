@@ -20,7 +20,7 @@ export default function OperatorDetails({
         {["MDOC", "Name", "Start Time", "Stop Time"].map((label, i) => {
           const value =
             i === 0
-              ? operator.id
+              ? operator.mdoc
               : i === 1
                 ? operator.name
                 : i === 2

@@ -23,7 +23,7 @@ export default function App() {
             element={
               <SidebarLayout
                 Sidebar={AdminSidebar}
-                activeOperatorMdoc={activeOperator ? activeOperator.id : null}
+                activeOperatorMdoc={activeOperator ? activeOperator.mdoc : null}
               />
             }
           >
@@ -38,7 +38,7 @@ export default function App() {
             element={
               <SidebarLayout
                 Sidebar={OperatorSidebar}
-                activeOperatorMdoc={activeOperator.id}
+                activeOperatorMdoc={activeOperator.mdoc}
               />
             }
           >

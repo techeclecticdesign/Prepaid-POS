@@ -11,7 +11,7 @@ function RootProviders() {
 
   return (
     <ThemeProvider
-      activeOperatorMdoc={activeOperator ? activeOperator.id : null}
+      activeOperatorMdoc={activeOperator ? activeOperator.mdoc : null}
       isAdminLoggedIn={loggedIn}
     >
       <App />

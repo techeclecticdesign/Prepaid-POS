@@ -35,7 +35,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      mdoc: selected.id,
+      mdoc: selected.mdoc,
       name: selected.name,
       start: selected.start,
       stop: now,
@@ -47,7 +47,7 @@ export default function OperatorsPage() {
     if (!selected) return;
     const now = new Date().toISOString();
     await update({
-      mdoc: selected.id,
+      mdoc: selected.mdoc,
       name: selected.name,
       start: now,
       stop: null,
@@ -83,7 +83,7 @@ export default function OperatorsPage() {
           open={showDialog}
           onClose={() => setShowDialog(false)}
           onSubmit={handleAdd}
-          existingMdocs={operators.map((o) => o.id)}
+          existingMdocs={operators.map((o) => o.mdoc)}
         />
       </Box>
     </Box>

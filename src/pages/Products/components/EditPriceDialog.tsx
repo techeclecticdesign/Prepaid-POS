@@ -114,7 +114,7 @@ export default function EditPriceDialog({
     >
       <DialogTitle>Adjust Price</DialogTitle>
       <DialogContent dividers className="space-y-4">
-        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
           Any changes to prices are logged and reported. If you wish to
           continue, please enter the new price below.
         </Typography>
