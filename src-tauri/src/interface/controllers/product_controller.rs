@@ -94,12 +94,19 @@ impl ProductController {
         category: Option<String>,
         page: u32,
     ) -> Result<ProductSearchResult, AppError> {
-        let products = self
+        let tuples = self
             .uc
             .search_products(search.clone(), category.clone(), page)?;
+
+        let products = tuples
+            .into_iter()
+            .map(|(p, avail)| ProductPresenter::to_search_row(p, avail))
+            .collect();
+
         let total_count = self.uc.count_products(search, category)?;
+
         Ok(ProductSearchResult {
-            products: ProductPresenter::to_dto_list(products),
+            products,
             total_count,
         })
     }

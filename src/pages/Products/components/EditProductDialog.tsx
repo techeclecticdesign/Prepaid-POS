@@ -9,6 +9,7 @@ import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ProductDialogLayout from "./ProductDialogLayout";
 import EditPriceDialog from "./EditPriceDialog";
+import EditQuantityDialog from "./EditQuantityDialog";
 import useProductActions from "../hooks/useProductActions";
 import type Product from "../../../models/Product";
 import {
@@ -27,6 +28,7 @@ interface Props {
     newPriceCents: number,
   ) => Promise<void>;
   refetch: () => void;
+  onQuantityAdjust: (oldQty: number, newQty: number) => Promise<void>;
 }
 
 export default function EditProductDialog({
@@ -36,6 +38,7 @@ export default function EditProductDialog({
   onClose,
   onSave,
   onPriceAdjust,
+  onQuantityAdjust,
   refetch,
 }: Props) {
   const { removeProduct } = useProductActions();
@@ -47,12 +50,15 @@ export default function EditProductDialog({
     },
   });
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false);
   const [displayedPriceCents, setDisplayedPriceCents] = useState(product.price);
+  const [displayedQty, setDisplayedQty] = useState(product.available);
 
   // Reset form whenever product changes
   useEffect(() => {
     reset({ desc: product.desc, category: product.category });
     setDisplayedPriceCents(product.price);
+    setDisplayedQty(product.available);
   }, [product, reset]);
 
   const wrapped = handleSubmit(async (vals) => {
@@ -106,6 +112,17 @@ export default function EditProductDialog({
               <EditIcon />
             </IconButton>
           </div>
+          <div className="flex items-center space-x-2">
+            <TextField
+              label="Qty"
+              value={displayedQty}
+              slotProps={{ input: { readOnly: true } }}
+              fullWidth
+            />
+            <IconButton onClick={() => setQuantityDialogOpen(true)}>
+              <EditIcon />
+            </IconButton>
+          </div>
           <Controller
             name="desc"
             control={control}
@@ -147,6 +164,15 @@ export default function EditProductDialog({
         initialPriceDollars={displayedPriceCents}
         onClose={() => setPriceDialogOpen(false)}
         onSubmit={handlePriceAdjustAndRefresh}
+      />
+      <EditQuantityDialog
+        open={quantityDialogOpen}
+        initialQty={displayedQty}
+        onClose={() => setQuantityDialogOpen(false)}
+        onSubmit={async (oldQty, newQty) => {
+          await onQuantityAdjust(oldQty, newQty);
+          setDisplayedQty(newQty);
+        }}
       />
     </>
   );

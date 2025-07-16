@@ -65,13 +65,14 @@ impl ProductRepoTrait for MockProductRepo {
     fn list(&self) -> Result<Vec<Product>, AppError> {
         Ok(self.store.lock().unwrap().clone())
     }
+
     fn search(
         &self,
         desc_like: Option<String>,
         category: Option<String>,
         limit: i64,
         offset: i64,
-    ) -> Result<Vec<Product>, AppError> {
+    ) -> Result<Vec<(Product, i64)>, AppError> {
         let guard = self.store.lock().unwrap();
         let mut products: Vec<Product> = guard
             .iter()
@@ -85,10 +86,20 @@ impl ProductRepoTrait for MockProductRepo {
             })
             .cloned()
             .collect();
+
         products.sort_by(|a, b| b.added.cmp(&a.added));
+
         let start = offset as usize;
-        let end = (start + limit as usize).min(products.len());
-        Ok(products.get(start..end).unwrap_or(&[]).to_vec())
+        let end = std::cmp::min(start + limit as usize, products.len());
+        let sliced = if start < products.len() {
+            &products[start..end]
+        } else {
+            &[]
+        };
+
+        let v = sliced.iter().cloned().map(|p| (p, 0_i64)).collect();
+
+        Ok(v)
     }
 
     fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<u32, AppError> {

@@ -3,4 +3,5 @@ export default interface Product {
   desc: string;
   category: string;
   price: number;
+  available: number;
 }

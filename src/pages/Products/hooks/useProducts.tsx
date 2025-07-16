@@ -7,7 +7,9 @@ export default function useProducts(
   category: string,
   page: number,
 ) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<
+    Array<Product & { available: number }>
+  >([]);
   const [totalPages, setTotalPages] = useState(1);
   const { searchProducts } = useProductActions();
 

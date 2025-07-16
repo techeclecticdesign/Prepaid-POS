@@ -2,8 +2,13 @@ import { invoke } from "@tauri-apps/api/core";
 import type Product from "../../../models/Product";
 import type Category from "../../../models/Category";
 
+export interface ProductSearchRow {
+  product: Product;
+  available: number;
+}
+
 export interface SearchProductsResponse {
-  products: Product[];
+  products: ProductSearchRow[];
   total_count: number;
 }
 
@@ -32,17 +37,35 @@ export interface DeleteProductDto {
   upc: string;
 }
 
+export interface InventoryAdjustmentDto {
+  operator_mdoc: number;
+  upc: string;
+  quantity_change: number;
+  reference?: string;
+  customer_mdoc?: number;
+  ref_order_id?: number;
+  created_at?: string;
+}
+
 export default function useProductActions() {
   const searchProducts = async (
     search: string | null,
     category: string | null,
     page: number,
-  ): Promise<SearchProductsResponse> => {
-    return await invoke<SearchProductsResponse>("search_products", {
+  ): Promise<{ products: Product[]; total_count: number }> => {
+    const res = await invoke<SearchProductsResponse>("search_products", {
       search,
       category,
       page,
     });
+
+    return {
+      total_count: res.total_count,
+      products: res.products.map(({ product, available }) => ({
+        ...product,
+        available,
+      })),
+    };
   };
 
   const listCategories = async (): Promise<Category[]> => {
@@ -67,6 +90,12 @@ export default function useProductActions() {
     await invoke("delete_product", { dto });
   };
 
+  const quantityAdjustment = async (
+    dto: InventoryAdjustmentDto,
+  ): Promise<void> => {
+    await invoke("inventory_adjustment", { dto });
+  };
+
   return {
     searchProducts,
     listCategories,
@@ -74,5 +103,6 @@ export default function useProductActions() {
     priceAdjustment,
     createProduct,
     removeProduct,
+    quantityAdjustment,
   };
 }

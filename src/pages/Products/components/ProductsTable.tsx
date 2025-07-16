@@ -70,6 +70,13 @@ export default function ProductsTable({ products, onProductClick }: Props) {
           <TableCell
             sx={{ textAlign: "right", paddingBottom: 0, paddingRight: 2 }}
           >
+            <Typography variant="caption" sx={headerSx}>
+              Qty
+            </Typography>
+          </TableCell>
+          <TableCell
+            sx={{ textAlign: "right", paddingBottom: 0, paddingRight: 2 }}
+          >
             <Typography variant="caption" sx={{ ...headerSx }}>
               Price
             </Typography>
@@ -95,6 +102,16 @@ export default function ProductsTable({ products, onProductClick }: Props) {
             <TableCell sx={cellSx}>
               <Typography variant="body2" sx={cellTextSx}>
                 {p.category}
+              </Typography>
+            </TableCell>
+            <TableCell
+              sx={{ ...cellSx, textAlign: "right", cursor: "pointer" }}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <Typography variant="body2" sx={{ ...cellTextSx }}>
+                {p.available}
               </Typography>
             </TableCell>
             <TableCell sx={{ ...cellSx, textAlign: "right" }}>

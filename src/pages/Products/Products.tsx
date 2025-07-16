@@ -22,7 +22,8 @@ export default function ProductsPage() {
   const { products, totalPages, refetch } = useProducts(search, category, page);
   const categories = useCategories();
   const { activeOperator } = useAuth();
-  const { updateItem, priceAdjustment, createProduct } = useProductActions();
+  const { updateItem, priceAdjustment, quantityAdjustment, createProduct } =
+    useProductActions();
 
   return (
     <Box className="p-2 w-3/5 mx-auto 2xl:px-50">
@@ -81,6 +82,16 @@ export default function ProductsPage() {
               new: newCents,
               old: oldCents,
               created_at: null,
+            });
+            refetch();
+          }}
+          onQuantityAdjust={async (oldQty, newQty) => {
+            const change = newQty - oldQty;
+            if (change === 0) return;
+            await quantityAdjustment({
+              operator_mdoc: activeOperator!.mdoc,
+              upc: editing.upc,
+              quantity_change: change,
             });
             refetch();
           }}

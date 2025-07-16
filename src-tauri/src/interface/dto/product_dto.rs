@@ -1,7 +1,8 @@
 use crate::interface::common::validators::validate_upc_str;
+use serde::{Deserialize, Serialize};
 use validator_derive::Validate;
 
-#[derive(serde::Deserialize, Validate)]
+#[derive(Deserialize, Validate)]
 pub struct CreateProductDto {
     #[validate(custom(function = "validate_upc_str"))]
     pub upc: String,
@@ -16,7 +17,7 @@ pub struct CreateProductDto {
     pub price: i32,
 }
 
-#[derive(serde::Deserialize, Validate)]
+#[derive(Deserialize, Validate)]
 pub struct UpdateProductDto {
     #[validate(custom(function = "validate_upc_str"))]
     pub upc: String,
@@ -28,13 +29,13 @@ pub struct UpdateProductDto {
     pub category: String,
 }
 
-#[derive(serde::Deserialize, Validate)]
+#[derive(Deserialize, Validate)]
 pub struct DeleteProductDto {
     #[validate(custom(function = "validate_upc_str"))]
     pub upc: String,
 }
 
-#[derive(serde::Serialize)]
+#[derive(Serialize)]
 pub struct ProductDto {
     pub upc: String,
     pub desc: String,
@@ -42,9 +43,15 @@ pub struct ProductDto {
     pub price: i32, // integer cents
 }
 
-#[derive(serde::Serialize)]
+#[derive(Serialize)]
+pub struct ProductSearchRow {
+    pub product: ProductDto,
+    pub available: i64,
+}
+
+#[derive(Serialize)]
 pub struct ProductSearchResult {
-    pub products: Vec<ProductDto>,
+    pub products: Vec<ProductSearchRow>,
     pub total_count: u32,
 }
 

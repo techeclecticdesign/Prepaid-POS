@@ -107,15 +107,22 @@ impl ProductRepoTrait for SqliteProductRepo {
         category: Option<String>,
         limit: i64,
         offset: i64,
-    ) -> Result<Vec<Product>, AppError> {
+    ) -> Result<Vec<(Product, i64)>, AppError> {
         let conn = self
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
 
         let mut sql = String::from(
-            "SELECT upc, desc, category, price, updated, added, deleted
-             FROM products",
+            "SELECT p.upc, p.desc, p.category, p.price,
+                    p.updated, p.added, p.deleted,
+                    COALESCE(inv.available, 0) AS available
+             FROM products p
+             LEFT JOIN (
+               SELECT upc, SUM(quantity_change) AS available
+               FROM inventory_transactions
+               GROUP BY upc
+             ) inv ON p.upc = inv.upc",
         );
         let mut clauses = Vec::new();
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
@@ -146,7 +153,8 @@ impl ProductRepoTrait for SqliteProductRepo {
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params.as_slice(), |r| {
-            Ok(Product {
+            // capture both Product and its summed inventory
+            let product = Product {
                 upc: r.get(0)?,
                 desc: r.get(1)?,
                 category: r.get(2)?,
@@ -154,7 +162,9 @@ impl ProductRepoTrait for SqliteProductRepo {
                 updated: r.get(4)?,
                 added: r.get(5)?,
                 deleted: r.get(6)?,
-            })
+            };
+            let available: i64 = r.get(7)?;
+            Ok((product, available))
         })?;
 
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)

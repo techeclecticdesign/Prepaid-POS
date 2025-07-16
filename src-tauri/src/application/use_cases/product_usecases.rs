@@ -174,7 +174,7 @@ impl ProductUseCases {
         search: Option<String>,
         category: Option<String>,
         page: u32,
-    ) -> Result<Vec<Product>, AppError> {
+    ) -> Result<Vec<(Product, i64)>, AppError> {
         let limit = 10;
         let offset = (page.saturating_sub(1) as i64) * limit;
         self.repo.search(search, category, limit, offset)
