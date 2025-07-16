@@ -69,14 +69,14 @@ impl ProductController {
         let domain = PriceAdjustment {
             id: 0, // gets assigned during persistence
             operator_mdoc: dto.operator_mdoc,
-            upc: dto.upc,
+            upc: dto.upc.clone(),
             old: dto.old,
             new: dto.new,
             created_at: None,
         };
 
-        let pa = self.uc.price_adjustment(domain)?;
-        Ok(PriceAdjustmentPresenter::to_dto(pa))
+        self.uc.price_adjustment(domain)?;
+        Ok(dto)
     }
 
     pub fn update_product(&self, dto: UpdateProductDto) -> Result<(), AppError> {

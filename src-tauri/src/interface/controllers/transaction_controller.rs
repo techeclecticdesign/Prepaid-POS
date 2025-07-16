@@ -11,6 +11,7 @@ use crate::interface::dto::customer_tx_detail_dto::{
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, ReadInventoryTransactionDto,
 };
+use crate::interface::presenters::customer_transaction_presenter::CustomerTransactionPresenter;
 use crate::interface::presenters::customer_tx_detail_presenter::CustomerTxDetailPresenter;
 use crate::interface::presenters::inventory_transaction_presenter::InventoryTransactionPresenter;
 use std::sync::Arc;
@@ -138,12 +139,14 @@ impl TransactionController {
         Ok(InventoryTransactionPresenter::to_dto_list(itxs))
     }
 
-    pub fn list_sales(&self) -> Result<Vec<CustomerTransaction>, AppError> {
-        self.uc.list_sales()
+    pub fn list_sales(&self) -> Result<Vec<CustomerTransactionDto>, AppError> {
+        let txs = self.uc.list_sales()?;
+        Ok(CustomerTransactionPresenter::to_dto_list(txs))
     }
 
-    pub fn get_sale(&self, id: i32) -> Result<Option<CustomerTransaction>, AppError> {
-        self.uc.get_sale(id)
+    pub fn get_sale(&self, id: i32) -> Result<Option<CustomerTransactionDto>, AppError> {
+        let opt = self.uc.get_sale(id)?;
+        Ok(opt.map(CustomerTransactionPresenter::to_dto))
     }
 
     pub fn make_sale(&self, dto: CustomerTransactionDto) -> Result<(), AppError> {

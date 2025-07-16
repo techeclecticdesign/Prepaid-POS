@@ -18,4 +18,16 @@ impl CustomerTransactionPresenter {
             })
             .collect()
     }
+
+    pub fn to_dto(t: CustomerTransaction) -> CustomerTransactionDto {
+        CustomerTransactionDto {
+            order_id: t.order_id,
+            customer_mdoc: t.customer_mdoc,
+            operator_mdoc: t.operator_mdoc,
+            date: t
+                .date
+                .map(|dt| chrono::Utc.from_utc_datetime(&dt).to_rfc3339()),
+            note: t.note,
+        }
+    }
 }

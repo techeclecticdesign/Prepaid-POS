@@ -6,7 +6,6 @@ use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, ReadInventoryTransactionDto,
 };
-use crate::interface::presenters::customer_transaction_presenter::CustomerTransactionPresenter;
 use std::sync::Arc;
 use tauri::State;
 
@@ -82,8 +81,7 @@ pub fn list_tx_for_customer(
 pub fn list_sales(
     controller: State<'_, Arc<TransactionController>>,
 ) -> Result<Vec<CustomerTransactionDto>, AppError> {
-    let txs = controller.list_sales()?;
-    Ok(CustomerTransactionPresenter::to_dto_list(txs))
+    controller.list_sales()
 }
 
 #[tauri::command]
@@ -91,8 +89,7 @@ pub fn get_sale(
     controller: State<'_, Arc<TransactionController>>,
     id: i32,
 ) -> Result<Option<CustomerTransactionDto>, AppError> {
-    let opt = controller.get_sale(id)?;
-    Ok(opt.map(|t| CustomerTransactionPresenter::to_dto_list(vec![t]).remove(0)))
+    controller.get_sale(id)
 }
 
 #[tauri::command]

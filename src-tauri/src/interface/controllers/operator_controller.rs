@@ -18,12 +18,18 @@ impl OperatorController {
         }
     }
 
-    pub fn list(&self) -> Result<Vec<Operator>, AppError> {
-        self.uc.list_operators()
+    pub fn list(&self) -> Result<Vec<OperatorDto>, AppError> {
+        let domains = self.uc.list_operators()?;
+        Ok(
+            crate::interface::presenters::operator_presenter::OperatorPresenter::to_dto_list(
+                domains,
+            ),
+        )
     }
 
-    pub fn get(&self, id: i32) -> Result<Option<Operator>, AppError> {
-        self.uc.get_operator(id)
+    pub fn get(&self, id: i32) -> Result<Option<OperatorDto>, AppError> {
+        let opt = self.uc.get_operator(id)?;
+        Ok(opt.map(crate::interface::presenters::operator_presenter::OperatorPresenter::to_dto))
     }
 
     pub fn create(&self, dto: OperatorDto) -> Result<(), AppError> {
