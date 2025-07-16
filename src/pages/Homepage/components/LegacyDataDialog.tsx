@@ -1,3 +1,5 @@
+import { useState } from "react";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -16,6 +18,13 @@ export default function LegacyDataDialog({
   onClose,
   onConfirm,
 }: LegacyDataDialogProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleConfirmClick = async () => {
+    setIsLoading(true);
+    await onConfirm();
+  };
+
   return (
     <Dialog
       open={open}
@@ -35,8 +44,13 @@ export default function LegacyDataDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={onConfirm} autoFocus>
-          Ok
+        <Button
+          onClick={handleConfirmClick}
+          autoFocus
+          disabled={isLoading}
+          sx={{ minWidth: 64 }}
+        >
+          {isLoading ? <CircularProgress size={24} color="inherit" /> : "Ok"}
         </Button>
       </DialogActions>
     </Dialog>
