@@ -146,15 +146,24 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
         offset: i64,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<PriceAdjustment>, AppError> {
+    ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
         let conn = self
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         let mut sql = "\
-            SELECT id, operator_mdoc, upc, old, new, created_at \
-            FROM price_adjustment \
-            WHERE 1=1 \
+            SELECT pa.id,
+                   pa.operator_mdoc,
+                   pa.upc,
+                   pa.old,
+                   pa.new,
+                   pa.created_at,
+                   p.desc AS product_name,
+                   o.name AS operator_name
+            FROM price_adjustments pa
+            JOIN products  p ON pa.upc           = p.upc
+            JOIN operators o ON pa.operator_mdoc = o.mdoc
+            WHERE 1=1
         "
         .to_string();
 
@@ -163,35 +172,44 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
 
         // date filter
         if let Some(ref d) = date {
-            sql.push_str(" AND date(created_at)=date(?)");
+            sql.push_str(" AND date(pa.created_at)=date(?)");
             params.push(d);
         }
         // text search on upc/operator_mdoc
         if let Some(ref s) = search {
-            sql.push_str(" AND (upc LIKE ? OR operator_mdoc LIKE ?)");
+            sql.push_str(
+                " AND (pa.upc LIKE ? \
+                          OR o.name LIKE ? \
+                          OR p.desc LIKE ? \
+                          OR pa.operator_mdoc LIKE ?)",
+            );
             let pat = format!("%{}%", s);
             string_params.push(pat);
             let last = string_params
                 .last()
                 .ok_or_else(|| AppError::Unexpected("search pattern missing".to_string()))?;
-            params.push(last);
-            params.push(last);
+            for _ in 0..4 {
+                params.push(last);
+            }
         }
 
-        sql.push_str(" ORDER BY created_at DESC LIMIT ? OFFSET ?");
+        sql.push_str(" ORDER BY pa.created_at DESC LIMIT ? OFFSET ?");
         params.push(&limit);
         params.push(&offset);
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params.as_slice(), |r| {
-            Ok(PriceAdjustment {
+            let pa = PriceAdjustment {
                 id: r.get(0)?,
                 operator_mdoc: r.get(1)?,
                 upc: r.get(2)?,
                 old: r.get(3)?,
                 new: r.get(4)?,
                 created_at: r.get(5)?,
-            })
+            };
+            let product_name: String = r.get(6)?;
+            let operator_name: String = r.get(7)?;
+            Ok((pa, product_name, operator_name))
         })?;
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
@@ -201,22 +219,34 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
-        let mut sql = "SELECT COUNT(*) FROM price_adjustment WHERE 1=1".to_string();
+        let mut sql = "\
+            SELECT COUNT(*) \
+            FROM price_adjustments pa \
+            JOIN products  p ON pa.upc           = p.upc \
+            JOIN operators o ON pa.operator_mdoc = o.mdoc \
+            WHERE 1=1"
+            .to_string();
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
         let mut string_params: Vec<String> = Vec::new();
         if let Some(ref d) = date {
-            sql.push_str(" AND date(created_at)=date(?)");
+            sql.push_str(" AND date(pa.created_at)=date(?)");
             params.push(d);
         }
         if let Some(ref s) = search {
-            sql.push_str(" AND (upc LIKE ? OR operator_mdoc LIKE ?)");
+            sql.push_str(
+                " AND (pa.upc LIKE ? \
+                          OR o.name LIKE ? \
+                          OR p.desc LIKE ? \
+                          OR pa.operator_mdoc LIKE ?)",
+            );
             let pat = format!("%{}%", s);
             string_params.push(pat);
             let last = string_params
                 .last()
                 .ok_or_else(|| AppError::Unexpected("search pattern missing".to_string()))?;
-            params.push(last);
-            params.push(last);
+            for _ in 0..4 {
+                params.push(last);
+            }
         }
         let mut stmt = conn.prepare(&sql)?;
         stmt.query_row(params.as_slice(), |r| r.get(0))

@@ -19,6 +19,6 @@ pub trait PriceAdjustmentRepoTrait: Send + Sync {
         offset: i64,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<PriceAdjustment>, AppError>;
+    ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError>;
     fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
 }

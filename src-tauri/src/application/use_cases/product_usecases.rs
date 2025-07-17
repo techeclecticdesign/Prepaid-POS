@@ -185,7 +185,7 @@ impl ProductUseCases {
         page: u32,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<PriceAdjustment>, AppError> {
+    ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
         let limit = 10;
         let offset = (page.saturating_sub(1) as i64) * limit;
         self.price_repo.search(limit, offset, date, search)
@@ -196,7 +196,10 @@ impl ProductUseCases {
         date: Option<String>,
         search: Option<String>,
     ) -> Result<u32, AppError> {
-        self.repo.count(date, search)
+        let count_i64 = self.price_repo.count(date, search)?;
+        let count_u32 = u32::try_from(count_i64)
+            .map_err(|_| AppError::Unexpected(format!("count overflow: {}", count_i64)))?;
+        Ok(count_u32)
     }
 
     pub fn list_categories(&self) -> Result<Vec<Category>, AppError> {

@@ -62,13 +62,13 @@ export default function AdminSidebar() {
         >
           Lost Inventory
         </Link>
-        <Typography
-          component="span"
-          className="cursor-not-allowed"
-          sx={{ color: "text.secondary" }}
+        <Link
+          to="/price-adjustments"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
         >
-          Dolor
-        </Typography>
+          Price Adjustments
+        </Link>
       </nav>
       <Button
         onClick={() => {

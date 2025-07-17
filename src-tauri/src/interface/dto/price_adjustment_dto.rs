@@ -21,8 +21,15 @@ pub struct PriceAdjustmentDto {
 }
 
 #[derive(Serialize)]
+pub struct PriceAdjustmentSearchRow {
+    pub adjustment: PriceAdjustmentDto,
+    pub product_name: String,
+    pub operator_name: String,
+}
+
+#[derive(Serialize)]
 pub struct PriceAdjustmentSearchResult {
-    pub adjustments: Vec<PriceAdjustmentDto>,
+    pub adjustments: Vec<PriceAdjustmentSearchRow>,
     pub total_count: u32,
 }
 

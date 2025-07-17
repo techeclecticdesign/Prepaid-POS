@@ -122,7 +122,7 @@ impl ProductController {
             .search_price_adjustments(page, date.clone(), search.clone())?;
         let total = self.uc.count_price_adjustments(date, search)?;
         Ok(PriceAdjustmentSearchResult {
-            adjustments: PriceAdjustmentPresenter::to_dto_list(adjustments),
+            adjustments: PriceAdjustmentPresenter::to_dto_search(adjustments),
             total_count: total,
         })
     }

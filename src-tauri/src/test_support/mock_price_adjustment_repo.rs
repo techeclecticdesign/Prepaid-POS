@@ -81,10 +81,10 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
         offset: i64,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<PriceAdjustment>, AppError> {
+    ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
         let guard = self.store.lock().unwrap();
 
-        let mut adjustments: Vec<PriceAdjustment> = guard
+        let mut adjustments: Vec<(PriceAdjustment, String, String)> = guard
             .iter()
             .filter(|a| {
                 // Date filter
@@ -106,10 +106,11 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
                 date_match && search_match
             })
             .cloned()
+            .map(|a| (a, String::new(), String::new()))
             .collect();
 
         // Sort newest first
-        adjustments.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        adjustments.sort_by(|(a, _, _), (b, _, _)| b.created_at.cmp(&a.created_at));
 
         let start = offset as usize;
         let end = (start + limit as usize).min(adjustments.len());

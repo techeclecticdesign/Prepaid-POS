@@ -11,6 +11,7 @@ import SalesPage from "./pages/Sales/Sales";
 import Homepage from "./pages/Homepage/Homepage";
 import ImportPage from "./pages/Import/Import";
 import LostInventoryPage from "./pages/LostInventory/LostInventory";
+import PriceAdjustmentsPage from "./pages/PriceAdjustments/PriceAdjustments";
 
 export default function App() {
   const { loggedIn, activeOperator } = useAuth();
@@ -32,6 +33,10 @@ export default function App() {
             <Route path="/operators" element={<OperatorsPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/lost-inventory" element={<LostInventoryPage />} />
+            <Route
+              path="/price-adjustments"
+              element={<PriceAdjustmentsPage />}
+            />
             <Route path="/import" element={<ImportPage />} />
           </Route>
         )}

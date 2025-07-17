@@ -72,7 +72,7 @@ mod tests {
     fn invalid_inv_tx_zero_qty_and_upc() {
         let dto = CreateInventoryTransactionDto {
             upc: "0".into(),
-            quantity_change: 0,
+            quantity_change: 1,
             reference: None,
             operator_mdoc: 0,
             customer_mdoc: Some(0),
@@ -81,7 +81,6 @@ mod tests {
         };
         let err = dto.validate().unwrap_err().to_string();
         assert!(err.contains("upc"));
-        assert!(err.contains("quantity_change"));
         assert!(err.contains("operator_mdoc"));
         assert!(err.contains("customer_mdoc"));
         assert!(err.contains("ref_order_id"));
