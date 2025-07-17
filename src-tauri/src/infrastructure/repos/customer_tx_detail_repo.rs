@@ -63,20 +63,19 @@ mod repo_tests {
 
     fn make_repo() -> SqliteCustomerTxDetailRepo {
         let mtx_conn = create_connection(":memory:").unwrap();
+        {
+            let conn = mtx_conn.lock().unwrap();
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        }
         // now wrap it in an Arc so it matches the repo constructor
         let arc = Arc::new(mtx_conn);
-        // ensure table exists
         {
             let conn = arc.lock().unwrap();
             conn.execute_batch(
                 "
-            CREATE TABLE IF NOT EXISTS customer_tx_detail (
-                detail_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id    INTEGER NOT NULL,
-                upc         TEXT NOT NULL,
-                quantity    INTEGER NOT NULL,
-                price       INTEGER NOT NULL
-            );
+            DELETE FROM customer_transactions;
+            INSERT INTO customer_transactions (order_id, customer_mdoc, operator_mdoc, date)
+            VALUES (100, 1, 1, CURRENT_TIMESTAMP);
             ",
             )
             .unwrap();

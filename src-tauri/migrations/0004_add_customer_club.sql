@@ -7,6 +7,8 @@ CREATE TABLE customer (
 
 CREATE TABLE club_transactions (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  import_id INTEGER NOT NULL,
+  entity_name TEXT,
   mdoc     INTEGER,                  
   tx_type  TEXT NOT NULL,            
   amount   INTEGER NOT NULL,

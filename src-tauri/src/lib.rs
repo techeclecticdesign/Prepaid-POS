@@ -90,6 +90,7 @@ pub fn run() {
         inv_repo: Arc::clone(&inv_repo),
         customer_transaction_repo: Arc::clone(&cust_tx_repo),
         customer_tx_detail_repo: Arc::clone(&detail_repo),
+        sqlite_conn: Arc::clone(&conn),
     }));
     let pdf_ctrl = Arc::new(PdfParseController::new(
         Arc::new(LopdfParser),

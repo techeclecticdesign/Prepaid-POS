@@ -60,7 +60,7 @@ impl ClubTransactionRepoTrait for SqliteClubTransactionRepo {
     fn create(&self, tx: &ClubTransaction) -> Result<(), AppError> {
         let conn = self.conn.safe_lock()?;
         conn.execute(
-            "INSERT INTO club_transactions (import_id, entity_name, mdoc, tx_type, amount, date) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO club_transactions (import_id, entity_name, mdoc, tx_type, amount, date) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![tx.import_id, tx.entity_name, tx.mdoc, format!("{:?}", tx.tx_type), tx.amount, tx.date],
         )?;
         Ok(())

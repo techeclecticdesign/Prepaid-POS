@@ -21,9 +21,9 @@ pub fn validate_upc_str(s: &str) -> Result<(), validator::ValidationError> {
         return Err(err);
     }
     let len = s.len();
-    if len != 8 && len != 12 {
+    if len != 8 && len != 12 && len != 14 {
         let mut err = ValidationError::new("invalid_upc_length");
-        err.message = Some("upc must be 8 or 12 digits".into());
+        err.message = Some("upc must be 8, 12 or 14 digits".into());
         return Err(err);
     }
     Ok(())

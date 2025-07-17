@@ -12,8 +12,9 @@ use crate::domain::repos::{
 use log::warn;
 use odbc_api::{Cursor, Environment, Nullable};
 use odbc_sys::Timestamp;
+use rusqlite::Connection;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 // SELECT lngOperatorMdoc, txtOperatorName, datStart, datStop FROM tblOperator
 type RawOperatorRow = (
@@ -79,7 +80,7 @@ type RawInventoryRow = (
     Option<String>,    // refnum
     Option<String>,    // note
     Option<String>,    // upc
-    Option<f64>,       // adjustment
+    Option<i32>,       // adjustment
     Option<Timestamp>, // posted
     Option<i32>,       // customer_mdoc
     Option<i32>,       // operator_mdoc
@@ -103,6 +104,7 @@ pub struct LegacyMigrationDeps {
     pub inv_repo: Arc<dyn InventoryTransactionRepoTrait>,
     pub customer_transaction_repo: Arc<dyn CustomerTransactionRepoTrait>,
     pub customer_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
+    pub sqlite_conn: Arc<Mutex<Connection>>,
 }
 
 pub struct LegacyMigrationUseCases {
@@ -130,6 +132,24 @@ impl LegacyMigrationUseCases {
             .connect_with_connection_string(conn_str, ConnectionOptions::default())
             .map_err(|e| AppError::Unexpected(e.to_string()))?;
 
+        {
+            let sqlite_conn = self
+                .deps
+                .sqlite_conn
+                .lock()
+                .map_err(|e| AppError::Unexpected(format!("mutex poisoned: {}", e)))?;
+            sqlite_conn
+                .execute_batch("BEGIN;")
+                .map_err(|e| AppError::Unexpected(e.to_string()))?;
+            // Insert operator mdoc 0 so FK constraint is not violated with legacy data
+            sqlite_conn
+                .execute(
+                    "INSERT OR IGNORE INTO operators (mdoc, name, start, stop)
+                    VALUES (0, 'Imported: unknown operator', '1900-01-01 00:00:00', '1900-01-01 00:00:00');",
+                    (),
+                )
+                .map_err(|e| AppError::Unexpected(e.to_string()))?;
+        }
         self.migrate_operators(&conn)?;
         self.migrate_products(&conn)?;
         self.migrate_categories(&conn)?;
@@ -139,7 +159,16 @@ impl LegacyMigrationUseCases {
         self.migrate_inventory_transactions(&conn)?;
         self.migrate_customer_orders(&conn)?;
         self.migrate_customer_order_details(&conn)?;
-
+        {
+            let sqlite_conn = self
+                .deps
+                .sqlite_conn
+                .lock()
+                .map_err(|e| AppError::Unexpected(format!("mutex poisoned: {}", e)))?;
+            sqlite_conn
+                .execute_batch("COMMIT;")
+                .map_err(|e| AppError::Unexpected(e.to_string()))?;
+        }
         Ok(true)
     }
 
@@ -259,14 +288,29 @@ impl LegacyMigrationUseCases {
             }
             // convert start
             let start = match start_opt {
-                Some(ts) => Self::ts_to_naive(ts)?,
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => dt,
+                    Err(e) => {
+                        warn!("skip operator row {}: bad start date: {}", mdoc, e);
+                        continue;
+                    }
+                },
                 None => {
-                    warn!("skip operator row: start NULL");
+                    warn!("skip operator row {}: start NULL", mdoc);
                     continue;
                 }
             };
-            // convert stop
-            let stop = stop_opt.map(Self::ts_to_naive).transpose()?;
+            // convert stop (skip bad stops, but allow None)
+            let stop = match stop_opt {
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => Some(dt),
+                    Err(e) => {
+                        warn!("skip operator row {}: bad stop date: {}", mdoc, e);
+                        continue;
+                    }
+                },
+                None => None,
+            };
 
             let op = Operator {
                 mdoc,
@@ -274,7 +318,10 @@ impl LegacyMigrationUseCases {
                 start: Some(start),
                 stop,
             };
-            self.deps.op_repo.create(&op)?;
+            if let Err(e) = self.deps.op_repo.create(&op) {
+                warn!("skip operator row {}: insert error: {}", mdoc, e);
+                continue;
+            }
         }
         Ok(())
     }
@@ -373,7 +420,9 @@ impl LegacyMigrationUseCases {
             let upc = match upc_opt {
                 Some(s) => {
                     let t = s.trim();
-                    if !(t.len() == 8 || t.len() == 12) || !t.chars().all(|c| c.is_ascii_digit()) {
+                    if !(t.len() == 8 || t.len() == 12 || t.len() == 14)
+                        || !t.chars().all(|c| c.is_ascii_digit())
+                    {
                         warn!("skip product row: invalid UPC '{}'", t);
                         continue;
                     }
@@ -424,21 +473,39 @@ impl LegacyMigrationUseCases {
                 continue;
             }
             let updated = match upd_opt {
-                Some(ts) => Self::ts_to_naive(ts)?,
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => dt,
+                    Err(e) => {
+                        warn!("skip product {}: bad updated date: {}", upc, e);
+                        continue;
+                    }
+                },
                 None => {
-                    warn!("skip product row: updated was NULL");
+                    warn!("skip product {}: updated was NULL", upc);
                     continue;
                 }
             };
             let added = match add_opt {
-                Some(ts) => Self::ts_to_naive(ts)?,
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => dt,
+                    Err(e) => {
+                        warn!("skip product {}: bad added date: {}", upc, e);
+                        continue;
+                    }
+                },
                 None => {
-                    warn!("skip product row: added was NULL");
+                    warn!("skip product {}: added was NULL", upc);
                     continue;
                 }
             };
             let deleted = match del_opt {
-                Some(ts) => Some(Self::ts_to_naive(ts)?),
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => Some(dt),
+                    Err(e) => {
+                        warn!("skip product {}: bad deleted date: {}", upc, e);
+                        continue;
+                    }
+                },
                 None => None,
             };
 
@@ -451,7 +518,10 @@ impl LegacyMigrationUseCases {
                 added: Some(added),
                 deleted,
             };
-            self.deps.product_repo.create(&prod)?;
+            if let Err(e) = self.deps.product_repo.create(&prod) {
+                warn!("skip product: insert error: {}", e);
+                continue;
+            }
         }
         Ok(())
     }
@@ -498,7 +568,10 @@ impl LegacyMigrationUseCases {
                     warn!("skip category row: empty name");
                     continue;
                 }
-                self.deps.category_repo.create(name.to_string())?;
+                if let Err(e) = self.deps.category_repo.create(name.to_string()) {
+                    warn!("skip category '{}': insert error: {}", name, e);
+                    continue;
+                }
             } else {
                 warn!("skip category row: null buffer");
             }
@@ -577,7 +650,13 @@ impl LegacyMigrationUseCases {
                 }
             };
             let dt = match added_opt {
-                Some(ts) => Self::ts_to_naive(ts)?,
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => dt,
+                    Err(e) => {
+                        warn!("skip customer row: invalid added date: {}", e);
+                        continue;
+                    }
+                },
                 None => {
                     warn!("skip customer row: missing added date");
                     continue;
@@ -590,7 +669,10 @@ impl LegacyMigrationUseCases {
                 added: dt,
                 updated: dt,
             };
-            self.deps.customer_repo.create(&cust)?;
+            if let Err(e) = self.deps.customer_repo.create(&cust) {
+                warn!("skip customer row {}: insert error: {}", mdoc, e);
+                continue;
+            }
         }
         Ok(())
     }
@@ -670,10 +752,20 @@ impl LegacyMigrationUseCases {
                 warn!("skip club stmt row {}: invalid activity '{}'", id, act_str);
                 continue;
             }
-            let from_date = chrono::NaiveDate::parse_from_str(parts[0].trim(), "%m/%d/%Y")
-                .map_err(|e| AppError::Unexpected(format!("invalid from date: {}", e)))?;
-            let to_date = chrono::NaiveDate::parse_from_str(parts[1].trim(), "%m/%d/%Y")
-                .map_err(|e| AppError::Unexpected(format!("invalid to date: {}", e)))?;
+            let from_date = match chrono::NaiveDate::parse_from_str(parts[0].trim(), "%m/%d/%Y") {
+                Ok(d) => d,
+                Err(e) => {
+                    warn!("skip club_import {}: bad from date: {}", id, e);
+                    continue;
+                }
+            };
+            let to_date = match chrono::NaiveDate::parse_from_str(parts[1].trim(), "%m/%d/%Y") {
+                Ok(d) => d,
+                Err(e) => {
+                    warn!("skip club_import {}: bad to date: {}", id, e);
+                    continue;
+                }
+            };
             let time = chrono::NaiveTime::from_hms_opt(0, 0, 0)
                 .ok_or_else(|| AppError::Unexpected("failed to construct midnight time".into()))?;
             let activity_from = chrono::NaiveDateTime::new(from_date, time);
@@ -701,7 +793,13 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
             };
-            let date = Self::ts_to_naive(imp_ts)?;
+            let date = match Self::ts_to_naive(imp_ts) {
+                Ok(dt) => dt,
+                Err(e) => {
+                    warn!("skip club_import {}: bad imported ts: {}", id, e);
+                    continue;
+                }
+            };
 
             let stmt = ClubImport {
                 id,
@@ -710,7 +808,10 @@ impl LegacyMigrationUseCases {
                 source_file,
                 date,
             };
-            self.deps.club_imports_repo.create(&stmt)?;
+            if let Err(e) = self.deps.club_imports_repo.create(&stmt) {
+                warn!("skip club_import {}: insert error: {}", id, e);
+                continue;
+            }
         }
         Ok(())
     }
@@ -874,7 +975,13 @@ impl LegacyMigrationUseCases {
             };
 
             let date = match dt_opt {
-                Some(ts) => Self::ts_to_naive(ts)?,
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => dt,
+                    Err(e) => {
+                        warn!("skip detail {}: bad date: {}", id, e);
+                        continue;
+                    }
+                },
                 None => {
                     warn!("skip detail {}: missing date", id);
                     continue;
@@ -890,7 +997,10 @@ impl LegacyMigrationUseCases {
                 amount,
                 date,
             };
-            self.deps.club_transaction_repo.create(&detail)?;
+            if let Err(e) = self.deps.club_transaction_repo.create(&detail) {
+                warn!("skip detail {}: insert error: {}", id, e);
+                continue;
+            }
         }
         Ok(())
     }
@@ -904,10 +1014,12 @@ impl LegacyMigrationUseCases {
         let mut raws: Vec<RawInventoryRow> = Vec::new();
         let mut cursor = conn
             .execute(
-                "SELECT lngOrderId, txtRefNum, txtNote, txtProductUPC, \
-                        lngInventoryAdjustment, datPosted, \
-                        lngCustomerMdoc, lngOperatorMdoc \
-                 FROM qryProductInvDetail",
+                "SELECT p.lngOrderId, p.txtRefNum, p.txtNote, p.txtProductUPC, \
+                        p.lngInventoryAdjustment, p.datPosted, \
+                        o.lngCustomerMdoc, o.lngOperatorMdoc \
+                 FROM tblProductInventory AS p \
+                 LEFT JOIN tblCustomerOrder AS o \
+                   ON p.lngOrderId = o.idnOrderId",
                 (),
                 None::<usize>,
             )
@@ -923,7 +1035,7 @@ impl LegacyMigrationUseCases {
             let mut ref_buf = Vec::<u8>::new();
             let mut note_buf = Vec::<u8>::new();
             let mut upc_buf = Vec::<u8>::new();
-            let mut adj_buf = Nullable::<f64>::null();
+            let mut adj_buf = Nullable::<i32>::null();
             let mut dt_buf = Nullable::<Timestamp>::null();
             let mut cust_buf = Nullable::<i32>::null();
             let mut op_buf = Nullable::<i32>::null();
@@ -976,7 +1088,7 @@ impl LegacyMigrationUseCases {
         self.migrate_inventory_transactions_from_rows(raws)
     }
 
-    /// Testable logic for inventory migrations
+    // Testable logic for inventory migrations
     pub(crate) fn migrate_inventory_transactions_from_rows<I>(
         &self,
         raw_rows: I,
@@ -999,19 +1111,19 @@ impl LegacyMigrationUseCases {
             } else {
                 None
             };
-            // upc: must be 8 or 12 digits
+            // upc: must be 8, 12 or 14 digits
             let upc = upc_opt.unwrap_or_default().trim().to_string();
-            if !((upc.len() == 8 || upc.len() == 12) && upc.chars().all(|c| c.is_ascii_digit())) {
+            if !((upc.len() == 8 || upc.len() == 12 || upc.len() == 14)
+                && upc.chars().all(|c| c.is_ascii_digit()))
+            {
                 warn!("skip inv {:?}: invalid upc '{}'", ref_order_id, upc);
                 continue;
             }
             // amount
-            let quantity_change = (adj_opt.unwrap_or_default() * 100.0).round() as i32;
-            if quantity_change <= 0 {
-                warn!(
-                    "skip inv {:?}: non-positive amount {}",
-                    ref_order_id, quantity_change
-                );
+            let quantity_change = adj_opt.unwrap_or_default();
+            // skip if amount is 0
+            if quantity_change == 0 {
+                warn!("skip inv {:?}: zero quantity", ref_order_id);
                 continue;
             }
             // created_at
@@ -1022,11 +1134,11 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
             };
-            // operator_mdoc must be >0
+            // operator_mdoc required
             let operator_mdoc = match op_opt {
-                Some(i) if i > 0 => i,
-                _ => {
-                    warn!("skip inv {:?}: bad operator_mdoc", ref_order_id);
+                Some(val) => val,
+                None => {
+                    warn!("skip inv {:?}: missing operator", ref_order_id);
                     continue;
                 }
             };
@@ -1044,7 +1156,10 @@ impl LegacyMigrationUseCases {
                 customer_mdoc,
                 operator_mdoc,
             };
-            self.deps.inv_repo.create(&itx)?;
+            if let Err(e) = self.deps.inv_repo.create(&itx) {
+                warn!("skip inventory tx for UPC {}: insert error: {}", itx.upc, e);
+                continue;
+            }
         }
         Ok(())
     }
@@ -1151,7 +1266,13 @@ impl LegacyMigrationUseCases {
 
             // date required
             let date = match dt_opt {
-                Some(ts) => Self::ts_to_naive(ts)?,
+                Some(ts) => match Self::ts_to_naive(ts) {
+                    Ok(dt) => dt,
+                    Err(e) => {
+                        warn!("skip customer_order: bad entry date: {}", e);
+                        continue;
+                    }
+                },
                 None => {
                     warn!("skip customer_order: missing entry date");
                     continue;
@@ -1183,7 +1304,10 @@ impl LegacyMigrationUseCases {
                 note,
             };
 
-            self.deps.customer_transaction_repo.create(&tx)?;
+            if let Err(e) = self.deps.customer_transaction_repo.create(&tx) {
+                warn!("skip customer_order {}: insert error: {}", order_id, e);
+                continue;
+            }
         }
 
         Ok(())
@@ -1290,10 +1414,10 @@ impl LegacyMigrationUseCases {
                 }
             };
 
-            // upc: must be exactly 8 or 12 numerical characters
+            // upc: must be exactly 8, 12 or 14 numerical characters
             let upc = match upc_opt {
                 Some(s)
-                    if (s.trim().len() == 8 || s.trim().len() == 12)
+                    if (s.trim().len() == 8 || s.trim().len() == 12 || s.trim().len() == 14)
                         && s.trim().chars().all(|c| c.is_ascii_digit()) =>
                 {
                     s.trim().to_string()
@@ -1304,13 +1428,9 @@ impl LegacyMigrationUseCases {
                 }
             };
 
-            // quantity ≥ 0
+            // quantity exists
             let quantity = match qty_opt {
-                Some(n) if n >= 0 => n,
-                Some(n) => {
-                    warn!("skip detail {}: negative qty ({})", order_id, n);
-                    continue;
-                }
+                Some(n) => n,
                 None => {
                     warn!("skip detail {}: missing qty", order_id);
                     continue;
@@ -1341,7 +1461,10 @@ impl LegacyMigrationUseCases {
                 price: price_cents,
             };
 
-            self.deps.customer_tx_detail_repo.create(&detail)?;
+            if let Err(e) = self.deps.customer_tx_detail_repo.create(&detail) {
+                warn!("skip detail {}: insert error: {}", order_id, e);
+                continue;
+            }
         }
 
         Ok(())
@@ -1376,6 +1499,7 @@ mod tests {
                 inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
                 customer_transaction_repo: Arc::new(MockCustomerTransactionRepo::new()),
                 customer_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
+                sqlite_conn: Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
             }
         }
     }
@@ -1446,6 +1570,7 @@ mod tests {
                 inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
                 customer_transaction_repo: Arc::new(MockCustomerTransactionRepo::new()),
                 customer_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
+                sqlite_conn: Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
             },
         };
 
@@ -2184,7 +2309,7 @@ mod tests {
             Some("R1".into()),
             Some("N1".into()),
             Some("000012345678".into()),
-            Some(3.21),
+            Some(3),
             Some(ts),
             Some(7),
             Some(8),
@@ -2197,7 +2322,7 @@ mod tests {
         assert_eq!(tx.ref_order_id, Some(42));
         assert_eq!(tx.reference.as_ref().unwrap(), "R1 - N1");
         assert_eq!(tx.upc, "000012345678");
-        assert_eq!(tx.quantity_change, (3.21 * 100.0) as i32);
+        assert_eq!(tx.quantity_change, 3);
         let dt = NaiveDate::from_ymd_opt(2025, 7, 8)
             .unwrap()
             .and_time(NaiveTime::from_hms_opt(9, 10, 11).unwrap());
@@ -2225,7 +2350,7 @@ mod tests {
                 Some("R2".into()),
                 Some("".into()),
                 Some("12345678".into()),
-                Some(1.0),
+                Some(1),
                 Some(ts),
                 None,
                 Some(5),
@@ -2236,7 +2361,7 @@ mod tests {
                 Some("".into()),
                 Some("N2".into()),
                 Some("87654321".into()),
-                Some(2.0),
+                Some(2),
                 Some(ts),
                 Some(9),
                 Some(6),
@@ -2247,7 +2372,7 @@ mod tests {
                 Some("".into()),
                 Some("".into()),
                 Some("11223344".into()),
-                Some(3.0),
+                Some(3),
                 Some(ts),
                 None,
                 Some(7),
@@ -2282,7 +2407,7 @@ mod tests {
                 Some("R".into()),
                 Some("N".into()),
                 Some("BADUPCLEN".into()),
-                Some(1.0),
+                Some(1),
                 Some(ts),
                 Some(1),
                 Some(1),
@@ -2293,7 +2418,7 @@ mod tests {
                 Some("R".into()),
                 Some("N".into()),
                 Some("12345678".into()),
-                Some(0.0),
+                Some(0),
                 Some(ts),
                 Some(1),
                 Some(1),
@@ -2323,7 +2448,7 @@ mod tests {
                 Some("R".into()),
                 Some("N".into()),
                 Some("12345678".into()),
-                Some(1.0),
+                Some(1),
                 None,
                 Some(2),
                 Some(2),
@@ -2334,7 +2459,7 @@ mod tests {
                 Some("R".into()),
                 Some("N".into()),
                 Some("12345678".into()),
-                Some(1.0),
+                Some(1),
                 Some(ts),
                 Some(2),
                 None,

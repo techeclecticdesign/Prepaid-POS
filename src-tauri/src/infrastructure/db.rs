@@ -17,6 +17,14 @@ static MIGRATIONS: LazyLock<Migrations> = LazyLock::new(|| {
             env!("CARGO_MANIFEST_DIR"),
             "/migrations/0003_add_categories.sql"
         ))),
+        M::up(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/migrations/0004_add_customer_club.sql"
+        ))),
+        M::up(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/migrations/0005_add_customer_transactions.sql"
+        ))),
     ])
 });
 
