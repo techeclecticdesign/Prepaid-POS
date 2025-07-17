@@ -85,13 +85,14 @@ export default function ProductsPage() {
             });
             refetch();
           }}
-          onQuantityAdjust={async (oldQty, newQty) => {
+          onQuantityAdjust={async (oldQty, newQty, reason) => {
             const change = newQty - oldQty;
             if (change === 0) return;
             await quantityAdjustment({
               operator_mdoc: activeOperator!.mdoc,
               upc: editing.upc,
               quantity_change: change,
+              reference: reason,
             });
             refetch();
           }}

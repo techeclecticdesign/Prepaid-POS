@@ -15,6 +15,6 @@ pub trait InventoryTransactionRepoTrait: Send + Sync {
         offset: i64,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<InventoryTransaction>, AppError>;
+    ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError>;
     fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
 }

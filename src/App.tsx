@@ -10,6 +10,7 @@ import ProductsPage from "./pages/Products/Products";
 import SalesPage from "./pages/Sales/Sales";
 import Homepage from "./pages/Homepage/Homepage";
 import ImportPage from "./pages/Import/Import";
+import LostInventoryPage from "./pages/LostInventory/LostInventory";
 
 export default function App() {
   const { loggedIn, activeOperator } = useAuth();
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/operators" element={<OperatorsPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/lost-inventory" element={<LostInventoryPage />} />
             <Route path="/import" element={<ImportPage />} />
           </Route>
         )}

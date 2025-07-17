@@ -163,6 +163,7 @@ pub fn run() {
             interface::commands::transaction::make_sale_line_item,
             interface::commands::transaction::list_order_details,
             interface::commands::transaction::search_customer_transactions,
+            interface::commands::transaction::search_inventory_transactions,
             interface::commands::club::list_customers,
             interface::commands::club::get_customer,
             interface::commands::club::list_club_transactions,

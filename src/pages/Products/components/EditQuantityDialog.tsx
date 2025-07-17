@@ -12,7 +12,7 @@ interface Props {
   open: boolean;
   initialQty: number;
   onClose: () => void;
-  onSubmit: (oldQty: number, newQty: number) => Promise<void>;
+  onSubmit: (oldQty: number, newQty: number, reason: string) => Promise<void>;
 }
 
 export default function EditQuantityDialog({
@@ -23,6 +23,8 @@ export default function EditQuantityDialog({
 }: Props) {
   const [newQty, setNewQty] = useState(initialQty);
   const [inputValue, setInputValue] = useState(String(initialQty));
+  const [reason, setReason] = useState("");
+  const [reasonInput, setReasonInput] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<
@@ -35,6 +37,8 @@ export default function EditQuantityDialog({
     if (open) {
       setNewQty(initialQty);
       setInputValue(String(initialQty));
+      setReason("");
+      setReasonInput("");
       setSnackbarOpen(false);
       inputRef.current?.focus();
     } else if (document.activeElement instanceof HTMLElement) {
@@ -48,7 +52,7 @@ export default function EditQuantityDialog({
 
     // must be integer >= 0
     const parsed = Number.parseInt(val, 10);
-    if (!/^\d*$/.test(val) || Number.isNaN(parsed) || parsed < 0) {
+    if (Number.isNaN(parsed) || parsed < 0) {
       setSnackbarMessage("Quantity must be a non-negative integer.");
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
@@ -59,10 +63,24 @@ export default function EditQuantityDialog({
     }
   };
 
+  const handleReasonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setReasonInput(e.target.value);
+    setReason(e.target.value);
+  };
+
   const handleSave = async () => {
     // block invalid
-    if (snackbarOpen) return;
-    await onSubmit(initialQty, newQty);
+    const quantityChange = newQty - initialQty;
+
+    if (quantityChange < 0 && !reason.trim()) {
+      setSnackbarMessage("Reason is required for negative quantity changes.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    if (snackbarOpen) return; // Block if quantity input is invalid
+    await onSubmit(initialQty, newQty, reason.trim());
     onClose();
   };
 
@@ -107,6 +125,28 @@ export default function EditQuantityDialog({
           fullWidth
           error={snackbarOpen && snackbarSeverity === "error"}
           inputRef={inputRef}
+          sx={{ mb: 2 }}
+        />
+        <TextField
+          label="Reason"
+          value={reasonInput}
+          onChange={handleReasonChange}
+          fullWidth
+          error={
+            newQty - initialQty < 0 &&
+            !reason.trim() &&
+            snackbarOpen &&
+            snackbarSeverity === "error"
+          }
+          helperText={
+            newQty - initialQty < 0 &&
+            !reason.trim() &&
+            snackbarOpen &&
+            snackbarSeverity === "error"
+              ? "Reason is required for negative changes"
+              : ""
+          }
+          placeholder="Reason for adjustment"
         />
       </DialogContent>
       <DialogActions>

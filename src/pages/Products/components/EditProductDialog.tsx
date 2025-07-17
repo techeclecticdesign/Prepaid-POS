@@ -28,7 +28,11 @@ interface Props {
     newPriceCents: number,
   ) => Promise<void>;
   refetch: () => void;
-  onQuantityAdjust: (oldQty: number, newQty: number) => Promise<void>;
+  onQuantityAdjust: (
+    oldQty: number,
+    newQty: number,
+    reason: string,
+  ) => Promise<void>;
 }
 
 export default function EditProductDialog({
@@ -169,8 +173,8 @@ export default function EditProductDialog({
         open={quantityDialogOpen}
         initialQty={displayedQty}
         onClose={() => setQuantityDialogOpen(false)}
-        onSubmit={async (oldQty, newQty) => {
-          await onQuantityAdjust(oldQty, newQty);
+        onSubmit={async (oldQty, newQty, reason) => {
+          await onQuantityAdjust(oldQty, newQty, reason);
           setDisplayedQty(newQty);
         }}
       />

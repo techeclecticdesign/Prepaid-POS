@@ -145,7 +145,7 @@ impl LegacyMigrationUseCases {
             sqlite_conn
                 .execute(
                     "INSERT OR IGNORE INTO operators (mdoc, name, start, stop)
-                    VALUES (0, 'Imported: unknown operator', '1900-01-01 00:00:00', '1900-01-01 00:00:00');",
+                    VALUES (0, 'unknown operator', '1900-01-01 00:00:00', '1900-01-01 00:00:00');",
                     (),
                 )
                 .map_err(|e| AppError::Unexpected(e.to_string()))?;

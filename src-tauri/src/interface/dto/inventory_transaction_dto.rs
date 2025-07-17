@@ -7,7 +7,6 @@ pub struct CreateInventoryTransactionDto {
     #[validate(custom(function = "validate_upc_str"))]
     pub upc: String,
 
-    #[validate(range(min = 1, message = "quantity_change must be non-zero and positive"))]
     pub quantity_change: i32,
 
     pub reference: Option<String>,
@@ -38,8 +37,15 @@ pub struct ReadInventoryTransactionDto {
 }
 
 #[derive(Serialize)]
+pub struct InventoryTransactionSearchRow {
+    pub transaction: ReadInventoryTransactionDto,
+    pub product_name: String,
+    pub operator_name: String,
+}
+
+#[derive(Serialize)]
 pub struct InventoryTransactionSearchResult {
-    pub transactions: Vec<ReadInventoryTransactionDto>,
+    pub transactions: Vec<InventoryTransactionSearchRow>,
     pub total_count: u32,
 }
 

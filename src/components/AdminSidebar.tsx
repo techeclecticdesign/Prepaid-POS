@@ -55,6 +55,13 @@ export default function AdminSidebar() {
         >
           Import
         </Link>
+        <Link
+          to="/lost-inventory"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
+        >
+          Lost Inventory
+        </Link>
         <Typography
           component="span"
           className="cursor-not-allowed"

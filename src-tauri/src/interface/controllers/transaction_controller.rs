@@ -143,8 +143,14 @@ impl TransactionController {
             .uc
             .search_inventory_transactions(page, date.clone(), search.clone())?;
         let total = self.uc.count_inventory_transactions(date, search)?;
+        let rows = items
+            .into_iter()
+            .map(|(tx, pname, oname)| {
+                InventoryTransactionPresenter::to_search_row(tx, pname, oname)
+            })
+            .collect();
         Ok(InventoryTransactionSearchResult {
-            transactions: InventoryTransactionPresenter::to_dto_list(items),
+            transactions: rows,
             total_count: total,
         })
     }

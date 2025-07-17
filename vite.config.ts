@@ -8,6 +8,9 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), tailwind()],
+  optimizeDeps: {
+    include: ["date-fns/addDays", "date-fns/subDays", "date-fns/format"],
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

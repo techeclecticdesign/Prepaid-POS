@@ -63,44 +63,66 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
         offset: i64,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<InventoryTransaction>, AppError> {
+    ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
         let conn = self
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         let mut sql = "\
-            SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
-            FROM inventory_transaction \
-            WHERE 1=1 \
-        ".to_string();
+            SELECT tx.id,
+                   tx.upc,
+                   tx.quantity_change,
+                   tx.operator_mdoc,
+                   tx.customer_mdoc,
+                   tx.ref_order_id,
+                   tx.reference,
+                   tx.created_at,
+                   p.desc AS product_name,
+                   o.name AS operator_name
+            FROM inventory_transactions tx
+            JOIN products  p ON tx.upc           = p.upc
+            JOIN operators o ON tx.operator_mdoc = o.mdoc
+            WHERE tx.customer_mdoc IS NULL
+              AND tx.quantity_change <= 0
+        "
+        .to_string();
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
         let mut string_params: Vec<String> = Vec::new();
 
         // date filter
         if let Some(ref d) = date {
-            sql.push_str(" AND date(created_at)=date(?)");
+            sql.push_str(" AND date(tx.created_at)=date(?)");
             params.push(d);
         }
         // multi‑field text search
         if let Some(ref s) = search {
-            sql.push_str(" AND (upc LIKE ? OR operator_mdoc LIKE ? OR customer_mdoc LIKE ? OR ref_order_id LIKE ? OR reference LIKE ?)");
+            sql.push_str(
+                " AND (\
+                tx.upc           LIKE ? OR \
+                CAST(tx.operator_mdoc AS TEXT) LIKE ? OR \
+                CAST(tx.ref_order_id    AS TEXT) LIKE ? OR \
+                tx.reference     LIKE ? OR \
+                p.desc           LIKE ? OR \
+                o.name           LIKE ?\
+            )",
+            );
             let pat = format!("%{}%", s);
             string_params.push(pat);
             let pat_ref = string_params
                 .last()
                 .ok_or_else(|| AppError::Unexpected("search pattern missing".to_string()))?;
-            for _ in 0..5 {
+            for _ in 0..6 {
                 params.push(pat_ref);
             }
         }
 
-        sql.push_str(" ORDER BY created_at DESC LIMIT ? OFFSET ?");
+        sql.push_str(" ORDER BY tx.created_at DESC LIMIT ? OFFSET ?");
         params.push(&limit);
         params.push(&offset);
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params.as_slice(), |r| {
-            Ok(InventoryTransaction {
+            let tx = InventoryTransaction {
                 id: r.get(0)?,
                 upc: r.get(1)?,
                 quantity_change: r.get(2)?,
@@ -109,9 +131,12 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
                 ref_order_id: r.get(5)?,
                 reference: r.get(6)?,
                 created_at: r.get(7)?,
-            })
+            };
+            let product_name: String = r.get(8)?;
+            let operator_name: String = r.get(9)?;
+            Ok((tx, product_name, operator_name))
         })?;
-        rows.collect::<Result<_, _>>().map_err(Into::into)
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
     fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
@@ -119,11 +144,16 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
-        let mut sql = "SELECT COUNT(*) FROM price_adjustment WHERE 1=1".to_string();
+        let mut sql = "\
+            SELECT COUNT(*) \
+            FROM inventory_transactions tx \
+            WHERE tx.customer_mdoc IS NULL \
+              AND tx.quantity_change <= 0"
+            .to_string();
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
         let mut string_params: Vec<String> = Vec::new();
         if let Some(ref d) = date {
-            sql.push_str(" AND date(created_at)=date(?)");
+            sql.push_str(" AND date(tx.created_at)=date(?)");
             params.push(d);
         }
         if let Some(ref s) = search {

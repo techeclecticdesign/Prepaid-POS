@@ -1,5 +1,7 @@
 use crate::domain::models::InventoryTransaction;
-use crate::interface::dto::inventory_transaction_dto::ReadInventoryTransactionDto;
+use crate::interface::dto::inventory_transaction_dto::{
+    InventoryTransactionSearchRow, ReadInventoryTransactionDto,
+};
 use chrono::{TimeZone, Utc};
 
 pub struct InventoryTransactionPresenter;
@@ -23,5 +25,17 @@ impl InventoryTransactionPresenter {
 
     pub fn to_dto_list(itxs: Vec<InventoryTransaction>) -> Vec<ReadInventoryTransactionDto> {
         itxs.into_iter().map(Self::to_dto).collect()
+    }
+
+    pub fn to_search_row(
+        itx: InventoryTransaction,
+        pname: String,
+        oname: String,
+    ) -> InventoryTransactionSearchRow {
+        InventoryTransactionSearchRow {
+            transaction: Self::to_dto(itx),
+            product_name: pname,
+            operator_name: oname,
+        }
     }
 }

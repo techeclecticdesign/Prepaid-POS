@@ -98,7 +98,7 @@ impl TransactionUseCases {
         page: u32,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<InventoryTransaction>, AppError> {
+    ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
         let limit = 10;
         let offset = (page.saturating_sub(1) as i64) * limit;
         self.inv_repo.search(limit, offset, date, search)

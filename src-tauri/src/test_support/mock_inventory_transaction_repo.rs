@@ -65,10 +65,10 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
         offset: i64,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<InventoryTransaction>, AppError> {
+    ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
         let guard = self.store.lock().unwrap();
 
-        let mut transactions: Vec<InventoryTransaction> = guard
+        let mut transactions: Vec<(InventoryTransaction, String, String)> = guard
             .iter()
             .filter(|t| {
                 // Date match
@@ -98,10 +98,11 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
                 date_match && search_match
             })
             .cloned()
+            .map(|t| (t, String::new(), String::new()))
             .collect();
 
         // Sort newest first
-        transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        transactions.sort_by(|a, b| b.0.created_at.cmp(&a.0.created_at));
 
         // Pagination slice
         let start = offset as usize;
