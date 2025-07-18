@@ -9,3 +9,15 @@ pub struct ClubTransactionReadDto {
     pub amount: i32,
     pub date: String,
 }
+
+#[derive(Serialize)]
+pub struct ClubTransactionSearchResult {
+    pub items: Vec<ClubTransactionSearchRow>,
+    pub total_count: i64,
+}
+
+#[derive(Serialize)]
+pub struct ClubTransactionSearchRow {
+    pub transaction: ClubTransactionReadDto,
+    pub customer_name: Option<String>,
+}

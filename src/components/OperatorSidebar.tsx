@@ -48,13 +48,13 @@ export default function OperatorSidebar() {
         >
           Customers
         </Link>
-        <Typography
-          component="span"
-          className="cursor-not-allowed"
-          sx={{ color: "text.secondary" }}
+        <Link
+          to="/accounts"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
         >
-          Ipsum
-        </Typography>
+          Accounts
+        </Link>
         <Typography
           component="span"
           className="cursor-not-allowed"

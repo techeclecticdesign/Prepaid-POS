@@ -60,23 +60,23 @@ impl ClubUseCases {
         self.import_repo.get_by_id(id)
     }
 
-    pub fn search_club_imports(
+    pub fn search_club_transactions(
         &self,
         page: u32,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<ClubImport>, AppError> {
+    ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError> {
         let limit = 10;
         let offset = (page.saturating_sub(1) as i64) * limit;
-        self.import_repo.search(limit, offset, date, search)
+        self.tx_repo.search(limit, offset, date, search)
     }
 
-    pub fn count_club_imports(
+    pub fn count_club_transactions(
         &self,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<u32, AppError> {
-        self.import_repo.count(date, search).map(|c| c as u32)
+    ) -> Result<i64, AppError> {
+        self.tx_repo.count(date, search)
     }
 }
 

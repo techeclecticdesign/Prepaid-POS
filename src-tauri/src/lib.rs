@@ -171,7 +171,7 @@ pub fn run() {
             interface::commands::club::list_club_imports,
             interface::commands::club::get_club_import,
             interface::commands::club::search_customers,
-            interface::commands::club::search_club_imports,
+            interface::commands::club::search_club_transactions,
             interface::commands::legacy_migration::has_legacy_data,
             interface::commands::legacy_migration::do_legacy_data_import,
             interface::commands::parse_pdf::parse_pdf,

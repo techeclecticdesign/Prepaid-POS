@@ -13,6 +13,7 @@ import ImportPage from "./pages/Import/Import";
 import LostInventoryPage from "./pages/LostInventory/LostInventory";
 import PriceAdjustmentsPage from "./pages/PriceAdjustments/PriceAdjustments";
 import CustomersPage from "./pages/Customers/Customers";
+import AccountsPage from "./pages/Accounts/Accounts";
 
 export default function App() {
   const { loggedIn, activeOperator } = useAuth();
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/accounts" element={<AccountsPage />} />
           </Route>
         )}
       </Routes>

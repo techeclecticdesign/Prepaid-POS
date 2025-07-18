@@ -1,12 +1,13 @@
 use crate::application::use_cases::club_usecases::ClubUseCases;
 use crate::common::error::AppError;
-use crate::interface::dto::club_import_dto::ClubImportSearchResult;
+use crate::interface::dto::club_transaction_dto::ClubTransactionSearchResult;
 use crate::interface::dto::{
     club_import_dto::ClubImportReadDto,
     club_transaction_dto::ClubTransactionReadDto,
     customer_dto::{CustomerReadDto, CustomerSearchResult},
 };
-use crate::interface::presenters::club_presenter::ClubPresenter;
+use crate::interface::presenters::club_import_presenter::ClubImportPresenter;
+use crate::interface::presenters::club_transaction_presenter::ClubTransactionPresenter;
 use crate::interface::presenters::customer_presenter::CustomerPresenter;
 use std::sync::Arc;
 
@@ -50,7 +51,7 @@ impl ClubController {
 
     pub fn list_club_transactions(&self) -> Result<Vec<ClubTransactionReadDto>, AppError> {
         let domains = self.uc.list_club_transactions()?;
-        Ok(ClubPresenter::to_transaction_dto_list(domains))
+        Ok(ClubTransactionPresenter::to_transaction_dto_list(domains))
     }
 
     pub fn get_club_transaction(
@@ -58,31 +59,31 @@ impl ClubController {
         id: i32,
     ) -> Result<Option<ClubTransactionReadDto>, AppError> {
         let opt = self.uc.get_club_transaction(id)?;
-        Ok(opt.map(ClubPresenter::to_transaction_dto))
+        Ok(opt.map(ClubTransactionPresenter::to_transaction_dto))
     }
 
     pub fn list_club_imports(&self) -> Result<Vec<ClubImportReadDto>, AppError> {
         let domains = self.uc.list_club_imports()?;
-        Ok(ClubPresenter::to_import_dto_list(domains))
+        Ok(ClubImportPresenter::to_import_dto_list(domains))
     }
 
     pub fn get_club_import(&self, id: i32) -> Result<Option<ClubImportReadDto>, AppError> {
         let opt = self.uc.get_club_import(id)?;
-        Ok(opt.map(ClubPresenter::to_import_dto))
+        Ok(opt.map(ClubImportPresenter::to_import_dto))
     }
 
-    pub fn search_club_imports(
+    pub fn search_club_transactions(
         &self,
         page: u32,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<ClubImportSearchResult, AppError> {
-        let items = self
+    ) -> Result<ClubTransactionSearchResult, AppError> {
+        let tuples = self
             .uc
-            .search_club_imports(page, date.clone(), search.clone())?;
-        let total = self.uc.count_club_imports(date, search)?;
-        Ok(ClubImportSearchResult {
-            items: ClubPresenter::to_import_dto_list(items),
+            .search_club_transactions(page, date.clone(), search.clone())?;
+        let total = self.uc.count_club_transactions(date, search)?;
+        Ok(ClubTransactionSearchResult {
+            items: ClubTransactionPresenter::to_search_rows(tuples),
             total_count: total,
         })
     }

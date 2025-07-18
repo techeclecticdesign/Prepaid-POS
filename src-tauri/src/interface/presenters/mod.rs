@@ -1,5 +1,6 @@
 pub mod category_presenter;
-pub mod club_presenter;
+pub mod club_import_presenter;
+pub mod club_transaction_presenter;
 pub mod customer_presenter;
 pub mod customer_transaction_presenter;
 pub mod customer_tx_detail_presenter;

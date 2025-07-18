@@ -1,8 +1,8 @@
 use crate::common::error::AppError;
 use crate::interface::controllers::club_controller::ClubController;
 use crate::interface::dto::club_import_dto::ClubImportReadDto;
-use crate::interface::dto::club_import_dto::ClubImportSearchResult;
 use crate::interface::dto::club_transaction_dto::ClubTransactionReadDto;
+use crate::interface::dto::club_transaction_dto::ClubTransactionSearchResult;
 use crate::interface::dto::customer_dto::{CustomerReadDto, CustomerSearchResult};
 use std::sync::Arc;
 use tauri::State;
@@ -63,12 +63,12 @@ pub fn get_club_import(
 }
 
 #[tauri::command]
-pub fn search_club_imports(
+pub fn search_club_transactions(
     controller: State<Arc<ClubController>>,
     page: Option<u32>,
     date: Option<String>,
     search: Option<String>,
-) -> Result<ClubImportSearchResult, AppError> {
+) -> Result<ClubTransactionSearchResult, AppError> {
     let page = page.unwrap_or(1);
-    controller.search_club_imports(page, date, search)
+    controller.search_club_transactions(page, date, search)
 }
