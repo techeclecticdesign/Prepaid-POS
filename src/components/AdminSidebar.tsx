@@ -69,6 +69,13 @@ export default function AdminSidebar() {
         >
           Price Adjustments
         </Link>
+        <Link
+          to="/barcode"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
+        >
+          Barcode Scanner Config
+        </Link>
       </nav>
       <Button
         onClick={() => {

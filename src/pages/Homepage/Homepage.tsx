@@ -29,6 +29,19 @@ export default function App() {
   const { setActiveOperator } = useAuth();
 
   const [showLegacyDataDialog, setShowLegacyDataDialog] = useState(false);
+  const saved = localStorage.getItem("barcode");
+
+  function isValidScannerType(val: string | null): val is "Zebra" | "Generic" {
+    return val === "Zebra" || val === "Generic";
+  }
+
+  let scannerType: "Zebra" | "Generic";
+  if (isValidScannerType(saved)) {
+    scannerType = saved;
+  } else {
+    localStorage.setItem("barcode", "Zebra");
+    scannerType = "Zebra";
+  }
 
   // show the dialog when the hook indicates it should
   useEffect(() => {
@@ -68,14 +81,20 @@ export default function App() {
   };
 
   useEffect(() => {
-    new BarcodeScanner({
+    const prefix = scannerType === "Zebra" ? "~" : "";
+
+    const scanner = new BarcodeScanner({
+      prefix,
+      suffix: "",
       timeout: 50,
       shouldCapture: () => true,
       barcodeCallback: handleScan,
     });
 
-    return () => {};
-  }, []);
+    return () => {
+      scanner.destroy(); // removes keydown listener
+    };
+  }, [scannerType]);
 
   const handleLegacyDataOk = async () => {
     await importLegacyData();

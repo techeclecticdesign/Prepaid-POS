@@ -35,6 +35,13 @@ export default function OperatorSidebar() {
       </div>
       <nav className="flex flex-col space-y-2">
         <Link
+          to="/sales"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
+        >
+          Sales
+        </Link>
+        <Link
           to="/products"
           className="hover:underline"
           style={{ color: theme.palette.primary.main }}
