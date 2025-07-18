@@ -41,13 +41,13 @@ export default function OperatorSidebar() {
         >
           Products
         </Link>
-        <Typography
-          component="span"
-          className="cursor-not-allowed"
-          sx={{ color: "text.secondary" }}
+        <Link
+          to="/customers"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
         >
-          Lorem
-        </Typography>
+          Customers
+        </Link>
         <Typography
           component="span"
           className="cursor-not-allowed"

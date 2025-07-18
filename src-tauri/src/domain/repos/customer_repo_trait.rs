@@ -11,7 +11,7 @@ pub trait CustomerRepoTrait: Send + Sync {
         limit: i64,
         offset: i64,
         search: Option<String>,
-    ) -> Result<Vec<Customer>, AppError>;
+    ) -> Result<Vec<(Customer, i64)>, AppError>;
 
     fn count(&self, search: Option<String>) -> Result<i64, AppError>;
 }

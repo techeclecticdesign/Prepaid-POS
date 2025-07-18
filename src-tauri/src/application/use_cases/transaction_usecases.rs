@@ -167,27 +167,34 @@ impl TransactionUseCases {
         res
     }
 
-    pub fn list_order_details(&self, order_id: i32) -> Result<Vec<CustomerTxDetail>, AppError> {
+    pub fn list_order_details(
+        &self,
+        order_id: i32,
+    ) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
         self.detail_repo.list_by_order(order_id)
     }
 
     pub fn search_customer_transactions(
         &self,
         page: u32,
+        mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<CustomerTransaction>, AppError> {
+    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError> {
         let limit = 10;
         let offset = (page.saturating_sub(1) as i64) * limit;
-        self.cust_tx_repo.search(limit, offset, date, search)
+        self.cust_tx_repo.search(limit, offset, mdoc, date, search)
     }
 
     pub fn count_customer_transactions(
         &self,
+        mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<u32, AppError> {
-        self.cust_tx_repo.count(date, search).map(|c| c as u32)
+        self.cust_tx_repo
+            .count(mdoc, date, search)
+            .map(|c| c as u32)
     }
 }
 
@@ -202,6 +209,7 @@ mod tests {
         SqliteCustomerTransactionRepo, SqliteCustomerTxDetailRepo, SqliteInventoryTransactionRepo,
         SqliteOperatorRepo, SqliteProductRepo,
     };
+    use chrono::Utc;
     use std::sync::Arc;
 
     impl Default for InventoryTransaction {
@@ -425,7 +433,16 @@ mod tests {
         };
         uc.make_sale(tx1)?;
 
-        // And create a detail for it
+        _prod_repo.create(&Product {
+            upc: "00000001".into(),
+            desc: "A test product".into(),
+            price: 100,
+            category: "test-category".into(),
+            updated: Some(Utc::now().naive_utc()),
+            added: Some(Utc::now().naive_utc()),
+            deleted: None,
+        })?;
+
         let detail = crate::domain::models::customer_tx_detail::CustomerTxDetail {
             detail_id: 0,
             order_id: 42,

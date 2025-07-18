@@ -86,19 +86,35 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         &self,
         limit: i64,
         offset: i64,
+        mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<CustomerTransaction>, AppError> {
+    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError> {
         let conn = self
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
         let mut sql = "\
-            SELECT order_id, customer_mdoc, operator_mdoc, date, note \
-            FROM customer_transaction WHERE 1=1\
+            SELECT t.order_id,
+                   t.customer_mdoc,
+                   t.operator_mdoc,
+                   t.date,
+                   t.note,
+                   o.name       AS operator_name,
+                   COALESCE(d.spent,0) AS spent
+            FROM customer_transactions t
+            JOIN operators o ON t.operator_mdoc = o.mdoc
+            LEFT JOIN (
+              SELECT order_id,
+                     SUM(quantity * price) AS spent
+              FROM customer_tx_detail
+              GROUP BY order_id
+            ) d ON t.order_id = d.order_id
+            WHERE t.customer_mdoc = ?1
         "
         .to_string();
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+        params.push(&mdoc);
         let mut string_params: Vec<String> = Vec::new();
 
         // date filter
@@ -108,11 +124,11 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         }
         // search on multiple fields
         if let Some(ref s) = search {
-            sql.push_str(" AND (customer_mdoc LIKE ? OR operator_mdoc LIKE ? OR order_id LIKE ? OR note LIKE ?)");
+            sql.push_str(" AND (t.customer_mdoc LIKE ? OR t.operator_mdoc LIKE ? OR t.order_id LIKE ? OR t.note LIKE ?)");
             let pat = format!("%{}%", s);
             string_params.push(pat);
             let p = string_params.last().ok_or_else(|| {
-                AppError::Unexpected("customer_transaction pattern missing".into())
+                AppError::Unexpected("customer_transactions pattern missing".into())
             })?;
             // push four times for each placeholder
             params.push(p);
@@ -122,30 +138,40 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         }
 
         // ordering + pagination
-        sql.push_str(" ORDER BY date DESC LIMIT ? OFFSET ?");
+        sql.push_str(" ORDER BY t.date DESC LIMIT ? OFFSET ?");
         params.push(&limit);
         params.push(&offset);
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params.as_slice(), |r| {
-            Ok(CustomerTransaction {
+            let ct = CustomerTransaction {
                 order_id: r.get(0)?,
                 customer_mdoc: r.get(1)?,
                 operator_mdoc: r.get(2)?,
                 date: r.get(3)?,
                 note: r.get(4)?,
-            })
+            };
+            let operator_name: String = r.get(5)?;
+            let spent: i64 = r.get(6)?;
+            Ok((ct, operator_name, spent))
         })?;
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(
+        &self,
+        mdoc: Option<i32>,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<i64, AppError> {
         let conn = self
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
-        let mut sql = "SELECT COUNT(*) FROM customer_transaction WHERE 1=1".to_string();
+        let mut sql =
+            "SELECT COUNT(*) FROM customer_transactions WHERE customer_mdoc = ?1".to_string();
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+        params.push(&mdoc);
         let mut string_params: Vec<String> = Vec::new();
 
         if let Some(ref d) = date {
@@ -157,7 +183,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
             let pat = format!("%{}%", s);
             string_params.push(pat);
             let p = string_params.last().ok_or_else(|| {
-                AppError::Unexpected("customer_transaction count pattern missing".into())
+                AppError::Unexpected("customer_transactions count pattern missing".into())
             })?;
             params.push(p);
             params.push(p);

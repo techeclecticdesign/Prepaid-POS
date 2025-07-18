@@ -53,21 +53,45 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
         limit: i64,
         offset: i64,
         search: Option<String>,
-    ) -> Result<Vec<Customer>, AppError> {
+    ) -> Result<Vec<(Customer, i64)>, AppError> {
         let conn = self
             .conn
             .lock()
             .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
+        // compute balance = sum(deposits) - sum(spent)
         let mut sql = "\
-            SELECT mdoc, name, added, updated \
-            FROM customer WHERE 1=1\
+            SELECT c.mdoc,
+                   c.name,
+                   c.added,
+                   c.updated,
+                   (COALESCE(ct.added,0) - COALESCE(sp.spent,0)) AS balance
+            FROM customer c
+            LEFT JOIN (
+              SELECT mdoc,
+                     SUM(CASE 
+                           WHEN tx_type = 'Deposit'    THEN amount
+                           WHEN tx_type = 'Withdrawal' THEN -amount
+                           ELSE 0
+                         END) AS added
+              FROM club_transactions
+              GROUP BY mdoc
+            ) ct ON c.mdoc = ct.mdoc
+            LEFT JOIN (
+              SELECT t.customer_mdoc AS mdoc,
+                     SUM(d.quantity * d.price) AS spent
+              FROM customer_transactions t
+              JOIN customer_tx_detail d 
+                ON t.order_id = d.order_id
+              GROUP BY t.customer_mdoc
+            ) sp ON c.mdoc = sp.mdoc
+            WHERE 1=1
         "
         .to_string();
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
         let mut string_params: Vec<String> = Vec::new();
 
         if let Some(ref s) = search {
-            sql.push_str(" AND (mdoc LIKE ? OR name LIKE ?)");
+            sql.push_str(" AND (c.mdoc LIKE ? OR c.name LIKE ?)");
             let pat = format!("%{}%", s);
             string_params.push(pat);
             let p = string_params
@@ -77,18 +101,20 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
             params.push(p);
         }
 
-        sql.push_str(" ORDER BY added DESC LIMIT ? OFFSET ?");
+        sql.push_str(" ORDER BY c.added DESC LIMIT ? OFFSET ?");
         params.push(&limit);
         params.push(&offset);
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params.as_slice(), |r| {
-            Ok(Customer {
+            let cust = Customer {
                 mdoc: r.get(0)?,
                 name: r.get(1)?,
                 added: r.get(2)?,
                 updated: r.get(3)?,
-            })
+            };
+            let balance: i64 = r.get(4)?;
+            Ok((cust, balance))
         })?;
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }

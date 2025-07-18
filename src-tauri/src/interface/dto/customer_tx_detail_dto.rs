@@ -23,6 +23,7 @@ pub struct CustomerTxDetailDto {
     pub detail_id: i32,
     pub order_id: i32,
     pub upc: String,
+    pub product_name: String,
     pub quantity: i32,
     pub price: i32,
 }

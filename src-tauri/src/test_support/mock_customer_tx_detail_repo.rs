@@ -29,11 +29,18 @@ impl Default for MockCustomerTxDetailRepo {
 
 impl CustomerTxDetailRepoTrait for MockCustomerTxDetailRepo {
     fn create(&self, d: &CustomerTxDetail) -> Result<(), AppError> {
-        self.store.lock().unwrap().push(d.clone());
+        let mut store = self.store.lock().unwrap();
+        let mut detail = d.clone();
+        if detail.detail_id == 0 {
+            // Simulate auto-increment
+            let max_id = store.iter().map(|e| e.detail_id).max().unwrap_or(0);
+            detail.detail_id = max_id + 1;
+        }
+        store.push(detail);
         Ok(())
     }
 
-    fn list_by_order(&self, order_id: i32) -> Result<Vec<CustomerTxDetail>, AppError> {
+    fn list_by_order(&self, order_id: i32) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
         Ok(self
             .store
             .lock()
@@ -41,6 +48,7 @@ impl CustomerTxDetailRepoTrait for MockCustomerTxDetailRepo {
             .iter()
             .filter(|d| d.order_id == order_id)
             .cloned()
+            .map(|d| (d.clone(), "product".to_string()))
             .collect())
     }
 }

@@ -136,9 +136,10 @@ pub fn list_order_details(
 pub fn search_customer_transactions(
     controller: State<Arc<TransactionController>>,
     page: Option<u32>,
+    mdoc: Option<i32>,
     date: Option<String>,
     search: Option<String>,
 ) -> Result<CustomerTransactionSearchResult, AppError> {
     let page = page.unwrap_or(1);
-    controller.search_customer_transactions(page, date, search)
+    controller.search_customer_transactions(page, mdoc, date, search)
 }

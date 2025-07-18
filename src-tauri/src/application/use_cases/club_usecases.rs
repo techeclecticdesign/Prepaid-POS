@@ -34,7 +34,7 @@ impl ClubUseCases {
         &self,
         page: u32,
         search: Option<String>,
-    ) -> Result<Vec<Customer>, AppError> {
+    ) -> Result<Vec<(Customer, i64)>, AppError> {
         let limit = 10;
         let offset = (page.saturating_sub(1) as i64) * limit;
         self.customer_repo.search(limit, offset, search)

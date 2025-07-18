@@ -10,12 +10,22 @@ impl CustomerTxDetailPresenter {
             detail_id: detail.detail_id,
             order_id: detail.order_id,
             upc: detail.upc,
+            product_name: String::new(),
             quantity: detail.quantity,
             price: detail.price,
         }
     }
 
-    pub fn to_dto_list(details: Vec<CustomerTxDetail>) -> Vec<CustomerTxDetailDto> {
-        details.into_iter().map(Self::to_dto).collect()
+    pub fn to_dto_list(rows: Vec<(CustomerTxDetail, String)>) -> Vec<CustomerTxDetailDto> {
+        rows.into_iter()
+            .map(|(d, product_name)| CustomerTxDetailDto {
+                detail_id: d.detail_id,
+                order_id: d.order_id,
+                upc: d.upc,
+                product_name,
+                quantity: d.quantity,
+                price: d.price,
+            })
+            .collect()
     }
 }

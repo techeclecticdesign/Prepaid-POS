@@ -214,15 +214,16 @@ impl TransactionController {
     pub fn search_customer_transactions(
         &self,
         page: u32,
+        mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<CustomerTransactionSearchResult, AppError> {
-        let items = self
+        let tuples: Vec<(CustomerTransaction, String, i64)> = self
             .uc
-            .search_customer_transactions(page, date.clone(), search.clone())?;
-        let total = self.uc.count_customer_transactions(date, search)?;
+            .search_customer_transactions(page, mdoc, date.clone(), search.clone())?;
+        let total = self.uc.count_customer_transactions(mdoc, date, search)?;
         Ok(CustomerTransactionSearchResult {
-            items: CustomerTransactionPresenter::to_dto_list(items),
+            items: CustomerTransactionPresenter::to_search_rows(tuples),
             total_count: total,
         })
     }

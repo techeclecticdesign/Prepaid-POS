@@ -9,9 +9,15 @@ pub trait CustomerTransactionRepoTrait: Send + Sync {
         &self,
         limit: i64,
         offset: i64,
+        mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<CustomerTransaction>, AppError>;
+    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError>;
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
+    fn count(
+        &self,
+        mdoc: Option<i32>,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<i64, AppError>;
 }

@@ -59,9 +59,9 @@ impl CustomerRepoTrait for MockCustomerRepo {
         limit: i64,
         offset: i64,
         search: Option<String>,
-    ) -> Result<Vec<Customer>, AppError> {
+    ) -> Result<Vec<(Customer, i64)>, AppError> {
         let guard = self.store.lock().unwrap();
-        let mut items: Vec<Customer> = guard
+        let mut items: Vec<(Customer, i64)> = guard
             .iter()
             .filter(|c| {
                 search
@@ -73,9 +73,10 @@ impl CustomerRepoTrait for MockCustomerRepo {
                     .unwrap_or(true)
             })
             .cloned()
+            .map(|c| (c, 0))
             .collect();
 
-        items.sort_by(|a, b| b.added.cmp(&a.added));
+        items.sort_by(|a, b| b.0.added.cmp(&a.0.added));
         let start = offset as usize;
         let end = (start + limit as usize).min(items.len());
         Ok(items.get(start..end).unwrap_or(&[]).to_vec())

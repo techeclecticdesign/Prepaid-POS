@@ -20,8 +20,15 @@ pub struct CustomerTransactionDto {
 
 #[derive(Serialize)]
 pub struct CustomerTransactionSearchResult {
-    pub items: Vec<CustomerTransactionDto>,
+    pub items: Vec<CustomerTransactionSearchRow>,
     pub total_count: u32,
+}
+
+#[derive(Serialize)]
+pub struct CustomerTransactionSearchRow {
+    pub transaction: CustomerTransactionDto,
+    pub operator_name: String,
+    pub spent: i64,
 }
 
 #[cfg(test)]

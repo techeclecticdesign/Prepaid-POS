@@ -40,10 +40,10 @@ impl ClubController {
         page: u32,
         search: Option<String>,
     ) -> Result<CustomerSearchResult, AppError> {
-        let items = self.uc.search_customers(page, search.clone())?;
+        let tuples = self.uc.search_customers(page, search.clone())?;
         let total = self.uc.count_customers(search)?;
         Ok(CustomerSearchResult {
-            customers: CustomerPresenter::to_dto_list(items),
+            customers: CustomerPresenter::to_search_rows(tuples),
             total_count: total,
         })
     }

@@ -2632,7 +2632,7 @@ mod tests {
         let list = uc.deps.customer_tx_detail_repo.list_by_order(5).unwrap();
 
         assert_eq!(list.len(), 1);
-        let det = &list[0];
+        let det = &list[0].0;
         assert_eq!(det.order_id, 5);
         assert_eq!(det.upc, "12345678");
         assert_eq!(det.quantity, 0);

@@ -6,5 +6,5 @@ pub trait CustomerTxDetailRepoTrait: Send + Sync {
     fn create(&self, detail: &CustomerTxDetail) -> Result<(), AppError>;
 
     // list all details for a given order_id
-    fn list_by_order(&self, order_id: i32) -> Result<Vec<CustomerTxDetail>, AppError>;
+    fn list_by_order(&self, order_id: i32) -> Result<Vec<(CustomerTxDetail, String)>, AppError>;
 }

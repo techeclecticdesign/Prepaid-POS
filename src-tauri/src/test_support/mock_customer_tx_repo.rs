@@ -46,15 +46,17 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
         &self,
         limit: i64,
         offset: i64,
+        mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<CustomerTransaction>, AppError> {
+    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError> {
         let mut items = self
             .store
             .lock()
             .unwrap()
             .iter()
             .filter(|ct| {
+                let mdoc_match = mdoc.is_none_or(|m| ct.customer_mdoc == m);
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
@@ -72,24 +74,31 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
                     })
                     .unwrap_or(true);
 
-                date_match && search_match
+                mdoc_match && date_match && search_match
             })
             .cloned()
+            .map(|ct| (ct, "operator".to_string(), 0))
             .collect::<Vec<_>>();
 
-        items.sort_by(|a, b| b.date.cmp(&a.date));
+        items.sort_by(|a, b| b.0.date.cmp(&a.0.date));
         let start = offset as usize;
         let end = (start + limit as usize).min(items.len());
         Ok(items.get(start..end).unwrap_or(&[]).to_vec())
     }
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(
+        &self,
+        mdoc: Option<i32>,
+        date: Option<String>,
+        search: Option<String>,
+    ) -> Result<i64, AppError> {
         let count = self
             .store
             .lock()
             .unwrap()
             .iter()
             .filter(|ct| {
+                let mdoc_match = mdoc.is_none_or(|m| ct.customer_mdoc == m);
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
@@ -107,7 +116,7 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
                     })
                     .unwrap_or(true);
 
-                date_match && search_match
+                mdoc_match && date_match && search_match
             })
             .count();
 

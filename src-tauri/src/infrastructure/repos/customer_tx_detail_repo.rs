@@ -36,20 +36,30 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
         Ok(())
     }
 
-    fn list_by_order(&self, order_id: i32) -> Result<Vec<CustomerTxDetail>, AppError> {
+    fn list_by_order(&self, order_id: i32) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
         let conn = self.conn.safe_lock()?;
+        // join to grab product_name
         let mut stmt = conn.prepare(
-            "SELECT detail_id, order_id, upc, quantity, price
-             FROM customer_tx_detail WHERE order_id = ?1",
+            "SELECT d.detail_id,
+                    d.order_id,
+                    d.upc,
+                    p.desc      AS product_name,
+                    d.quantity,
+                    d.price
+             FROM customer_tx_detail d
+             JOIN products p ON d.upc = p.upc
+             WHERE d.order_id = ?1",
         )?;
         let rows = stmt.query_map(params![order_id], |r| {
-            Ok(CustomerTxDetail {
+            let detail = CustomerTxDetail {
                 detail_id: r.get(0)?,
                 order_id: r.get(1)?,
                 upc: r.get(2)?,
-                quantity: r.get(3)?,
-                price: r.get(4)?,
-            })
+                quantity: r.get(4)?,
+                price: r.get(5)?,
+            };
+            let product_name: String = r.get(3)?;
+            Ok((detail, product_name))
         })?;
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
@@ -60,6 +70,7 @@ mod repo_tests {
     use super::*;
     use crate::domain::models::customer_tx_detail::CustomerTxDetail;
     use crate::infrastructure::db::create_connection;
+    use std::sync::Arc;
 
     fn make_repo() -> SqliteCustomerTxDetailRepo {
         let mtx_conn = create_connection(":memory:").unwrap();
@@ -74,8 +85,20 @@ mod repo_tests {
             conn.execute_batch(
                 "
             DELETE FROM customer_transactions;
+            DELETE FROM customer_tx_detail;
             INSERT INTO customer_transactions (order_id, customer_mdoc, operator_mdoc, date)
             VALUES (100, 1, 1, CURRENT_TIMESTAMP);
+            CREATE TABLE IF NOT EXISTS products (
+            upc      TEXT PRIMARY KEY,
+            desc     TEXT NOT NULL,
+            category TEXT NOT NULL,
+            price    INTEGER NOT NULL,
+            updated  DATETIME NOT NULL,
+            added    DATETIME NOT NULL,
+            deleted  DATETIME
+            );
+            INSERT INTO products (upc, desc, category, price, updated, added)
+              VALUES ('00000001', '', '', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
             ",
             )
             .unwrap();
@@ -96,8 +119,11 @@ mod repo_tests {
             price: 150,
         };
         repo.create(&d1).unwrap();
+
         let list = repo.list_by_order(100).unwrap();
         assert_eq!(list.len(), 1);
+        let (d, _) = &list[0];
+        assert_eq!(d.detail_id, 1);
 
         let d2 = CustomerTxDetail {
             detail_id: 7,
@@ -105,6 +131,6 @@ mod repo_tests {
         };
         repo.create(&d2).unwrap();
         let list2 = repo.list_by_order(100).unwrap();
-        assert!(list2.iter().any(|d| d.detail_id == 7));
+        assert!(list2.iter().any(|(d, _)| d.detail_id == 7));
     }
 }
