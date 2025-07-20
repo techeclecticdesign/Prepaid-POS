@@ -7,5 +7,7 @@ pub mod customer_tx_detail_dto;
 pub mod inventory_transaction_dto;
 pub mod operator_dto;
 pub mod pdf_parse_dto;
+pub mod pos_dto;
 pub mod price_adjustment_dto;
 pub mod product_dto;
+pub mod sale_dto;

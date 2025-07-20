@@ -22,10 +22,6 @@ impl ClubUseCases {
         }
     }
 
-    pub fn list_customers(&self) -> Result<Vec<Customer>, AppError> {
-        self.customer_repo.list()
-    }
-
     pub fn get_customer(&self, mdoc: i32) -> Result<Option<Customer>, AppError> {
         self.customer_repo.get_by_mdoc(mdoc)
     }
@@ -94,13 +90,6 @@ mod tests {
         let tx_repo = Arc::new(MockClubTransactionRepo::new());
         let im_repo = Arc::new(MockClubImportRepo::new());
         ClubUseCases::new(c_repo, tx_repo, im_repo)
-    }
-
-    #[test]
-    fn smoke_list_and_get_customers() {
-        let uc = make_uc();
-        assert!(uc.list_customers().unwrap().is_empty());
-        assert!(uc.get_customer(123).unwrap().is_none());
     }
 
     #[test]

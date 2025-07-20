@@ -57,6 +57,28 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
         Ok(())
     }
 
+    // for use with atomic_tx
+    fn create_with_tx(
+        &self,
+        a: &InventoryTransaction,
+        tx: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError> {
+        tx.execute(
+            "INSERT INTO inventory_transactions \
+     (upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference) \
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                a.upc,
+                a.quantity_change,
+                a.operator_mdoc,
+                a.customer_mdoc,
+                a.ref_order_id,
+                a.reference
+            ],
+        )?;
+        Ok(())
+    }
+
     fn search(
         &self,
         limit: i64,

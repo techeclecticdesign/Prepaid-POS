@@ -161,4 +161,12 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
     fn list(&self) -> Result<Vec<InventoryTransaction>, AppError> {
         Ok(self.store.lock().unwrap().clone())
     }
+
+    fn create_with_tx(
+        &self,
+        tx: &InventoryTransaction,
+        _txn: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError> {
+        self.create(tx)
+    }
 }

@@ -17,4 +17,9 @@ pub trait InventoryTransactionRepoTrait: Send + Sync {
         search: Option<String>,
     ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError>;
     fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
+    fn create_with_tx(
+        &self,
+        a: &InventoryTransaction,
+        tx: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError>;
 }

@@ -8,13 +8,6 @@ use std::sync::Arc;
 use tauri::State;
 
 #[tauri::command]
-pub fn list_customers(
-    controller: State<Arc<ClubController>>,
-) -> Result<Vec<CustomerReadDto>, AppError> {
-    controller.list_customers()
-}
-
-#[tauri::command]
 pub fn get_customer(
     controller: State<Arc<ClubController>>,
     mdoc: i32,

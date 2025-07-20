@@ -7,4 +7,9 @@ pub trait CustomerTxDetailRepoTrait: Send + Sync {
 
     // list all details for a given order_id
     fn list_by_order(&self, order_id: i32) -> Result<Vec<(CustomerTxDetail, String)>, AppError>;
+    fn create_with_tx(
+        &self,
+        d: &CustomerTxDetail,
+        tx: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError>;
 }

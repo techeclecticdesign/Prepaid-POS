@@ -122,4 +122,12 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
 
         Ok(count as i64)
     }
+
+    fn create_with_tx(
+        &self,
+        tx: &CustomerTransaction,
+        _txn: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError> {
+        self.create(tx)
+    }
 }

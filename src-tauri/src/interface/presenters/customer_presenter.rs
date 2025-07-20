@@ -1,5 +1,5 @@
 use crate::domain::models::Customer;
-use crate::interface::dto::customer_dto::{CustomerReadDto, CustomerSearchRow};
+use crate::interface::dto::customer_dto::{CustomerPosDto, CustomerReadDto, CustomerSearchRow};
 use chrono::{TimeZone, Utc};
 
 pub struct CustomerPresenter;
@@ -25,5 +25,12 @@ impl CustomerPresenter {
                 balance,
             })
             .collect()
+    }
+
+    pub fn to_pos_dto(c: Customer, balance: i32) -> CustomerPosDto {
+        CustomerPosDto {
+            customer: Self::to_dto(c),
+            balance,
+        }
     }
 }

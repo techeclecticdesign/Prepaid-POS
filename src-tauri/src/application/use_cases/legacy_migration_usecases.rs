@@ -103,7 +103,7 @@ pub struct LegacyMigrationDeps {
     pub club_imports_repo: Arc<dyn ClubImportRepoTrait>,
     pub inv_repo: Arc<dyn InventoryTransactionRepoTrait>,
     pub customer_transaction_repo: Arc<dyn CustomerTransactionRepoTrait>,
-    pub customer_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
+    pub cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
     pub sqlite_conn: Arc<Mutex<Connection>>,
 }
 
@@ -1461,7 +1461,7 @@ impl LegacyMigrationUseCases {
                 price: price_cents,
             };
 
-            if let Err(e) = self.deps.customer_tx_detail_repo.create(&detail) {
+            if let Err(e) = self.deps.cust_tx_detail_repo.create(&detail) {
                 warn!("skip detail {}: insert error: {}", order_id, e);
                 continue;
             }
@@ -1498,7 +1498,7 @@ mod tests {
                 club_imports_repo: Arc::new(MockClubImportRepo::new()),
                 inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
                 customer_transaction_repo: Arc::new(MockCustomerTransactionRepo::new()),
-                customer_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
+                cust_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
                 sqlite_conn: Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
             }
         }
@@ -1569,7 +1569,7 @@ mod tests {
                 club_imports_repo: Arc::new(MockClubImportRepo::new()),
                 inv_repo: Arc::new(MockInventoryTransactionRepo::new()),
                 customer_transaction_repo: Arc::new(MockCustomerTransactionRepo::new()),
-                customer_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
+                cust_tx_detail_repo: Arc::new(MockCustomerTxDetailRepo::new()),
                 sqlite_conn: Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
             },
         };
@@ -2629,7 +2629,7 @@ mod tests {
         uc.migrate_customer_order_details_from_rows(raws).unwrap();
 
         // Only the valid row with order_id = 5 should be in the repo:
-        let list = uc.deps.customer_tx_detail_repo.list_by_order(5).unwrap();
+        let list = uc.deps.cust_tx_detail_repo.list_by_order(5).unwrap();
 
         assert_eq!(list.len(), 1);
         let det = &list[0].0;

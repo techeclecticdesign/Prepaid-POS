@@ -20,3 +20,9 @@ pub struct CustomerSearchResult {
     pub customers: Vec<CustomerSearchRow>,
     pub total_count: u32,
 }
+
+#[derive(Serialize)]
+pub struct CustomerPosDto {
+    pub customer: CustomerReadDto,
+    pub balance: i32,
+}

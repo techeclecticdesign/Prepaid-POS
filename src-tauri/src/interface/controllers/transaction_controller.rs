@@ -3,7 +3,6 @@ use crate::common::error::AppError;
 use crate::domain::models::customer_transaction::CustomerTransaction;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::inventory_transaction::InventoryTransaction;
-use crate::interface::common::date_utils::parse_rfc3339;
 use crate::interface::dto::customer_transaction_dto::{
     CustomerTransactionDto, CustomerTransactionSearchResult,
 };
@@ -13,10 +12,11 @@ use crate::interface::dto::customer_tx_detail_dto::{
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, InventoryTransactionSearchResult, ReadInventoryTransactionDto,
 };
+use crate::interface::dto::sale_dto::SaleDto;
 use crate::interface::presenters::customer_transaction_presenter::CustomerTransactionPresenter;
 use crate::interface::presenters::customer_tx_detail_presenter::CustomerTxDetailPresenter;
 use crate::interface::presenters::inventory_transaction_presenter::InventoryTransactionPresenter;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use validator::Validate;
 
 pub struct TransactionController {
@@ -27,10 +27,11 @@ impl TransactionController {
     pub fn new(
         inv_repo: Arc<dyn crate::domain::repos::InventoryTransactionRepoTrait>,
         cust_tx_repo: Arc<dyn crate::domain::repos::CustomerTransactionRepoTrait>,
-        detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
+        cust_tx_detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
+        conn: Arc<Mutex<rusqlite::Connection>>,
     ) -> Self {
         Self {
-            uc: TransactionUseCases::new(inv_repo, cust_tx_repo, detail_repo),
+            uc: TransactionUseCases::new(inv_repo, cust_tx_repo, cust_tx_detail_repo, conn),
         }
     }
 
@@ -55,25 +56,41 @@ impl TransactionController {
         Ok(InventoryTransactionPresenter::to_dto(itx))
     }
 
-    pub fn sale_transaction(
-        &self,
-        dto: CreateInventoryTransactionDto,
-    ) -> Result<ReadInventoryTransactionDto, AppError> {
-        dto.validate()
-            .map_err(|e| AppError::Validation(e.to_string()))?;
-        let tx = InventoryTransaction {
-            id: Some(0), // new record, gets auto-assigned by db
-            upc: dto.upc,
-            quantity_change: dto.quantity_change,
-            operator_mdoc: dto.operator_mdoc,
+    pub fn sale_transaction(&self, dto: SaleDto) -> Result<i32, AppError> {
+        // build customer transaction
+        let cust_tx = CustomerTransaction {
+            order_id: 0, // will be set by DB if auto‑pk
             customer_mdoc: dto.customer_mdoc,
-            ref_order_id: dto.ref_order_id,
-            reference: dto.reference,
-            created_at: None,
+            operator_mdoc: dto.operator_mdoc,
+            date: None, // let use‑case set timestamp
+            note: None,
         };
 
-        let itx = self.uc.sale_transaction(tx)?;
-        Ok(InventoryTransactionPresenter::to_dto(itx))
+        // build inventory transactions and customer transaction detail lines
+        let mut invs = Vec::with_capacity(dto.items.len());
+        let mut details = Vec::with_capacity(dto.items.len());
+        // placeholder values are filled in use case or repo layer.
+        for item in dto.items {
+            invs.push(InventoryTransaction {
+                id: None,
+                upc: item.upc.clone(),
+                quantity_change: item.quantity,
+                operator_mdoc: dto.operator_mdoc,
+                customer_mdoc: Some(dto.customer_mdoc),
+                ref_order_id: None,
+                reference: None,
+                created_at: None,
+            });
+            details.push(CustomerTxDetail {
+                detail_id: 0,
+                order_id: 0,
+                upc: item.upc,
+                quantity: item.quantity,
+                price: item.price,
+            });
+        }
+
+        self.uc.sale_transaction(cust_tx, invs, details)
     }
 
     pub fn stock_items(
@@ -173,26 +190,6 @@ impl TransactionController {
         Ok(opt.map(CustomerTransactionPresenter::to_dto))
     }
 
-    pub fn make_sale(&self, dto: CustomerTransactionDto) -> Result<(), AppError> {
-        dto.validate()
-            .map_err(|e| AppError::Validation(e.to_string()))?;
-
-        let date = match &dto.date {
-            Some(s) => Some(parse_rfc3339(s)?),
-            None => None,
-        };
-
-        let tx = CustomerTransaction {
-            order_id: dto.order_id,
-            customer_mdoc: dto.customer_mdoc,
-            operator_mdoc: dto.operator_mdoc,
-            date,
-            note: dto.note,
-        };
-
-        self.uc.make_sale(tx)
-    }
-
     pub fn make_sale_line_item(&self, dto: CreateCustomerTxDetailDto) -> Result<(), AppError> {
         dto.validate()
             .map_err(|e| AppError::Validation(e.to_string()))?;
@@ -235,14 +232,19 @@ mod smoke {
     use crate::test_support::mock_customer_tx_detail_repo::MockCustomerTxDetailRepo;
     use crate::test_support::mock_customer_tx_repo::MockCustomerTransactionRepo;
     use crate::test_support::mock_inventory_transaction_repo::MockInventoryTransactionRepo;
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex};
 
     #[test]
     fn controller_smoke_list_transactions() {
         let inv_repo = Arc::new(MockInventoryTransactionRepo::new());
         let cust_tx_repo = Arc::new(MockCustomerTransactionRepo::new());
-        let detail_repo = Arc::new(MockCustomerTxDetailRepo::new());
-        let ctrl = TransactionController::new(inv_repo.clone(), cust_tx_repo.clone(), detail_repo);
+        let cust_tx_detail_repo = Arc::new(MockCustomerTxDetailRepo::new());
+        let ctrl = TransactionController::new(
+            inv_repo.clone(),
+            cust_tx_repo.clone(),
+            cust_tx_detail_repo,
+            Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
+        );
         let out = ctrl
             .list_inv_adjust()
             .expect("list_inv_adjust should succeed");

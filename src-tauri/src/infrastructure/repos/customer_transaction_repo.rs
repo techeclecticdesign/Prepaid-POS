@@ -42,6 +42,41 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         Ok(())
     }
 
+    // for use with atomic_tx
+    fn create_with_tx(
+        &self,
+        tx_data: &CustomerTransaction,
+        tx: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError> {
+        if tx_data.order_id > 0 {
+            tx.execute(
+                "INSERT INTO customer_transactions
+                 (order_id, customer_mdoc, operator_mdoc, date, note)
+                 VALUES (?1,?2,?3,?4,?5)",
+                rusqlite::params![
+                    tx_data.order_id,
+                    tx_data.customer_mdoc,
+                    tx_data.operator_mdoc,
+                    tx_data.date,
+                    tx_data.note,
+                ],
+            )?;
+        } else {
+            tx.execute(
+                "INSERT INTO customer_transactions
+                 (customer_mdoc, operator_mdoc, date, note)
+                 VALUES (?1,?2,?3,?4)",
+                rusqlite::params![
+                    tx_data.customer_mdoc,
+                    tx_data.operator_mdoc,
+                    tx_data.date,
+                    tx_data.note,
+                ],
+            )?;
+        }
+        Ok(())
+    }
+
     fn get(&self, order_id: i32) -> Result<Option<CustomerTransaction>, AppError> {
         let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(

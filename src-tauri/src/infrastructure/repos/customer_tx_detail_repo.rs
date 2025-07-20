@@ -36,6 +36,30 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
         Ok(())
     }
 
+    // for use with atomic_tx
+    fn create_with_tx(
+        &self,
+        d: &CustomerTxDetail,
+        tx: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError> {
+        if d.detail_id > 0 {
+            tx.execute(
+                "INSERT INTO customer_tx_detail
+                 (detail_id, order_id, upc, quantity, price)
+                 VALUES (?1,?2,?3,?4,?5)",
+                rusqlite::params![d.detail_id, d.order_id, d.upc, d.quantity, d.price],
+            )?;
+        } else {
+            tx.execute(
+                "INSERT INTO customer_tx_detail
+                 (order_id, upc, quantity, price)
+                 VALUES (?1,?2,?3,?4)",
+                rusqlite::params![d.order_id, d.upc, d.quantity, d.price],
+            )?;
+        }
+        Ok(())
+    }
+
     fn list_by_order(&self, order_id: i32) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
         let conn = self.conn.safe_lock()?;
         // join to grab product_name

@@ -98,4 +98,10 @@ impl CustomerRepoTrait for MockCustomerRepo {
             .count();
         Ok(count as i64)
     }
+
+    fn list_customer_accounts(&self) -> Result<Vec<(Customer, i32)>, AppError> {
+        // Returning balance 0 for simplicity
+        let guard = self.store.lock().unwrap();
+        Ok(guard.iter().cloned().map(|c| (c, 0)).collect())
+    }
 }

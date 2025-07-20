@@ -20,4 +20,10 @@ pub trait CustomerTransactionRepoTrait: Send + Sync {
         date: Option<String>,
         search: Option<String>,
     ) -> Result<i64, AppError>;
+
+    fn create_with_tx(
+        &self,
+        tx_data: &CustomerTransaction,
+        tx: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError>;
 }

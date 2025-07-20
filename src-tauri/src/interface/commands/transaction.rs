@@ -8,6 +8,7 @@ use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, InventoryTransactionSearchResult, ReadInventoryTransactionDto,
 };
+use crate::interface::dto::sale_dto::SaleDto;
 use std::sync::Arc;
 use tauri::State;
 
@@ -22,8 +23,8 @@ pub fn inventory_adjustment(
 #[tauri::command]
 pub fn sale_transaction(
     controller: State<Arc<TransactionController>>,
-    dto: CreateInventoryTransactionDto,
-) -> Result<ReadInventoryTransactionDto, AppError> {
+    dto: SaleDto,
+) -> Result<i32, AppError> {
     controller.sale_transaction(dto)
 }
 
@@ -105,15 +106,6 @@ pub fn get_sale(
     id: i32,
 ) -> Result<Option<CustomerTransactionDto>, AppError> {
     controller.get_sale(id)
-}
-
-#[tauri::command]
-pub fn make_sale(
-    controller: State<'_, Arc<TransactionController>>,
-    dto: CustomerTransactionDto,
-) -> Result<CustomerTransactionDto, AppError> {
-    controller.make_sale(dto.clone())?;
-    Ok(dto)
 }
 
 #[tauri::command]

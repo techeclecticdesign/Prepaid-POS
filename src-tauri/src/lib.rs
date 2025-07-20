@@ -16,6 +16,7 @@ use crate::interface::controllers::club_controller::ClubController;
 use crate::interface::controllers::legacy_migration_controller::LegacyMigrationController;
 use crate::interface::controllers::operator_controller::OperatorController;
 use crate::interface::controllers::parse_pdf_controller::PdfParseController;
+use crate::interface::controllers::pos_controller::PosController;
 use crate::interface::controllers::product_controller::ProductController;
 use crate::interface::controllers::transaction_controller::TransactionController;
 
@@ -61,7 +62,7 @@ pub fn run() {
         Arc::new(SqliteClubImportRepo::new(Arc::clone(&conn)));
     let cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait> =
         Arc::new(SqliteCustomerTransactionRepo::new(Arc::clone(&conn)));
-    let detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
+    let cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
         Arc::new(SqliteCustomerTxDetailRepo::new(Arc::clone(&conn)));
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
     let product_ctrl = Arc::new(ProductController::new(
@@ -73,12 +74,17 @@ pub fn run() {
     let tx_ctrl = Arc::new(TransactionController::new(
         Arc::clone(&inv_repo),
         Arc::clone(&cust_tx_repo),
-        Arc::clone(&detail_repo),
+        Arc::clone(&cust_tx_detail_repo),
+        Arc::clone(&conn),
     ));
     let club_ctrl = Arc::new(ClubController::new(
         Arc::clone(&customer_repo),
         Arc::clone(&club_tx_repo),
         Arc::clone(&club_import_repo),
+    ));
+    let pos_ctrl = Arc::new(PosController::new(
+        Arc::clone(&product_repo),
+        Arc::clone(&customer_repo),
     ));
     let legacy_ctrl = Arc::new(LegacyMigrationController::new(LegacyMigrationDeps {
         op_repo: Arc::clone(&op_repo),
@@ -89,7 +95,7 @@ pub fn run() {
         club_imports_repo: Arc::clone(&club_import_repo),
         inv_repo: Arc::clone(&inv_repo),
         customer_transaction_repo: Arc::clone(&cust_tx_repo),
-        customer_tx_detail_repo: Arc::clone(&detail_repo),
+        cust_tx_detail_repo: Arc::clone(&cust_tx_detail_repo),
         sqlite_conn: Arc::clone(&conn),
     }));
     let pdf_ctrl = Arc::new(PdfParseController::new(
@@ -113,6 +119,7 @@ pub fn run() {
         .manage(product_ctrl)
         .manage(tx_ctrl)
         .manage(club_ctrl)
+        .manage(pos_ctrl)
         .manage(RwLock::new(common::auth::AuthState::default()))
         .manage(op_repo)
         .manage(product_repo)
@@ -159,12 +166,10 @@ pub fn run() {
             interface::commands::transaction::stock_items,
             interface::commands::transaction::list_sales,
             interface::commands::transaction::get_sale,
-            interface::commands::transaction::make_sale,
             interface::commands::transaction::make_sale_line_item,
             interface::commands::transaction::list_order_details,
             interface::commands::transaction::search_customer_transactions,
             interface::commands::transaction::search_inventory_transactions,
-            interface::commands::club::list_customers,
             interface::commands::club::get_customer,
             interface::commands::club::list_club_transactions,
             interface::commands::club::get_club_transaction,
@@ -172,6 +177,7 @@ pub fn run() {
             interface::commands::club::get_club_import,
             interface::commands::club::search_customers,
             interface::commands::club::search_club_transactions,
+            interface::commands::pos::pos_init,
             interface::commands::legacy_migration::has_legacy_data,
             interface::commands::legacy_migration::do_legacy_data_import,
             interface::commands::parse_pdf::parse_pdf,

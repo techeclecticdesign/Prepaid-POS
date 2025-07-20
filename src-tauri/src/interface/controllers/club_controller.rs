@@ -26,11 +26,6 @@ impl ClubController {
         }
     }
 
-    pub fn list_customers(&self) -> Result<Vec<CustomerReadDto>, AppError> {
-        let domains = self.uc.list_customers()?;
-        Ok(CustomerPresenter::to_dto_list(domains))
-    }
-
     pub fn get_customer(&self, mdoc: i32) -> Result<Option<CustomerReadDto>, AppError> {
         let opt = self.uc.get_customer(mdoc)?;
         Ok(opt.map(CustomerPresenter::to_dto))
@@ -103,13 +98,6 @@ mod smoke {
         let tx_repo = Arc::new(MockClubTransactionRepo::new());
         let im_repo = Arc::new(MockClubImportRepo::new());
         ClubController::new(c_repo, tx_repo, im_repo)
-    }
-
-    #[test]
-    fn smoke_list_customers() {
-        let ctrl = make_controller();
-        let out = ctrl.list_customers().unwrap();
-        assert!(out.is_empty());
     }
 
     #[test]

@@ -144,6 +144,54 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
             .map_err(Into::into)
     }
 
+    fn list_customer_accounts(&self) -> Result<Vec<(Customer, i32)>, AppError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
+        let sql = "\
+            SELECT c.mdoc,
+                   c.name,
+                   c.added,
+                   c.updated,
+                   COALESCE(ct.added,0) - COALESCE(sp.spent,0) AS balance
+            FROM customer c
+            LEFT JOIN (
+              SELECT mdoc,
+                     SUM(
+                       CASE 
+                         WHEN tx_type = 'Deposit'    THEN amount
+                         WHEN tx_type = 'Withdrawal' THEN -amount
+                         ELSE 0
+                       END
+                     ) AS added
+              FROM club_transactions
+              GROUP BY mdoc
+            ) ct ON c.mdoc = ct.mdoc
+            LEFT JOIN (
+              SELECT t.customer_mdoc AS mdoc,
+                     SUM(d.quantity * d.price) AS spent
+              FROM customer_transactions t
+              JOIN customer_tx_detail d ON t.order_id = d.order_id AND d.order_id IS NOT NULL
+              GROUP BY t.customer_mdoc
+            ) sp ON c.mdoc = sp.mdoc
+            WHERE 1=1
+        ";
+        let mut stmt = conn.prepare(sql)?;
+        let rows = stmt.query_map([], |r| {
+            Ok((
+                Customer {
+                    mdoc: r.get(0)?,
+                    name: r.get(1)?,
+                    added: r.get(2)?,
+                    updated: r.get(3)?,
+                },
+                r.get(4)?,
+            ))
+        })?;
+        rows.collect::<Result<_, _>>().map_err(Into::into)
+    }
+
     fn update(&self, customer: &Customer) -> Result<(), AppError> {
         let conn = self.conn.safe_lock()?;
         conn.execute(

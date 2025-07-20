@@ -62,13 +62,6 @@ export default function OperatorSidebar() {
         >
           Accounts
         </Link>
-        <Typography
-          component="span"
-          className="cursor-not-allowed"
-          sx={{ color: "text.secondary" }}
-        >
-          Dolor
-        </Typography>
       </nav>
       <Button
         onClick={() => {

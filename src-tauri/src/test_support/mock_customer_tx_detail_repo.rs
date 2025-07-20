@@ -51,6 +51,14 @@ impl CustomerTxDetailRepoTrait for MockCustomerTxDetailRepo {
             .map(|d| (d.clone(), "product".to_string()))
             .collect())
     }
+
+    fn create_with_tx(
+        &self,
+        d: &CustomerTxDetail,
+        _tx: &rusqlite::Transaction<'_>,
+    ) -> Result<(), AppError> {
+        self.create(d)
+    }
 }
 
 pub trait AsAny {
