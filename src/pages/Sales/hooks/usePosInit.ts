@@ -15,6 +15,7 @@ export interface PosDto {
 
 export interface SaleItemDto {
   upc: string;
+  desc: string;
   quantity: number;
   price: number;
 }
@@ -22,6 +23,8 @@ export interface SaleItemDto {
 export interface SaleDto {
   customer_mdoc: number;
   operator_mdoc: number;
+  operator_name: string;
+  customer_name: string;
   items: SaleItemDto[];
 }
 

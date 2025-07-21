@@ -157,6 +157,7 @@ export default function Sales() {
 
     const saleItems: SaleItemDto[] = transactionItems.map((item) => ({
       upc: item.upc,
+      desc: item.name,
       quantity: item.quantity,
       price: item.price,
     }));
@@ -164,12 +165,16 @@ export default function Sales() {
     const saleDto: SaleDto = {
       customer_mdoc: selectedCustomer.customer.mdoc,
       operator_mdoc: activeOperator?.mdoc ?? 0,
+      operator_name: activeOperator?.name ?? "Unknown",
+      customer_name: selectedCustomer.customer.name,
       items: saleItems,
     };
 
     try {
+      const receiptPrinter = localStorage.getItem("receipt_printer") ?? "";
       const orderId = await invoke<number>("sale_transaction", {
         dto: saleDto,
+        receiptPrinter: receiptPrinter,
       });
 
       // Update session stats

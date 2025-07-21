@@ -6,12 +6,12 @@ use crate::domain::models::inventory_transaction::InventoryTransaction;
 use crate::interface::dto::customer_transaction_dto::{
     CustomerTransactionDto, CustomerTransactionSearchResult,
 };
-use crate::interface::dto::customer_tx_detail_dto::{
-    CreateCustomerTxDetailDto, CustomerTxDetailDto,
-};
+use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, InventoryTransactionSearchResult, ReadInventoryTransactionDto,
 };
+use crate::interface::dto::printer_dto::PrintableLineItem;
+use crate::interface::dto::printer_dto::PrintableSaleDto;
 use crate::interface::dto::sale_dto::SaleDto;
 use crate::interface::presenters::customer_transaction_presenter::CustomerTransactionPresenter;
 use crate::interface::presenters::customer_tx_detail_presenter::CustomerTxDetailPresenter;
@@ -57,19 +57,17 @@ impl TransactionController {
     }
 
     pub fn sale_transaction(&self, dto: SaleDto) -> Result<i32, AppError> {
-        // build customer transaction
         let cust_tx = CustomerTransaction {
-            order_id: 0, // will be set by DB if auto‑pk
+            order_id: 0,
             customer_mdoc: dto.customer_mdoc,
             operator_mdoc: dto.operator_mdoc,
-            date: None, // let use‑case set timestamp
+            date: None,
             note: None,
         };
 
         // build inventory transactions and customer transaction detail lines
         let mut invs = Vec::with_capacity(dto.items.len());
         let mut details = Vec::with_capacity(dto.items.len());
-        // placeholder values are filled in use case or repo layer.
         for item in dto.items {
             invs.push(InventoryTransaction {
                 id: None,
@@ -190,19 +188,6 @@ impl TransactionController {
         Ok(opt.map(CustomerTransactionPresenter::to_dto))
     }
 
-    pub fn make_sale_line_item(&self, dto: CreateCustomerTxDetailDto) -> Result<(), AppError> {
-        dto.validate()
-            .map_err(|e| AppError::Validation(e.to_string()))?;
-        let detail = CustomerTxDetail {
-            detail_id: 0,
-            order_id: dto.order_id,
-            upc: dto.upc,
-            quantity: dto.quantity,
-            price: dto.price,
-        };
-        self.uc.make_sale_line_item(&detail)
-    }
-
     pub fn list_order_details(&self, order_id: i32) -> Result<Vec<CustomerTxDetailDto>, AppError> {
         let dets = self.uc.list_order_details(order_id)?;
         Ok(CustomerTxDetailPresenter::to_dto_list(dets))
@@ -222,6 +207,25 @@ impl TransactionController {
         Ok(CustomerTransactionSearchResult {
             items: CustomerTransactionPresenter::to_search_rows(tuples),
             total_count: total,
+        })
+    }
+
+    pub fn get_sale_details(&self, order_id: i32) -> Result<PrintableSaleDto, AppError> {
+        let (tx, details, balance) = self.uc.get_sale_details(order_id)?;
+        let items = details
+            .into_iter()
+            .map(|(d, desc)| PrintableLineItem {
+                upc: d.upc,
+                desc,
+                quantity: d.quantity,
+                price: d.price,
+            })
+            .collect();
+
+        Ok(PrintableSaleDto {
+            transaction: tx,
+            items,
+            balance,
         })
     }
 }

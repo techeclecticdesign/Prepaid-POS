@@ -1,3 +1,4 @@
+use std::io;
 use tauri::ipc::InvokeError;
 use thiserror::Error;
 
@@ -26,6 +27,12 @@ pub enum AppError {
 
     #[error("unexpected error: {0}")]
     Unexpected(String),
+
+    #[error("IO error: {0}")]
+    Io(#[from] io::Error),
+
+    #[error("PDF error: {0}")]
+    Pdf(#[from] printpdf::Error),
 }
 
 impl From<AppError> for InvokeError {

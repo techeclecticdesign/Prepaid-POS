@@ -1,6 +1,7 @@
 use crate::application::common::db::atomic_tx;
 use crate::common::error::AppError;
 use crate::domain::models::{CustomerTransaction, CustomerTxDetail, InventoryTransaction};
+use crate::domain::repos::customer_tx_repo_trait::SaleDetailsTuple;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use crate::domain::repos::CustomerTxDetailRepoTrait;
 use crate::domain::repos::InventoryTransactionRepoTrait;
@@ -139,52 +140,12 @@ impl TransactionUseCases {
         self.inv_repo.list_for_customer(customer_mdoc)
     }
 
-    pub fn make_sale(&self, mut tx: CustomerTransaction) -> Result<(), AppError> {
-        // stamp entry time
-        tx.date = Some(chrono::Utc::now().naive_utc());
-        // If a specific order_id is requested, ensure it's unique
-        if tx.order_id > 0 && self.cust_tx_repo.get(tx.order_id)?.is_some() {
-            return Err(AppError::Unexpected(format!(
-                "CustomerTransaction with order_id={} already exists",
-                tx.order_id
-            )));
-        }
-        // delegate to repo
-        let res = self.cust_tx_repo.create(&tx);
-        match &res {
-            Ok(()) => info!(
-                "customer transaction created: order_id={} cust={} op={}",
-                tx.order_id, tx.customer_mdoc, tx.operator_mdoc
-            ),
-            Err(e) => error!(
-                "customer transaction error: cust={} op={} error={}",
-                tx.customer_mdoc, tx.operator_mdoc, e
-            ),
-        }
-        res
-    }
-
     pub fn list_sales(&self) -> Result<Vec<CustomerTransaction>, AppError> {
         self.cust_tx_repo.list()
     }
 
     pub fn get_sale(&self, order_id: i32) -> Result<Option<CustomerTransaction>, AppError> {
         self.cust_tx_repo.get(order_id)
-    }
-
-    pub fn make_sale_line_item(&self, detail: &CustomerTxDetail) -> Result<(), AppError> {
-        let res = self.cust_tx_detail_repo.create(detail);
-        match &res {
-            Ok(()) => info!(
-                "detail created: order_id={} upc={} qty={}",
-                detail.order_id, detail.upc, detail.quantity
-            ),
-            Err(e) => error!(
-                "detail create error: order_id={} upc={} error={}",
-                detail.order_id, detail.upc, e
-            ),
-        }
-        res
     }
 
     pub fn list_order_details(
@@ -216,6 +177,10 @@ impl TransactionUseCases {
             .count(mdoc, date, search)
             .map(|c| c as u32)
     }
+
+    pub fn get_sale_details(&self, order_id: i32) -> Result<SaleDetailsTuple, AppError> {
+        self.cust_tx_repo.get_with_details_and_balance(order_id)
+    }
 }
 
 #[cfg(test)]
@@ -229,7 +194,6 @@ mod tests {
         SqliteCustomerTransactionRepo, SqliteCustomerTxDetailRepo, SqliteInventoryTransactionRepo,
         SqliteOperatorRepo, SqliteProductRepo,
     };
-    use chrono::Utc;
     use rusqlite::Connection;
     use std::sync::Arc;
 
@@ -503,68 +467,6 @@ mod tests {
         // nothing for today filter if date logic differs
         let today = uc.list_inv_adjust_today()?;
         assert!(today.len() >= 2);
-        Ok(())
-    }
-
-    #[test]
-    fn make_sale_explicit_order_id_uniqueness() -> anyhow::Result<()> {
-        let (uc, op_repo, _prod_repo, _inv, _cust_tx, _det) = make_use_cases();
-
-        let details_before = uc.list_order_details(42)?;
-        assert!(details_before.is_empty());
-
-        // Seed an operator so FK passes if needed
-        op_repo.create(&Operator {
-            mdoc: 1,
-            name: "Op1".into(),
-            start: Some(chrono::Utc::now().naive_utc()),
-            stop: None,
-        })?;
-
-        // Create first transaction with order_id=42
-        let tx1 = CustomerTransaction {
-            order_id: 42,
-            customer_mdoc: 1,
-            operator_mdoc: 1,
-            date: None,
-            note: Some("First".into()),
-        };
-        uc.make_sale(tx1)?;
-
-        _prod_repo.create(&Product {
-            upc: "00000001".into(),
-            desc: "A test product".into(),
-            price: 100,
-            category: "test-category".into(),
-            updated: Some(Utc::now().naive_utc()),
-            added: Some(Utc::now().naive_utc()),
-            deleted: None,
-        })?;
-
-        let detail = crate::domain::models::customer_tx_detail::CustomerTxDetail {
-            detail_id: 0,
-            order_id: 42,
-            upc: "00000001".into(),
-            quantity: 1,
-            price: 100,
-        };
-        uc.make_sale_line_item(&detail)?;
-        let dets = uc.list_order_details(42)?;
-        assert_eq!(dets.len(), 1);
-
-        // Attempt to create second transaction with same order_id
-        let tx2 = CustomerTransaction {
-            order_id: 42,
-            customer_mdoc: 2,
-            operator_mdoc: 1,
-            date: None,
-            note: Some("Duplicate".into()),
-        };
-        let err = uc.make_sale(tx2).unwrap_err();
-        assert!(
-            err.to_string().contains("order_id=42 already exists"),
-            "unexpected error: {err}"
-        );
         Ok(())
     }
 

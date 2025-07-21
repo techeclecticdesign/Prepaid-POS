@@ -6,6 +6,7 @@ pub mod interface;
 pub mod test_support;
 
 use crate::application::use_cases::legacy_migration_usecases::LegacyMigrationDeps;
+use crate::application::use_cases::printer_usecases::{CommandRunner, PrinterUseCases};
 use crate::domain::repos::{
     CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait,
     CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
@@ -17,9 +18,11 @@ use crate::interface::controllers::legacy_migration_controller::LegacyMigrationC
 use crate::interface::controllers::operator_controller::OperatorController;
 use crate::interface::controllers::parse_pdf_controller::PdfParseController;
 use crate::interface::controllers::pos_controller::PosController;
+use crate::interface::controllers::printer_controller::PrinterController;
 use crate::interface::controllers::product_controller::ProductController;
 use crate::interface::controllers::transaction_controller::TransactionController;
 
+use infrastructure::command_runner::WindowsCommandRunner;
 use infrastructure::db::create_connection;
 use infrastructure::pdf_parser::LopdfParser;
 use infrastructure::repos::{
@@ -105,6 +108,10 @@ pub fn run() {
         Arc::clone(&customer_repo),
     ));
 
+    let runner: Arc<dyn CommandRunner> = Arc::new(WindowsCommandRunner);
+    let printer_uc = PrinterUseCases::new(Arc::clone(&runner));
+    let printer_ctrl = Arc::new(PrinterController::new(printer_uc));
+
     // filter spammy tao / winit event loop spam in console
     std::env::set_var(
         "RUST_LOG",
@@ -120,6 +127,9 @@ pub fn run() {
         .manage(tx_ctrl)
         .manage(club_ctrl)
         .manage(pos_ctrl)
+        .manage(printer_ctrl)
+        .manage(legacy_ctrl)
+        .manage(pdf_ctrl)
         .manage(RwLock::new(common::auth::AuthState::default()))
         .manage(op_repo)
         .manage(product_repo)
@@ -128,8 +138,7 @@ pub fn run() {
         .manage(club_import_repo)
         .manage(club_tx_repo)
         .manage(customer_repo)
-        .manage(legacy_ctrl)
-        .manage(pdf_ctrl)
+        // add commands
         .invoke_handler(tauri::generate_handler![
             common::logger::process_frontend_error,
             interface::commands::auth::check_login_status,
@@ -166,7 +175,6 @@ pub fn run() {
             interface::commands::transaction::stock_items,
             interface::commands::transaction::list_sales,
             interface::commands::transaction::get_sale,
-            interface::commands::transaction::make_sale_line_item,
             interface::commands::transaction::list_order_details,
             interface::commands::transaction::search_customer_transactions,
             interface::commands::transaction::search_inventory_transactions,
@@ -181,6 +189,7 @@ pub fn run() {
             interface::commands::legacy_migration::has_legacy_data,
             interface::commands::legacy_migration::do_legacy_data_import,
             interface::commands::parse_pdf::parse_pdf,
+            interface::commands::printer::list_printers,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

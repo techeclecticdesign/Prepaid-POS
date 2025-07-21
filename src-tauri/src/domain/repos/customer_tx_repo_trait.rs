@@ -1,5 +1,8 @@
 use crate::common::error::AppError;
+use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
+
+pub type SaleDetailsTuple = (CustomerTransaction, Vec<(CustomerTxDetail, String)>, i32);
 
 pub trait CustomerTransactionRepoTrait: Send + Sync {
     fn create(&self, tx: &CustomerTransaction) -> Result<(), AppError>;
@@ -26,4 +29,6 @@ pub trait CustomerTransactionRepoTrait: Send + Sync {
         tx_data: &CustomerTransaction,
         tx: &rusqlite::Transaction<'_>,
     ) -> Result<(), AppError>;
+
+    fn get_with_details_and_balance(&self, _order_id: i32) -> Result<SaleDetailsTuple, AppError>;
 }

@@ -1,4 +1,5 @@
 use crate::common::error::AppError;
+use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use std::sync::Mutex;
@@ -129,5 +130,34 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
         _txn: &rusqlite::Transaction<'_>,
     ) -> Result<(), AppError> {
         self.create(tx)
+    }
+
+    fn get_with_details_and_balance(
+        &self,
+        order_id: i32,
+    ) -> Result<(CustomerTransaction, Vec<(CustomerTxDetail, String)>, i32), AppError> {
+        let tx = self
+            .store
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|t| t.order_id == order_id)
+            .cloned()
+            .ok_or_else(|| AppError::NotFound("Transaction not found".into()))?;
+
+        let details = vec![(
+            CustomerTxDetail {
+                detail_id: 1,
+                order_id: tx.order_id,
+                upc: "123456789012".to_string(),
+                quantity: 2,
+                price: 300, // $3.00
+            },
+            "Test Product".to_string(),
+        )];
+
+        let balance = 1234; // $12.34 mock balance
+
+        Ok((tx, details, balance))
     }
 }

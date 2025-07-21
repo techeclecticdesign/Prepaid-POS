@@ -1,13 +1,14 @@
 use crate::common::error::AppError;
+use crate::common::print::{print_business_receipt, print_customer_receipt};
 use crate::interface::controllers::transaction_controller::TransactionController;
 use crate::interface::dto::customer_transaction_dto::{
     CustomerTransactionDto, CustomerTransactionSearchResult,
 };
-use crate::interface::dto::customer_tx_detail_dto::CreateCustomerTxDetailDto;
 use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, InventoryTransactionSearchResult, ReadInventoryTransactionDto,
 };
+use crate::interface::dto::printer_dto::PrintableSaleDto;
 use crate::interface::dto::sale_dto::SaleDto;
 use std::sync::Arc;
 use tauri::State;
@@ -24,8 +25,32 @@ pub fn inventory_adjustment(
 pub fn sale_transaction(
     controller: State<Arc<TransactionController>>,
     dto: SaleDto,
+    receipt_printer: String,
 ) -> Result<i32, AppError> {
-    controller.sale_transaction(dto)
+    let order_id = controller.sale_transaction(dto.clone())?;
+
+    let PrintableSaleDto {
+        transaction: cust_tx,
+        items,
+        balance,
+    } = controller.get_sale_details(order_id)?;
+    print_customer_receipt(
+        &cust_tx,
+        &items,
+        &dto.operator_name,
+        &dto.customer_name,
+        &receipt_printer,
+    )?;
+    print_business_receipt(
+        &cust_tx,
+        &items,
+        &dto.operator_name,
+        &dto.customer_name,
+        balance,
+        &receipt_printer,
+    )?;
+
+    Ok(order_id)
 }
 
 #[tauri::command]
@@ -106,14 +131,6 @@ pub fn get_sale(
     id: i32,
 ) -> Result<Option<CustomerTransactionDto>, AppError> {
     controller.get_sale(id)
-}
-
-#[tauri::command]
-pub fn make_sale_line_item(
-    controller: State<'_, Arc<TransactionController>>,
-    dto: CreateCustomerTxDetailDto,
-) -> Result<(), AppError> {
-    controller.make_sale_line_item(dto)
 }
 
 #[tauri::command]

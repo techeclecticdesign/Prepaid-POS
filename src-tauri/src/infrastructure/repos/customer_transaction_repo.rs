@@ -1,5 +1,6 @@
 use crate::common::error::AppError;
 use crate::common::mutex_ext::MutexExt;
+use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use rusqlite::{params, Connection};
@@ -229,6 +230,72 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         let mut stmt = conn.prepare(&sql)?;
         stmt.query_row(params.as_slice(), |r| r.get(0))
             .map_err(Into::into)
+    }
+
+    fn get_with_details_and_balance(
+        &self,
+        order_id: i32,
+    ) -> Result<(CustomerTransaction, Vec<(CustomerTxDetail, String)>, i32), AppError> {
+        let conn = self.conn.safe_lock()?;
+
+        // fetch the transaction
+        let tx: CustomerTransaction = conn.query_row(
+            "SELECT order_id, customer_mdoc, operator_mdoc, date, note FROM customer_transactions WHERE order_id = ?1",
+            rusqlite::params![order_id],
+            |row| Ok(CustomerTransaction {
+                order_id: row.get(0)?,
+                customer_mdoc: row.get(1)?,
+                operator_mdoc: row.get(2)?,
+                date: row.get(3)?,
+                note: row.get(4)?,
+            }),
+        )?;
+
+        // fetch the line items + product description
+        let mut stmt = conn.prepare(
+            "SELECT d.detail_id, d.order_id, d.upc, d.quantity, d.price, p.desc
+             FROM customer_tx_detail d
+             JOIN products p ON p.upc = d.upc
+             WHERE d.order_id = ?1",
+        )?;
+        let details = stmt
+            .query_map(rusqlite::params![order_id], |row| {
+                Ok((
+                    CustomerTxDetail {
+                        detail_id: row.get(0)?,
+                        order_id: row.get(1)?,
+                        upc: row.get(2)?,
+                        quantity: row.get(3)?,
+                        price: row.get(4)?,
+                        // no created_at here
+                    },
+                    row.get(5)?,
+                ))
+            })?
+            .collect::<Result<_, _>>()?;
+
+        // compute balance
+        let balance: i32 = conn.query_row(
+            "
+            SELECT COALESCE(ct.added,0) - COALESCE(sp.spent,0)
+            FROM customer c
+            LEFT JOIN (
+              SELECT mdoc, SUM(CASE WHEN tx_type='Deposit' THEN amount WHEN tx_type='Withdrawal' THEN -amount ELSE 0 END) AS added
+              FROM club_transactions GROUP BY mdoc
+            ) ct ON c.mdoc = ct.mdoc
+            LEFT JOIN (
+              SELECT t.customer_mdoc AS mdoc, SUM(d.quantity*d.price) AS spent
+              FROM customer_transactions t
+              JOIN customer_tx_detail d ON d.order_id = t.order_id
+              GROUP BY t.customer_mdoc
+            ) sp ON c.mdoc = sp.mdoc
+            WHERE c.mdoc = ?1
+            ",
+            rusqlite::params![tx.customer_mdoc],
+            |row| row.get(0),
+        )?;
+
+        Ok((tx, details, balance))
     }
 }
 

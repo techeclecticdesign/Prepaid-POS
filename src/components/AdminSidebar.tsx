@@ -76,6 +76,13 @@ export default function AdminSidebar() {
         >
           Barcode Scanner Config
         </Link>
+        <Link
+          to="/printer"
+          className="hover:underline"
+          style={{ color: theme.palette.primary.main }}
+        >
+          Printer Config
+        </Link>
       </nav>
       <Button
         onClick={() => {
