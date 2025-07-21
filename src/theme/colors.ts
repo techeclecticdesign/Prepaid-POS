@@ -17,7 +17,7 @@ export const colors: { light: ColorPalette; dark: ColorPalette } = {
     textSecondary: "#6b7280",
   },
   dark: {
-    primary: "#90caf9",
+    primary: "#5684db",
     secondary: "#ce93d8",
     background: "#121212",
     surface: "#1e1e1e",

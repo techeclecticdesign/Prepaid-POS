@@ -1,15 +1,29 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
+import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
 import { useAuth } from "../AuthProvider";
 import ThemeSwitch from "./ThemeSwitch";
-import { useTheme as useMuiTheme } from "@mui/material/styles";
 
 export default function AdminSidebar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const theme = useMuiTheme();
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname.startsWith(path);
+
+  const linkSx = (path: string) => {
+    const isCurrent = location.pathname === path;
+    return {
+      fontWeight: 600,
+      py: 0.5,
+      fontSize: "1.2rem",
+      cursor: isCurrent ? "default" : "pointer",
+      textDecoration: isCurrent ? "none" : undefined,
+      "&:hover": {
+        textDecoration: isCurrent ? "none" : "underline",
+      },
+    };
+  };
 
   return (
     <Box
@@ -35,72 +49,80 @@ export default function AdminSidebar() {
       </div>
       <nav className="flex flex-col space-y-2">
         <Link
+          component={RouterLink}
           to="/operators"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={isActive("/operators") ? "text.secondary" : "primary"}
+          sx={linkSx("/operators")}
         >
           Operators
         </Link>
         <Link
+          component={RouterLink}
           to="/categories"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={isActive("/categories") ? "text.secondary" : "primary"}
+          sx={linkSx("/categories")}
         >
           Categories
         </Link>
         <Link
+          component={RouterLink}
           to="/import"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={isActive("/import") ? "text.secondary" : "primary"}
+          sx={linkSx("/import")}
         >
           Import
         </Link>
         <Link
+          component={RouterLink}
           to="/lost-inventory"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={isActive("/lost-inventory") ? "text.secondary" : "primary"}
+          sx={linkSx("/lost-inventory")}
         >
           Lost Inventory
         </Link>
         <Link
+          component={RouterLink}
           to="/price-adjustments"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={isActive("/price-adjustments") ? "text.secondary" : "primary"}
+          sx={linkSx("/price-adjustments")}
         >
           Price Adjustments
         </Link>
         <Link
+          component={RouterLink}
           to="/barcode"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={isActive("/barcode") ? "text.secondary" : "primary"}
+          sx={linkSx("/barcode")}
         >
           Barcode Scanner Config
         </Link>
         <Link
+          component={RouterLink}
           to="/printer"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={isActive("/printer") ? "text.secondary" : "primary"}
+          sx={linkSx("/printer")}
         >
           Printer Config
         </Link>
       </nav>
-      <Button
+      <Link
         onClick={() => {
           logout();
           navigate("/");
         }}
-        className="mt-6 text-left"
-        sx={{
-          color: "error.main",
-          "&:hover": {
-            textDecoration: "underline",
-            backgroundColor: "transparent",
-          },
-        }}
-        variant="text"
+        underline="hover"
+        color="error"
+        sx={{ mt: 6, fontSize: "1.2rem", fontWeight: 600, cursor: "pointer" }}
       >
         Sign Out
-      </Button>
+      </Link>
     </Box>
   );
 }

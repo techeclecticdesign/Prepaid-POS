@@ -1,15 +1,28 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import { useTheme as useMuiTheme } from "@mui/material/styles";
+import Link from "@mui/material/Link";
 import { useAuth } from "../AuthProvider";
 import ThemeSwitch from "./ThemeSwitch";
 
 export default function OperatorSidebar() {
   const navigate = useNavigate();
   const { setActiveOperator } = useAuth();
-  const theme = useMuiTheme();
+  const location = useLocation();
+
+  const linkSx = (path: string) => {
+    const isCurrent = location.pathname === path;
+    return {
+      fontWeight: 600,
+      py: 0.5,
+      fontSize: "1.2rem",
+      cursor: isCurrent ? "default" : "pointer",
+      textDecoration: isCurrent ? "none" : undefined,
+      "&:hover": {
+        textDecoration: isCurrent ? "none" : "underline",
+      },
+    };
+  };
 
   return (
     <Box
@@ -35,51 +48,59 @@ export default function OperatorSidebar() {
       </div>
       <nav className="flex flex-col space-y-2">
         <Link
+          component={RouterLink}
           to="/sales"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={location.pathname === "/sales" ? "text.secondary" : "primary"}
+          sx={linkSx("/sales")}
         >
           Sales
         </Link>
         <Link
+          component={RouterLink}
           to="/products"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={
+            location.pathname === "/products" ? "text.secondary" : "primary"
+          }
+          sx={linkSx("/products")}
         >
           Products
         </Link>
         <Link
+          component={RouterLink}
           to="/customers"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={
+            location.pathname === "/customers" ? "text.secondary" : "primary"
+          }
+          sx={linkSx("/customers")}
         >
           Customers
         </Link>
         <Link
+          component={RouterLink}
           to="/accounts"
-          className="hover:underline"
-          style={{ color: theme.palette.primary.main }}
+          underline="hover"
+          color={
+            location.pathname === "/accounts" ? "text.secondary" : "primary"
+          }
+          sx={linkSx("/accounts")}
         >
           Accounts
         </Link>
       </nav>
-      <Button
+      <Link
+        underline="hover"
+        color="error"
+        sx={{ mt: 6, fontSize: "1.2rem", fontWeight: 600, cursor: "pointer" }}
         onClick={() => {
-          navigate("/");
           setActiveOperator(null);
+          navigate("/");
         }}
-        className="mt-6 text-left"
-        sx={{
-          color: "error.main",
-          "&:hover": {
-            textDecoration: "underline",
-            backgroundColor: "transparent",
-          },
-        }}
-        variant="text"
       >
         Sign Out
-      </Button>
+      </Link>
     </Box>
   );
 }
