@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import { formatDate, formatCurrency } from "../../../lib/util";
 import type { ClubTransactionSearchRow } from "../hooks/useClubTransactions";
 
 interface Props {
@@ -31,17 +32,6 @@ export default function AccountsTable({
       xs: theme.typography.pxToRem(12),
       xl: theme.typography.pxToRem(14),
     },
-  };
-
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) {
-      return "-";
-    }
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatAmount = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
   };
 
   return (
@@ -148,7 +138,7 @@ export default function AccountsTable({
               whiteSpace: "nowrap",
             }}
           >
-            {formatAmount(row.transaction.amount)}
+            {formatCurrency(row.transaction.amount)}
           </Typography>
         </Box>
       ))}

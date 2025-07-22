@@ -10,6 +10,7 @@ import {
 } from "@mui/x-data-grid";
 import { useTheme } from "@mui/material/styles";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { formatCurrency } from "../../../lib/util";
 import type Product from "../../../models/Product";
 
 export interface TransactionItem {
@@ -161,14 +162,6 @@ export default function TransactionItems({
     return { ...newRow, quantity: updatedQuantity };
   };
 
-  const formatPrice = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
-  };
-
-  const formatTotal = (cents: number, quantity: number) => {
-    return `$${((cents * quantity) / 100).toFixed(2)}`;
-  };
-
   const columns: GridColDef[] = [
     {
       field: "name",
@@ -181,7 +174,7 @@ export default function TransactionItems({
       headerName: "Price",
       width: 100,
       editable: false,
-      valueFormatter: (value) => formatPrice(value),
+      valueFormatter: (value) => formatCurrency(value),
     },
     {
       field: "quantity",
@@ -195,7 +188,7 @@ export default function TransactionItems({
       headerName: "Total",
       width: 120,
       editable: false,
-      valueGetter: (_value, row) => formatTotal(row.price, row.quantity),
+      valueGetter: (_value, row) => formatCurrency(row.price * row.quantity),
     },
     // column with button to delete row
     {

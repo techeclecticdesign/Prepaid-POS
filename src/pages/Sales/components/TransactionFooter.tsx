@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import { useTheme } from "@mui/material/styles";
+import { formatCurrency } from "../../../lib/util";
 import type { CustomerPosDto } from "../hooks/usePosInit";
 
 interface Props {
@@ -24,10 +25,6 @@ export default function TransactionFooter({
   onSubmitTransaction,
 }: Props) {
   const theme = useTheme();
-
-  const formatPrice = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
-  };
 
   const remainingBalance = selectedCustomer
     ? selectedCustomer.balance - transactionTotal
@@ -89,7 +86,7 @@ export default function TransactionFooter({
               Total:
             </Typography>
             <Typography variant="body1" sx={valueSx}>
-              {selectedCustomer ? formatPrice(transactionTotal) : "-"}
+              {selectedCustomer ? formatCurrency(transactionTotal) : "-"}
             </Typography>
           </Box>
           <Box>
@@ -97,7 +94,9 @@ export default function TransactionFooter({
               Account Balance:
             </Typography>
             <Typography variant="body1" sx={valueSx}>
-              {selectedCustomer ? formatPrice(selectedCustomer.balance) : "-"}
+              {selectedCustomer
+                ? formatCurrency(selectedCustomer.balance)
+                : "-"}
             </Typography>
           </Box>
           <Box>
@@ -114,7 +113,7 @@ export default function TransactionFooter({
                     : "text.primary",
               }}
             >
-              {selectedCustomer ? formatPrice(remainingBalance) : "-"}
+              {selectedCustomer ? formatCurrency(remainingBalance) : "-"}
             </Typography>
           </Box>
         </Box>
@@ -126,7 +125,7 @@ export default function TransactionFooter({
               Amount sold this session:
             </Typography>
             <Typography variant="body1" sx={valueSx}>
-              {formatPrice(sessionSales)}
+              {formatCurrency(sessionSales)}
             </Typography>
           </Box>
           <Box>

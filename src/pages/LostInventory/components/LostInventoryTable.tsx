@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
+import { formatDate } from "../../../lib/util";
 
 interface Transaction {
   id: number | null;
@@ -45,13 +46,6 @@ export default function LostInventoryTable({
       xs: theme.typography.pxToRem(12),
       xl: theme.typography.pxToRem(14),
     },
-  };
-
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) {
-      return "-";
-    }
-    return new Date(dateString).toLocaleDateString();
   };
 
   const getQuantityChangeColor = (change: number) => {

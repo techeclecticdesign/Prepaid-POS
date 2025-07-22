@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import OrderDetailsDialog from "./OrderDetailsDialog";
+import { formatDate, formatCurrency } from "../../../lib/util";
 import type { CustomerTransactionSearchRow } from "../../../hooks/useCustomerTransactions";
 
 interface Props {
@@ -42,17 +43,6 @@ export default function CustomerTransactionTable({
   const paddingSx = {
     xs: isDialog ? "4px 6px" : "8px 10px",
     xl: isDialog ? "14px 18px" : "14px 26px",
-  };
-
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) {
-      return "-";
-    }
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatCurrency = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
   };
 
   return (

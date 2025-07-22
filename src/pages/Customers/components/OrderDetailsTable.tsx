@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import { formatCurrency } from "../../../lib/util";
 import type { CustomerTxDetailDto } from "../../../hooks/useOrderDetails";
 
 interface Props {
@@ -39,10 +40,6 @@ export default function OrderDetailsTable({
   const paddingSx = {
     xs: isDialog ? "4px 6px" : "8px 10px",
     xl: isDialog ? "8px 12px" : "12px 18px",
-  };
-
-  const formatPrice = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
   };
 
   return (
@@ -155,7 +152,7 @@ export default function OrderDetailsTable({
                 whiteSpace: "nowrap",
               }}
             >
-              {formatPrice(detail.price)}
+              {formatCurrency(detail.price)}
             </Typography>
           </Box>
         ))}

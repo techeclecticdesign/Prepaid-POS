@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
+import { formatDate, formatCurrency } from "../../../lib/util";
 import type { PriceAdjustmentSearchRow } from "../hooks/usePriceAdjustments";
 
 interface Props {
@@ -34,17 +35,6 @@ export default function PriceAdjustmentTable({
     },
   };
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) {
-      return "-";
-    }
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatPrice = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
-  };
-
   const getPriceChangeColor = (oldPrice: number, newPrice: number) => {
     if (newPrice > oldPrice) return "success";
     if (newPrice < oldPrice) return "error";
@@ -53,9 +43,9 @@ export default function PriceAdjustmentTable({
 
   const getPriceChangeLabel = (oldPrice: number, newPrice: number) => {
     const change = newPrice - oldPrice;
-    if (change > 0) return `+${formatPrice(change)}`;
-    if (change < 0) return formatPrice(change);
-    return formatPrice(0);
+    if (change > 0) return `+${formatCurrency(change)}`;
+    if (change < 0) return formatCurrency(change);
+    return formatCurrency(0);
   };
 
   console.log("adjustments", adjustments);
@@ -159,7 +149,7 @@ export default function PriceAdjustmentTable({
               whiteSpace: "nowrap",
             }}
           >
-            {formatPrice(row.adjustment.old)}
+            {formatCurrency(row.adjustment.old)}
           </Typography>
           <Typography
             variant="body2"
@@ -171,7 +161,7 @@ export default function PriceAdjustmentTable({
               whiteSpace: "nowrap",
             }}
           >
-            {formatPrice(row.adjustment.new)}
+            {formatCurrency(row.adjustment.new)}
           </Typography>
           <Box sx={{ display: "flex", justifyContent: "center" }}>
             <Chip

@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import CustomerTransactionDialog from "./CustomerTransactionDialog";
+import { formatDate, formatCurrency } from "../../../lib/util";
 import type { CustomerSearchRow } from "../hooks/useCustomers";
 
 interface Props {
@@ -32,17 +33,6 @@ export default function CustomerTable({ customers, onCustomerClick }: Props) {
       xs: theme.typography.pxToRem(12),
       xl: theme.typography.pxToRem(14),
     },
-  };
-
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) {
-      return "-";
-    }
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const formatBalance = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
   };
 
   const handleCustomerClick = (row: CustomerSearchRow) => {
@@ -154,7 +144,7 @@ export default function CustomerTable({ customers, onCustomerClick }: Props) {
                 whiteSpace: "nowrap",
               }}
             >
-              {formatBalance(row.balance)}
+              {formatCurrency(row.balance)}
             </Typography>
             <Typography
               variant="body2"
