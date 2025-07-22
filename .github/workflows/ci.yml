@@ -52,6 +52,11 @@ jobs:
           key: cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
           restore-keys: cargo-
 
+      - name: Clean stale Tauri build artifacts
+        working-directory: src-tauri
+        run: Remove-Item -Recurse -Force target
+        shell: pwsh
+
       - name: Rust fmt & lint & test
         working-directory: src-tauri
         run: |
