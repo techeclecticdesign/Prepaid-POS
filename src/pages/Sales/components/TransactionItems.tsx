@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
@@ -27,6 +27,8 @@ interface Props {
   transactionItems: TransactionItem[];
   setTransactionItems: React.Dispatch<React.SetStateAction<TransactionItem[]>>;
   onTotalChange: (newTotal: number) => void;
+  availableBalance: number;
+  onInsufficientFunds: () => void;
 }
 
 export default function TransactionItems({
@@ -35,6 +37,8 @@ export default function TransactionItems({
   transactionItems,
   setTransactionItems,
   onTotalChange,
+  availableBalance,
+  onInsufficientFunds,
 }: Props) {
   const theme = useTheme();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -70,60 +74,68 @@ export default function TransactionItems({
     },
   };
 
-  // Calculate and update total whenever items change
-  const calculateTotal = useCallback(
-    (items: TransactionItem[]) => {
-      const total = items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
+  /*
+   *  Creates virtual cart with incoming changes added to current cart.  Uses this to check
+   * if customer has funds to cover the new changes and notifies if not.
+   */
+  const getScannedCart = (
+    prevItems: TransactionItem[],
+    upc: string,
+  ): TransactionItem[] => {
+    // Find existing
+    const idx = prevItems.findIndex((i) => i.upc === upc);
+    if (idx >= 0) {
+      // bump quantity
+      return prevItems.map((it, i) =>
+        i === idx ? { ...it, quantity: it.quantity + 1 } : it,
       );
-      onTotalChange(total);
-      return total;
-    },
-    [onTotalChange],
-  );
+    }
+    // add new line
+    const p = products.find((x) => x.upc === upc);
+    return p
+      ? [
+          ...prevItems,
+          {
+            id: p.upc,
+            upc: p.upc,
+            name: p.desc,
+            price: p.price,
+            quantity: 1,
+          },
+        ]
+      : prevItems;
+  };
 
   // Handle new scanned UPC
   useEffect(() => {
     if (!scannedUpc) return;
 
     setTransactionItems((prevItems) => {
-      const existingItemIndex = prevItems.findIndex(
-        (item) => item.upc === scannedUpc,
+      // build the would-be cart
+      const updatedItems = getScannedCart(prevItems, scannedUpc);
+
+      // calc new total and check balance
+      const total = updatedItems.reduce(
+        (s, it) => s + it.price * it.quantity,
+        0,
       );
 
-      if (existingItemIndex >= 0) {
-        // Item already exists, increment quantity
-        const updatedItems = [...prevItems];
-        updatedItems[existingItemIndex] = {
-          ...updatedItems[existingItemIndex],
-          quantity: updatedItems[existingItemIndex].quantity + 1,
-        };
-        calculateTotal(updatedItems);
-        return updatedItems;
-      } else {
-        const foundProduct = products.find(
-          (product) => product.upc === scannedUpc,
-        );
-
-        if (foundProduct) {
-          const newItem: TransactionItem = {
-            id: foundProduct.upc, // Use UPC as ID for DataGrid row
-            upc: foundProduct.upc,
-            name: foundProduct.desc,
-            price: foundProduct.price,
-            quantity: 1,
-          };
-          const updatedItems = [...prevItems, newItem];
-          calculateTotal(updatedItems);
-          return updatedItems;
-        } else {
-          console.warn(`Scanned UPC ${scannedUpc} not found in products list.`);
-          return prevItems; // Do not add item if not found
-        }
+      if (total > availableBalance) {
+        onInsufficientFunds();
+        return prevItems;
       }
+
+      onTotalChange(total);
+      return updatedItems;
     });
-  }, [scannedUpc, products, calculateTotal, setTransactionItems]);
+  }, [
+    scannedUpc,
+    products,
+    availableBalance,
+    onInsufficientFunds,
+    onTotalChange,
+    setTransactionItems,
+  ]);
 
   useEffect(() => {
     // Scroll to bottom of DataGrid as items are added to large orders
@@ -148,17 +160,25 @@ export default function TransactionItems({
   const handleRowUpdate = (newRow: GridRowModel) => {
     const updatedQuantity = Math.max(0, Number(newRow.quantity) || 0); // Ensure non-negative quantity
 
-    setTransactionItems((prevItems) => {
-      const updatedItems = prevItems
-        .map((item) =>
-          item.id === newRow.id ? { ...item, quantity: updatedQuantity } : item,
-        )
-        .filter((item) => item.quantity > 0); // Remove items with 0 quantity
+    // find the original item
+    const orig = transactionItems.find((it) => it.id === newRow.id);
+    if (!orig) return { ...newRow, quantity: updatedQuantity };
 
-      calculateTotal(updatedItems);
-      return updatedItems;
-    });
+    // build post-edit cart
+    const updatedItems = transactionItems
+      .map((it) =>
+        it.id === newRow.id ? { ...it, quantity: updatedQuantity } : it,
+      )
+      .filter((it) => it.quantity > 0);
 
+    // calc new total & block if it exceeds balance
+    const total = updatedItems.reduce((s, it) => s + it.price * it.quantity, 0);
+    if (total > availableBalance) {
+      onInsufficientFunds();
+      return { ...newRow, quantity: orig.quantity }; // revert UI
+    }
+    setTransactionItems(updatedItems);
+    onTotalChange(total);
     return { ...newRow, quantity: updatedQuantity };
   };
 

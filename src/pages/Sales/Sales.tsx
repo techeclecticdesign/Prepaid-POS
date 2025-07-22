@@ -46,6 +46,8 @@ export default function Sales() {
     useState<SnackbarSeverity>("error");
   const [isMdocDialogOpen, setIsMdocDialogOpen] = useState(false);
   const [isUnknownUpcDialogOpen, setIsUnknownUpcDialogOpen] = useState(false);
+  const [isInsufficientFundsDialogOpen, setIsInsufficientFundsDialogOpen] =
+    useState(false);
 
   // Refs
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -364,6 +366,10 @@ export default function Sales() {
                 transactionItems={transactionItems}
                 setTransactionItems={setTransactionItems}
                 onTotalChange={setTransactionTotal}
+                availableBalance={selectedCustomer.balance}
+                onInsufficientFunds={() =>
+                  setIsInsufficientFundsDialogOpen(true)
+                }
               />
             </Box>
           ) : (
@@ -407,6 +413,14 @@ export default function Sales() {
       >
         Scanned product does not have a recognized UPC. Item cannot be sold
         until it has been registered in the Products page.
+      </NotificationDialog>
+
+      <NotificationDialog
+        open={isInsufficientFundsDialogOpen}
+        onClose={() => setIsInsufficientFundsDialogOpen(false)}
+        title="Insufficient Funds"
+      >
+        Customer does not have enough funds to add item to transaction.
       </NotificationDialog>
 
       {/* Customer MDOC Dialog */}
