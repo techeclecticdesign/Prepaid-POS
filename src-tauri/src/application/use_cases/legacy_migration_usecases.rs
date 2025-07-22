@@ -1134,14 +1134,8 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
             };
-            // operator_mdoc required
-            let operator_mdoc = match op_opt {
-                Some(val) => val,
-                None => {
-                    warn!("skip inv {:?}: missing operator", ref_order_id);
-                    continue;
-                }
-            };
+            // operator_mdoc
+            let operator_mdoc = op_opt.unwrap_or(0);
             // customer_mdoc optional
             let customer_mdoc = cust_opt.filter(|&i| i > 0);
 
@@ -2467,7 +2461,10 @@ mod tests {
         ];
 
         uc.migrate_inventory_transactions_from_rows(raws).unwrap();
-        assert!(uc.deps.inv_repo.list().unwrap().is_empty());
+        let txs = uc.deps.inv_repo.list().unwrap();
+        assert_eq!(txs.len(), 1);
+        assert_eq!(txs[0].ref_order_id, Some(2));
+        assert_eq!(txs[0].operator_mdoc, 0);
     }
 
     // Customer order migration tests
