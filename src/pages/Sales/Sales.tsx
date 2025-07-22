@@ -10,7 +10,7 @@ import TransactionItems, {
 } from "./components/TransactionItems";
 import AppSnackbar from "../../components/AppSnackbar";
 import CustomerMdocDialog from "./components/CustomerMdocDialog";
-import UnknownUpcDialog from "./components/UnknownUpcDialog";
+import NotificationDialog from "../../components/NotificationDialog";
 import { useAuth } from "../../AuthProvider";
 import usePosInit, {
   type CustomerPosDto,
@@ -400,11 +400,14 @@ export default function Sales() {
         />
       </Box>
 
-      {/* Unknown UPC Dialog */}
-      <UnknownUpcDialog
+      <NotificationDialog
         open={isUnknownUpcDialogOpen}
         onClose={() => setIsUnknownUpcDialogOpen(false)}
-      />
+        title="Unrecognized Product"
+      >
+        Scanned product does not have a recognized UPC. Item cannot be sold
+        until it has been registered in the Products page.
+      </NotificationDialog>
 
       {/* Customer MDOC Dialog */}
       {isMdocDialogOpen && (
