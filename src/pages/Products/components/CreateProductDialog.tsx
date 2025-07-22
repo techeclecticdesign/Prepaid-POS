@@ -117,6 +117,11 @@ export default function CreateProductDialog({
               <TextField
                 {...field}
                 label="Scan UPC"
+                onKeyDown={(e) => {
+                  if (e.key === "~") {
+                    e.preventDefault();
+                  }
+                }}
                 error={!!formState.errors.upc}
                 helperText={formState.errors.upc?.message}
                 fullWidth
