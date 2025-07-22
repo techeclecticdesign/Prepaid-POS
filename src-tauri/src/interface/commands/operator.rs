@@ -14,14 +14,6 @@ pub fn list_operators(
 }
 
 #[tauri::command]
-pub fn get_operator(
-    ctrl: State<'_, Arc<OperatorController>>,
-    id: i32,
-) -> Result<Option<OperatorDto>, AppError> {
-    ctrl.get(id)
-}
-
-#[tauri::command]
 pub fn create_operator(
     auth: State<'_, RwLock<AuthState>>,
     ctrl: State<'_, Arc<OperatorController>>,

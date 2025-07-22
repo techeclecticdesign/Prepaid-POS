@@ -7,7 +7,7 @@ use crate::interface::dto::price_adjustment_dto::{
     PriceAdjustmentDto, PriceAdjustmentSearchResult,
 };
 use crate::interface::dto::product_dto::{
-    CreateProductDto, DeleteProductDto, ProductDto, ProductSearchResult, UpdateProductDto,
+    CreateProductDto, DeleteProductDto, ProductSearchResult, UpdateProductDto,
 };
 use crate::interface::presenters::category_presenter::CategoryPresenter;
 use crate::interface::presenters::price_adjustment_presenter::PriceAdjustmentPresenter;
@@ -50,16 +50,6 @@ impl ProductController {
         dto.validate()
             .map_err(|e| AppError::Validation(e.to_string()))?;
         self.uc.delete_product(dto.upc)
-    }
-
-    pub fn list_products(&self) -> Result<Vec<ProductDto>, AppError> {
-        let ps = self.uc.list_products()?;
-        Ok(ProductPresenter::to_dto_list(ps))
-    }
-
-    pub fn list_products_category(&self, category: String) -> Result<Vec<ProductDto>, AppError> {
-        let ps = self.uc.list_products_by_category(category)?;
-        Ok(ProductPresenter::to_dto_list(ps))
     }
 
     pub fn price_adjustment(
@@ -127,24 +117,6 @@ impl ProductController {
         })
     }
 
-    pub fn list_price_adjust_for_product(
-        &self,
-        upc: String,
-    ) -> Result<Vec<PriceAdjustmentDto>, AppError> {
-        let pas = self.uc.list_price_adjust_for_product(upc)?;
-        Ok(PriceAdjustmentPresenter::to_dto_list(pas))
-    }
-
-    pub fn list_price_adjust_today(&self) -> Result<Vec<PriceAdjustmentDto>, AppError> {
-        let pas = self.uc.list_price_adjust_today()?;
-        Ok(PriceAdjustmentPresenter::to_dto_list(pas))
-    }
-
-    pub fn list_price_adjust_operator(&self, op: i32) -> Result<Vec<PriceAdjustmentDto>, AppError> {
-        let pas = self.uc.list_price_adjust_operator(op)?;
-        Ok(PriceAdjustmentPresenter::to_dto_list(pas))
-    }
-
     pub fn list_price_adjust(&self) -> Result<Vec<PriceAdjustmentDto>, AppError> {
         let pas = self.uc.list_price_adjust()?;
         Ok(PriceAdjustmentPresenter::to_dto_list(pas))
@@ -182,13 +154,6 @@ mod smoke {
         let category_repo = Arc::new(MockCategoryRepo::new());
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
         ProductController::new(prod_repo, price_repo, category_repo, conn)
-    }
-
-    #[test]
-    fn controller_smoke_list_products() {
-        let ctrl = make_controller();
-        let out = ctrl.list_products().expect("list_products should succeed");
-        assert!(out.is_empty());
     }
 
     #[test]

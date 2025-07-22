@@ -80,19 +80,6 @@ impl ProductUseCases {
         res
     }
 
-    pub fn list_products(&self) -> Result<Vec<Product>, AppError> {
-        self.repo.list()
-    }
-
-    pub fn list_products_by_category(&self, cat: String) -> Result<Vec<Product>, AppError> {
-        Ok(self
-            .repo
-            .list()?
-            .into_iter()
-            .filter(|p| p.category == cat)
-            .collect())
-    }
-
     pub fn price_adjustment(&self, adj: PriceAdjustment) -> Result<PriceAdjustment, AppError> {
         let mut p = self
             .repo
@@ -149,24 +136,8 @@ impl ProductUseCases {
         }
         res
     }
-
-    pub fn list_price_adjust_today(&self) -> Result<Vec<PriceAdjustment>, AppError> {
-        self.price_repo.list_for_today()
-    }
-
-    pub fn list_price_adjust_operator(&self, op: i32) -> Result<Vec<PriceAdjustment>, AppError> {
-        self.price_repo.list_for_operator(op)
-    }
-
     pub fn list_price_adjust(&self) -> Result<Vec<PriceAdjustment>, AppError> {
         self.price_repo.list()
-    }
-
-    pub fn list_price_adjust_for_product(
-        &self,
-        upc: String,
-    ) -> Result<Vec<PriceAdjustment>, AppError> {
-        self.price_repo.list_for_product(upc)
     }
 
     pub fn search_products(
@@ -346,57 +317,6 @@ mod tests {
     }
 
     #[test]
-    fn full_product_crud_and_category_filter() -> anyhow::Result<()> {
-        let (uc, _op_repo, _prod_repo) = make_use_cases();
-
-        assert!(uc.list_products()?.is_empty());
-
-        uc.create_product(Product {
-            upc: "100".into(),
-            desc: "Widget".into(),
-            category: "Gadgets".into(),
-            price: 1000,
-            ..Default::default()
-        })?;
-        uc.create_product(Product {
-            upc: "200".into(),
-            desc: "Gizmo".into(),
-            category: "Gadgets".into(),
-            price: 2000,
-            ..Default::default()
-        })?;
-        uc.create_product(Product {
-            upc: "300".into(),
-            desc: "Thing".into(),
-            category: "Stuff".into(),
-            price: 1500,
-            ..Default::default()
-        })?;
-
-        let all = uc.list_products()?;
-        assert_eq!(all.len(), 3);
-
-        // filter by category
-        let gadgets = uc.list_products_by_category("Gadgets".into())?;
-        assert_eq!(
-            gadgets.iter().map(|p| &p.upc).collect::<Vec<_>>(),
-            vec!["100", "200"]
-        );
-
-        // remove one product
-        uc.delete_product("200".into())?;
-        let post = uc.list_products()?;
-        assert!(post
-            .iter()
-            .find(|p| p.upc == "200")
-            .unwrap()
-            .deleted
-            .is_some());
-
-        Ok(())
-    }
-
-    #[test]
     fn update_product_changes_only_specified_fields() -> anyhow::Result<()> {
         let (uc, _op_repo, _prod_repo) = make_use_cases();
         uc.create_product(Product {
@@ -467,45 +387,6 @@ mod tests {
         // verify update
         let p = uc.repo.get_by_upc("7".into())?.unwrap();
         assert_eq!(p.price, 2000);
-
-        // listing adjustments
-        let today = uc.list_price_adjust_today()?;
-        assert_eq!(today.len(), 1);
-        Ok(())
-    }
-
-    #[test]
-    fn list_price_adjust_for_product_returns_expected_results() -> anyhow::Result<()> {
-        let (uc, _op_repo, _prod_repo) = make_use_cases();
-
-        // Seed with two price adjustments for same product
-        uc.create_product(Product {
-            upc: "1".into(),
-            desc: "Item".into(),
-            category: "Cat".into(),
-            price: 1000,
-            ..Default::default()
-        })?;
-        uc.price_adjustment(PriceAdjustment {
-            id: 0,
-            operator_mdoc: 1,
-            upc: "1".into(),
-            old: 1000,
-            new: 1100,
-            created_at: Some(Utc::now().naive_utc()),
-        })?;
-        uc.price_adjustment(PriceAdjustment {
-            id: 0,
-            operator_mdoc: 1,
-            upc: "1".into(),
-            old: 1100,
-            new: 1200,
-            created_at: Some(Utc::now().naive_utc()),
-        })?;
-
-        let list = uc.list_price_adjust_for_product("1".into())?;
-        assert_eq!(list.len(), 2);
-        assert!(list.iter().all(|pa| pa.upc == "1"));
 
         Ok(())
     }

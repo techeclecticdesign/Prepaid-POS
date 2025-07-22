@@ -17,10 +17,6 @@ impl OperatorUseCases {
         self.repo.list()
     }
 
-    pub fn get_operator(&self, mdoc: i32) -> Result<Option<Operator>, AppError> {
-        self.repo.get_by_mdoc(mdoc)
-    }
-
     pub fn create_operator(&self, op: &Operator) -> Result<(), AppError> {
         if op.name.trim().is_empty() {
             warn!("create failed: name empty (name={})", op.name);
@@ -85,12 +81,6 @@ mod tests {
         };
         uc.create_operator(&op)?;
         assert_eq!(uc.list_operators()?, vec![op.clone()]);
-
-        // update operator
-        let mut updated = op.clone();
-        updated.name = "Alice Updated".into();
-        uc.update_operator(&updated)?;
-        assert_eq!(uc.get_operator(1)?.unwrap().name, "Alice Updated");
 
         Ok(())
     }

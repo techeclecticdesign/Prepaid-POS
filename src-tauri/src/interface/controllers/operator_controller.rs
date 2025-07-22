@@ -27,11 +27,6 @@ impl OperatorController {
         )
     }
 
-    pub fn get(&self, id: i32) -> Result<Option<OperatorDto>, AppError> {
-        let opt = self.uc.get_operator(id)?;
-        Ok(opt.map(crate::interface::presenters::operator_presenter::OperatorPresenter::to_dto))
-    }
-
     pub fn create(&self, dto: OperatorDto) -> Result<(), AppError> {
         dto.validate()
             .map_err(|e| AppError::Validation(e.to_string()))?;

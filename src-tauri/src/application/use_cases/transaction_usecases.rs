@@ -75,41 +75,6 @@ impl TransactionUseCases {
         })
     }
 
-    pub fn stock_items(
-        &self,
-        mut tx: InventoryTransaction,
-    ) -> Result<InventoryTransaction, AppError> {
-        if tx.quantity_change <= 0 {
-            return Err(AppError::Unexpected("quantity_change must be > 0".into()));
-        }
-        tx.customer_mdoc = None;
-        tx.ref_order_id = None;
-        tx.reference = Some("Stock Addition".to_string());
-
-        let out = self.inventory_adjustment(tx)?;
-        info!(
-            "stock items: upc={} added={} operator={}",
-            out.upc, out.quantity_change, out.operator_mdoc
-        );
-        Ok(out)
-    }
-
-    pub fn list_inv_adjust_today(&self) -> Result<Vec<InventoryTransaction>, AppError> {
-        self.inv_repo.list_for_today()
-    }
-
-    pub fn list_inv_adjust_operator(&self, op: i32) -> Result<Vec<InventoryTransaction>, AppError> {
-        self.inv_repo.list_for_operator(op)
-    }
-
-    pub fn list_inv_adjust(&self) -> Result<Vec<InventoryTransaction>, AppError> {
-        self.inv_repo.list()
-    }
-
-    pub fn get_transaction(&self, id: i64) -> Result<Option<InventoryTransaction>, AppError> {
-        self.inv_repo.get_by_id(id)
-    }
-
     pub fn list_for_product(&self, upc: String) -> Result<Vec<InventoryTransaction>, AppError> {
         self.inv_repo.list_for_product(upc)
     }
@@ -138,14 +103,6 @@ impl TransactionUseCases {
         customer_mdoc: i32,
     ) -> Result<Vec<InventoryTransaction>, AppError> {
         self.inv_repo.list_for_customer(customer_mdoc)
-    }
-
-    pub fn list_sales(&self) -> Result<Vec<CustomerTransaction>, AppError> {
-        self.cust_tx_repo.list()
-    }
-
-    pub fn get_sale(&self, order_id: i32) -> Result<Option<CustomerTransaction>, AppError> {
-        self.cust_tx_repo.get(order_id)
     }
 
     pub fn list_order_details(
@@ -379,39 +336,6 @@ mod tests {
             }],
         )?;
         assert_eq!(order_id, 1);
-        let adjusted = uc.list_inv_adjust()?;
-        let sale_tx = adjusted
-            .iter()
-            .find(|tx| tx.customer_mdoc == Some(20) && tx.quantity_change == -2)
-            .expect("expected inventory tx with customer_mdoc 20 and quantity_change -2");
-
-        assert_eq!(sale_tx.upc, "000000000555");
-
-        // stock items (positive only)
-        let itx3 = uc.stock_items(InventoryTransaction {
-            operator_mdoc: 10,
-            customer_mdoc: Some(20),
-            upc: "000000000555".into(),
-            quantity_change: 3,
-            ..Default::default()
-        })?;
-
-        assert_eq!(itx3.quantity_change, 3);
-
-        // 0 or negative stock fails
-        let err = uc
-            .stock_items(InventoryTransaction {
-                operator_mdoc: 10,
-                upc: "000000000555".into(),
-                quantity_change: 0,
-                ..Default::default()
-            })
-            .unwrap_err();
-        assert!(err.to_string().contains("must be > 0"));
-
-        // listing all
-        let all = uc.list_inv_adjust()?;
-        assert_eq!(all.len(), 3);
 
         Ok(())
     }
@@ -458,15 +382,6 @@ mod tests {
             ..Default::default()
         })?;
 
-        let all = uc.list_inv_adjust()?;
-        assert_eq!(all.len(), 2);
-
-        let op1 = uc.list_inv_adjust_operator(1)?;
-        assert_eq!(op1.len(), 1);
-
-        // nothing for today filter if date logic differs
-        let today = uc.list_inv_adjust_today()?;
-        assert!(today.len() >= 2);
         Ok(())
     }
 

@@ -3,9 +3,7 @@ use crate::common::error::AppError;
 use crate::domain::models::customer_transaction::CustomerTransaction;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::inventory_transaction::InventoryTransaction;
-use crate::interface::dto::customer_transaction_dto::{
-    CustomerTransactionDto, CustomerTransactionSearchResult,
-};
+use crate::interface::dto::customer_transaction_dto::CustomerTransactionSearchResult;
 use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 use crate::interface::dto::inventory_transaction_dto::{
     CreateInventoryTransactionDto, InventoryTransactionSearchResult, ReadInventoryTransactionDto,
@@ -91,63 +89,6 @@ impl TransactionController {
         self.uc.sale_transaction(cust_tx, invs, details)
     }
 
-    pub fn stock_items(
-        &self,
-        dto: CreateInventoryTransactionDto,
-    ) -> Result<ReadInventoryTransactionDto, AppError> {
-        dto.validate()
-            .map_err(|e| AppError::Validation(e.to_string()))?;
-        let tx = InventoryTransaction {
-            id: Some(0), // new record, gets auto-assigned by db
-            upc: dto.upc,
-            quantity_change: dto.quantity_change,
-            operator_mdoc: dto.operator_mdoc,
-            customer_mdoc: dto.customer_mdoc,
-            ref_order_id: dto.ref_order_id,
-            reference: dto.reference,
-            created_at: None,
-        };
-
-        let itx = self.uc.stock_items(tx)?;
-        Ok(InventoryTransactionPresenter::to_dto(itx))
-    }
-
-    pub fn list_inv_adjust_today(&self) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
-        let itxs = self.uc.list_inv_adjust_today()?;
-        Ok(InventoryTransactionPresenter::to_dto_list(itxs))
-    }
-
-    pub fn list_inv_adjust_operator(
-        &self,
-        op: i32,
-    ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
-        let itxs = self.uc.list_inv_adjust_operator(op)?;
-        Ok(InventoryTransactionPresenter::to_dto_list(itxs))
-    }
-
-    pub fn list_inv_adjust(&self) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
-        let itxs = self.uc.list_inv_adjust()?;
-        Ok(InventoryTransactionPresenter::to_dto_list(itxs))
-    }
-
-    pub fn get_transaction(
-        &self,
-        id: i64,
-    ) -> Result<Option<ReadInventoryTransactionDto>, AppError> {
-        Ok(self
-            .uc
-            .get_transaction(id)?
-            .map(InventoryTransactionPresenter::to_dto))
-    }
-
-    pub fn list_tx_for_product(
-        &self,
-        upc: String,
-    ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
-        let itxs = self.uc.list_for_product(upc)?;
-        Ok(InventoryTransactionPresenter::to_dto_list(itxs))
-    }
-
     pub fn search_inventory_transactions(
         &self,
         page: u32,
@@ -168,24 +109,6 @@ impl TransactionController {
             transactions: rows,
             total_count: total,
         })
-    }
-
-    pub fn list_tx_for_customer(
-        &self,
-        customer_mdoc: i32,
-    ) -> Result<Vec<ReadInventoryTransactionDto>, AppError> {
-        let itxs = self.uc.list_for_customer(customer_mdoc)?;
-        Ok(InventoryTransactionPresenter::to_dto_list(itxs))
-    }
-
-    pub fn list_sales(&self) -> Result<Vec<CustomerTransactionDto>, AppError> {
-        let txs = self.uc.list_sales()?;
-        Ok(CustomerTransactionPresenter::to_dto_list(txs))
-    }
-
-    pub fn get_sale(&self, id: i32) -> Result<Option<CustomerTransactionDto>, AppError> {
-        let opt = self.uc.get_sale(id)?;
-        Ok(opt.map(CustomerTransactionPresenter::to_dto))
     }
 
     pub fn list_order_details(&self, order_id: i32) -> Result<Vec<CustomerTxDetailDto>, AppError> {
@@ -227,31 +150,5 @@ impl TransactionController {
             items,
             balance,
         })
-    }
-}
-
-#[cfg(test)]
-mod smoke {
-    use super::*;
-    use crate::test_support::mock_customer_tx_detail_repo::MockCustomerTxDetailRepo;
-    use crate::test_support::mock_customer_tx_repo::MockCustomerTransactionRepo;
-    use crate::test_support::mock_inventory_transaction_repo::MockInventoryTransactionRepo;
-    use std::sync::{Arc, Mutex};
-
-    #[test]
-    fn controller_smoke_list_transactions() {
-        let inv_repo = Arc::new(MockInventoryTransactionRepo::new());
-        let cust_tx_repo = Arc::new(MockCustomerTransactionRepo::new());
-        let cust_tx_detail_repo = Arc::new(MockCustomerTxDetailRepo::new());
-        let ctrl = TransactionController::new(
-            inv_repo.clone(),
-            cust_tx_repo.clone(),
-            cust_tx_detail_repo,
-            Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
-        );
-        let out = ctrl
-            .list_inv_adjust()
-            .expect("list_inv_adjust should succeed");
-        assert!(out.is_empty());
     }
 }

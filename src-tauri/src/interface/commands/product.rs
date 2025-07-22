@@ -5,7 +5,7 @@ use crate::interface::dto::price_adjustment_dto::{
     PriceAdjustmentDto, PriceAdjustmentSearchResult,
 };
 use crate::interface::dto::product_dto::{
-    CreateProductDto, DeleteProductDto, ProductDto, ProductSearchResult, UpdateProductDto,
+    CreateProductDto, DeleteProductDto, ProductSearchResult, UpdateProductDto,
 };
 use std::sync::Arc;
 use tauri::State;
@@ -35,40 +35,10 @@ pub fn price_adjustment(
 }
 
 #[tauri::command]
-pub fn list_price_adjust_today(
-    controller: State<Arc<ProductController>>,
-) -> Result<Vec<PriceAdjustmentDto>, AppError> {
-    controller.list_price_adjust_today()
-}
-
-#[tauri::command]
-pub fn list_price_adjust_operator(
-    controller: State<Arc<ProductController>>,
-    operator_mdoc: i32,
-) -> Result<Vec<PriceAdjustmentDto>, AppError> {
-    controller.list_price_adjust_operator(operator_mdoc)
-}
-
-#[tauri::command]
 pub fn list_price_adjust(
     controller: State<Arc<ProductController>>,
 ) -> Result<Vec<PriceAdjustmentDto>, AppError> {
     controller.list_price_adjust()
-}
-
-#[tauri::command]
-pub fn list_products(
-    controller: State<Arc<ProductController>>,
-) -> Result<Vec<ProductDto>, AppError> {
-    controller.list_products()
-}
-
-#[tauri::command]
-pub fn list_products_category(
-    controller: State<Arc<ProductController>>,
-    category: String,
-) -> Result<Vec<ProductDto>, AppError> {
-    controller.list_products_category(category)
 }
 
 #[tauri::command]
@@ -77,14 +47,6 @@ pub fn update_product(
     dto: UpdateProductDto,
 ) -> Result<(), AppError> {
     controller.update_product(dto)
-}
-
-#[tauri::command]
-pub fn list_price_adjust_for_product(
-    controller: State<Arc<ProductController>>,
-    upc: String,
-) -> Result<Vec<PriceAdjustmentDto>, AppError> {
-    controller.list_price_adjust_for_product(upc)
 }
 
 #[tauri::command]
