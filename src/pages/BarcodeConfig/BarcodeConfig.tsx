@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
 import InputLabel from "@mui/material/InputLabel";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
@@ -12,6 +16,7 @@ type ScannerType = "Zebra" | "Generic";
 export default function BarcodeConfig() {
   const theme = useTheme();
   const [scannerType, setScannerType] = useState<ScannerType | string>("");
+  const [zebraMode, setZebraMode] = useState("load");
 
   useEffect(() => {
     // Load from local storage on component mount
@@ -58,39 +63,71 @@ export default function BarcodeConfig() {
         Barcode Scanner Configuration
       </Typography>
 
-      <FormControl fullWidth sx={{ maxWidth: 300, mb: 4 }}>
-        <InputLabel id="scanner-type-label">Scanner Type</InputLabel>
-        <Select
-          labelId="scanner-type-label"
-          id="scanner-type-select"
-          value={scannerType}
-          label="Scanner Type"
-          onChange={handleScannerTypeChange}
-        >
-          <MenuItem value="Zebra">Zebra (recommended)</MenuItem>
-          <MenuItem value="Generic">Generic</MenuItem>
-        </Select>
-      </FormControl>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 4,
+          mb: 12,
+          mt: 6,
+        }}
+      >
+        <FormControl sx={{ minWidth: 300 }}>
+          <InputLabel id="scanner-type-label">Scanner Type</InputLabel>
+          <Select
+            labelId="scanner-type-label"
+            id="scanner-type-select"
+            value={scannerType}
+            label="Scanner Type"
+            onChange={handleScannerTypeChange}
+          >
+            <MenuItem value="Zebra">Zebra (recommended)</MenuItem>
+            <MenuItem value="Generic">Generic</MenuItem>
+          </Select>
+        </FormControl>
+        {scannerType === "Zebra" && (
+          <FormControl>
+            <FormLabel>Zebra Mode</FormLabel>
+            <RadioGroup
+              row
+              value={zebraMode}
+              onChange={(e) => setZebraMode(e.target.value)}
+            >
+              <FormControlLabel
+                value="load"
+                control={<Radio />}
+                label="Load Settings"
+              />
+              <FormControlLabel
+                value="reset"
+                control={<Radio />}
+                label="Factory Reset"
+              />
+            </RadioGroup>
+          </FormControl>
+        )}
+      </Box>
 
       {scannerType === "Zebra" && (
         <Box sx={{ textAlign: "center" }}>
           <Typography variant="body1" sx={bodyTextSx}>
-            If you have not already done so, please scan the QR code below to
-            configure your Zebra scanner. This will ensure optimal settings for
-            use in a Point of Sale environment.
+            {zebraMode === "reset"
+              ? "Scan the barcode to restore your scanner to its factory defaults."
+              : "If you have not already done so, please scan the QR code below to \
+            configure your Zebra scanner. This will ensure optimal settings for \
+            use in a Point of Sale environment."}
           </Typography>
-          <Box sx={{ mt: 4 }}>
-            <img
-              src="barcode.png"
-              alt="QR code for Zebra scanner configuration"
-              style={{
-                maxWidth: "300px",
-                height: "auto",
-                display: "block",
-                margin: "0 auto",
-              }}
-            />
-          </Box>
+          <Box
+            component="img"
+            src={zebraMode === "reset" ? "/factoryReset.png" : "/barcode.png"}
+            alt="scanner barcode"
+            sx={{
+              maxWidth: 300,
+              height: "auto",
+              display: "block",
+              mx: "auto",
+            }}
+          />
         </Box>
       )}
 
