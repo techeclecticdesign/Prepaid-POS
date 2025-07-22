@@ -5,5 +5,5 @@
 #![deny(unused_must_use)]
 
 fn main() {
-    mdoc_annex_pos_lib::run();
+    prepaid_pos_lib::run();
 }

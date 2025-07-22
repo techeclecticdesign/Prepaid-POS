@@ -2387,34 +2387,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
 
 [[package]]
-name = "mdoc_annex_pos"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "dotenvy",
- "fern",
- "log",
- "lopdf 0.36.0",
- "odbc-api",
- "odbc-sys",
- "printpdf",
- "regex",
- "rusqlite",
- "rusqlite_migration",
- "serde",
- "serde_bytes",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "thiserror 2.0.12",
- "validator",
- "validator_derive",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3371,6 +3343,34 @@ name = "precomputed-hash"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
+
+[[package]]
+name = "prepaid_pos"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dotenvy",
+ "fern",
+ "log",
+ "lopdf 0.36.0",
+ "odbc-api",
+ "odbc-sys",
+ "printpdf",
+ "regex",
+ "rusqlite",
+ "rusqlite_migration",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "thiserror 2.0.12",
+ "validator",
+ "validator_derive",
+]
 
 [[package]]
 name = "printpdf"

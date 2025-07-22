@@ -1,6 +1,6 @@
-use mdoc_annex_pos_lib::domain::models::Operator;
-use mdoc_annex_pos_lib::domain::repos::OperatorRepoTrait;
-use mdoc_annex_pos_lib::infrastructure::repos::SqliteOperatorRepo;
+use prepaid_pos_lib::domain::models::Operator;
+use prepaid_pos_lib::domain::repos::OperatorRepoTrait;
+use prepaid_pos_lib::infrastructure::repos::SqliteOperatorRepo;
 use rusqlite::Connection;
 use std::sync::{Arc, Mutex};
 
