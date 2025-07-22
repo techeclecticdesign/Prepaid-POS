@@ -28,4 +28,23 @@ export const getMuiTheme = (mode: keyof typeof colors = "light"): Theme =>
         xl: 1536,
       },
     },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: (theme: Theme) => ({
+          "::-webkit-scrollbar": {
+            width: 8,
+          },
+          "::-webkit-scrollbar-track": {
+            background: theme.palette.background.paper,
+          },
+          "::-webkit-scrollbar-thumb": {
+            backgroundColor: theme.palette.text.secondary,
+            borderRadius: 4,
+          },
+          "::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: theme.palette.text.primary,
+          },
+        }),
+      },
+    },
   });

@@ -27,30 +27,32 @@ export default function CategoriesPage() {
   };
 
   return (
-    <Box className="p-12 flex justify-center w-full h-full">
-      <Box className="w-110">
-        <Typography
-          variant="h4"
-          component="h1"
-          className="font-bold text-center"
-          sx={{ color: "text.primary" }}
-        >
-          Categories
-        </Typography>
-        <Box className="my-12 text-center">
-          <AppButton onClick={() => setShowAdd(true)} text="Add Category" />
+    <Box className="fixed top-0 w-[calc(100vw-21.5rem)] h-screen overflow-auto">
+      <Box className="p-12 flex justify-center">
+        <Box className="w-110">
+          <Typography
+            variant="h4"
+            component="h1"
+            className="font-bold text-center"
+            sx={{ color: "text.primary" }}
+          >
+            Categories
+          </Typography>
+          <Box className="my-12 text-center">
+            <AppButton onClick={() => setShowAdd(true)} text="Add Category" />
+          </Box>
+          <CategoryList categories={categories} onDelete={handleDelete} />
+          <AddCategoryDialog
+            open={showAdd}
+            onClose={() => setShowAdd(false)}
+            onSubmit={handleAdd}
+            existingNames={categories.map((c) => c.name)}
+          />
+          <DeleteCatNotify
+            open={notifyOpen}
+            onClose={() => setNotifyOpen(false)}
+          />
         </Box>
-        <CategoryList categories={categories} onDelete={handleDelete} />
-        <AddCategoryDialog
-          open={showAdd}
-          onClose={() => setShowAdd(false)}
-          onSubmit={handleAdd}
-          existingNames={categories.map((c) => c.name)}
-        />
-        <DeleteCatNotify
-          open={notifyOpen}
-          onClose={() => setNotifyOpen(false)}
-        />
       </Box>
     </Box>
   );
