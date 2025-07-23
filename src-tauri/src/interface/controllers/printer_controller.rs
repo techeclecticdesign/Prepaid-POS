@@ -7,7 +7,8 @@ pub struct PrinterController {
 }
 
 impl PrinterController {
-    pub fn new(uc: PrinterUseCases) -> Self {
+    #[must_use]
+    pub const fn new(uc: PrinterUseCases) -> Self {
         Self { uc }
     }
 

@@ -4,6 +4,7 @@ use crate::interface::dto::product_dto::{ProductDto, ProductSearchRow};
 pub struct ProductPresenter;
 
 impl ProductPresenter {
+    #[must_use]
     pub fn to_dto(p: Product) -> ProductDto {
         ProductDto {
             upc: p.upc,
@@ -17,6 +18,7 @@ impl ProductPresenter {
         ps.into_iter().map(Self::to_dto).collect()
     }
 
+    #[must_use]
     pub fn to_search_row(p: Product, available: i64) -> ProductSearchRow {
         ProductSearchRow {
             product: Self::to_dto(p),

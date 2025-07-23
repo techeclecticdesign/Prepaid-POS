@@ -7,6 +7,7 @@ use chrono::{TimeZone, Utc};
 pub struct InventoryTransactionPresenter;
 
 impl InventoryTransactionPresenter {
+    #[must_use]
     pub fn to_dto(itx: InventoryTransaction) -> ReadInventoryTransactionDto {
         let created_at = itx
             .created_at
@@ -27,6 +28,7 @@ impl InventoryTransactionPresenter {
         itxs.into_iter().map(Self::to_dto).collect()
     }
 
+    #[must_use]
     pub fn to_search_row(
         itx: InventoryTransaction,
         pname: String,

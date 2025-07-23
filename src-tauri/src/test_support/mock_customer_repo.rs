@@ -8,7 +8,8 @@ pub struct MockCustomerRepo {
 }
 
 impl MockCustomerRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }
@@ -64,13 +65,10 @@ impl CustomerRepoTrait for MockCustomerRepo {
         let mut items: Vec<(Customer, i64)> = guard
             .iter()
             .filter(|c| {
-                search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        c.mdoc.to_string().contains(s) || c.name.contains(s)
-                    })
-                    .unwrap_or(true)
+                search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    c.mdoc.to_string().contains(s) || c.name.contains(s)
+                })
             })
             .cloned()
             .map(|c| (c, 0))
@@ -87,13 +85,10 @@ impl CustomerRepoTrait for MockCustomerRepo {
         let count = guard
             .iter()
             .filter(|c| {
-                search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        c.mdoc.to_string().contains(s) || c.name.contains(s)
-                    })
-                    .unwrap_or(true)
+                search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    c.mdoc.to_string().contains(s) || c.name.contains(s)
+                })
             })
             .count();
         Ok(count as i64)

@@ -8,7 +8,8 @@ pub struct MockPriceAdjustmentRepo {
 }
 
 impl MockPriceAdjustmentRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }
@@ -91,17 +92,13 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| a.created_at.map(|dt| dt.date() == parsed).unwrap_or(false))
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| a.created_at.is_some_and(|dt| dt.date() == parsed));
 
                 // Search filter
-                let search_match = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        a.upc.contains(s) || a.operator_mdoc.to_string().contains(s)
-                    })
-                    .unwrap_or(true);
+                let search_match = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    a.upc.contains(s) || a.operator_mdoc.to_string().contains(s)
+                });
 
                 date_match && search_match
             })
@@ -126,16 +123,12 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| a.created_at.map(|dt| dt.date() == parsed).unwrap_or(false))
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| a.created_at.is_some_and(|dt| dt.date() == parsed));
 
-                let search_match = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        a.upc.contains(s) || a.operator_mdoc.to_string().contains(s)
-                    })
-                    .unwrap_or(true);
+                let search_match = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    a.upc.contains(s) || a.operator_mdoc.to_string().contains(s)
+                });
 
                 date_match && search_match
             })

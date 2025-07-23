@@ -4,6 +4,7 @@ use crate::interface::dto::category_dto::CategoryDto;
 pub struct CategoryPresenter;
 
 impl CategoryPresenter {
+    #[must_use]
     pub fn to_dto(cat: Category) -> CategoryDto {
         CategoryDto {
             id: cat.id,

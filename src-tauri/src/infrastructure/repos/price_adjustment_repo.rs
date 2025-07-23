@@ -10,7 +10,7 @@ pub struct SqlitePriceAdjustmentRepo {
 }
 
 impl SqlitePriceAdjustmentRepo {
-    pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
+    pub const fn new(conn: Arc<Mutex<Connection>>) -> Self {
         Self { conn }
     }
 }

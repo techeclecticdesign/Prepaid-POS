@@ -5,6 +5,7 @@ use chrono::{TimeZone, Utc};
 pub struct OperatorPresenter;
 
 impl OperatorPresenter {
+    #[must_use]
     pub fn to_dto_list(ops: Vec<Operator>) -> Vec<OperatorDto> {
         ops.into_iter()
             .map(|o| OperatorDto {
@@ -20,6 +21,7 @@ impl OperatorPresenter {
             .collect()
     }
 
+    #[must_use]
     pub fn to_dto(op: Operator) -> OperatorDto {
         OperatorDto {
             mdoc: op.mdoc,

@@ -10,7 +10,7 @@ pub struct SqliteOperatorRepo {
 }
 
 impl SqliteOperatorRepo {
-    pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
+    pub const fn new(conn: Arc<Mutex<Connection>>) -> Self {
         Self { conn }
     }
 }

@@ -114,7 +114,8 @@ pub struct LegacyMigrationUseCases {
 /* Note: to keep migrations testable they use two functions, one fetches the legacy data into rows,
  * the other does the parsing of these rows, maps to domain models, and persists to repo. */
 impl LegacyMigrationUseCases {
-    pub fn new(deps: LegacyMigrationDeps) -> Self {
+    #[must_use]
+    pub const fn new(deps: LegacyMigrationDeps) -> Self {
         Self { deps }
     }
 
@@ -174,12 +175,16 @@ impl LegacyMigrationUseCases {
 
     // helper to convert ODBC Timestamp -> NaiveDateTime
     pub(crate) fn ts_to_naive(ts: Timestamp) -> Result<chrono::NaiveDateTime, AppError> {
-        let date = chrono::NaiveDate::from_ymd_opt(ts.year as i32, ts.month as u32, ts.day as u32)
-            .ok_or_else(|| AppError::Unexpected("invalid date".into()))?;
+        let date = chrono::NaiveDate::from_ymd_opt(
+            i32::from(ts.year),
+            u32::from(ts.month),
+            u32::from(ts.day),
+        )
+        .ok_or_else(|| AppError::Unexpected("invalid date".into()))?;
         let time = chrono::NaiveTime::from_hms_micro_opt(
-            ts.hour as u32,
-            ts.minute as u32,
-            ts.second as u32,
+            u32::from(ts.hour),
+            u32::from(ts.minute),
+            u32::from(ts.second),
             ts.fraction,
         )
         .ok_or_else(|| AppError::Unexpected("invalid time".into()))?;
@@ -207,7 +212,7 @@ impl LegacyMigrationUseCases {
             // mdoc
             let mut mdoc_buf = Nullable::<i32>::null();
             let mdoc_opt = match row.get_data(1, &mut mdoc_buf) {
-                Ok(_) => mdoc_buf.into_opt(),
+                Ok(()) => mdoc_buf.into_opt(),
                 Err(e) => {
                     warn!("skip operator row: bad id: {e}");
                     raws.push((None, None, None, None));
@@ -227,7 +232,7 @@ impl LegacyMigrationUseCases {
             // start
             let mut start_buf = Nullable::<Timestamp>::null();
             let start_opt = match row.get_data(3, &mut start_buf) {
-                Ok(_) => start_buf.into_opt(),
+                Ok(()) => start_buf.into_opt(),
                 Err(e) => {
                     warn!("skip operator row: bad start date: {e}");
                     raws.push((None, None, None, None));
@@ -237,7 +242,7 @@ impl LegacyMigrationUseCases {
             // stop
             let mut stop_buf = Nullable::<Timestamp>::null();
             let stop_opt = match row.get_data(4, &mut stop_buf) {
-                Ok(_) => stop_buf.into_opt(),
+                Ok(()) => stop_buf.into_opt(),
                 Err(e) => {
                     warn!("skip operator row: bad stop date: {e}");
                     raws.push((None, None, None, None));
@@ -269,12 +274,11 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
             };
-            let name_raw = match name_opt {
-                Some(s) => s,
-                None => {
-                    warn!("skip operator row: bad UTF-8 name");
-                    continue;
-                }
+            let name_raw = if let Some(s) = name_opt {
+                s
+            } else {
+                warn!("skip operator row: bad UTF-8 name");
+                continue;
             };
             let name_trimmed = name_raw.trim();
             if name_trimmed.is_empty() {
@@ -287,18 +291,17 @@ impl LegacyMigrationUseCases {
                 continue;
             }
             // convert start
-            let start = match start_opt {
-                Some(ts) => match Self::ts_to_naive(ts) {
+            let start = if let Some(ts) = start_opt {
+                match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
                         warn!("skip operator row {mdoc}: bad start date: {e}");
                         continue;
                     }
-                },
-                None => {
-                    warn!("skip operator row {mdoc}: start NULL");
-                    continue;
                 }
+            } else {
+                warn!("skip operator row {mdoc}: start NULL");
+                continue;
             };
             // convert stop (skip bad stops, but allow None)
             let stop = match stop_opt {
@@ -378,7 +381,7 @@ impl LegacyMigrationUseCases {
             };
 
             let price = match row.get_data(4, &mut price_buf) {
-                Ok(_) => price_buf.into_opt(),
+                Ok(()) => price_buf.into_opt(),
                 Err(e) => {
                     warn!("skip product row: bad price ({e})");
                     None
@@ -386,7 +389,7 @@ impl LegacyMigrationUseCases {
             };
 
             let updated = match row.get_data(5, &mut upd_buf) {
-                Ok(_) => upd_buf.into_opt(),
+                Ok(()) => upd_buf.into_opt(),
                 Err(e) => {
                     warn!("skip product row: bad updated ({e})");
                     None
@@ -394,7 +397,7 @@ impl LegacyMigrationUseCases {
             };
 
             let added = match row.get_data(6, &mut add_buf) {
-                Ok(_) => add_buf.into_opt(),
+                Ok(()) => add_buf.into_opt(),
                 Err(e) => {
                     warn!("skip product row: bad added ({e})");
                     None
@@ -402,7 +405,7 @@ impl LegacyMigrationUseCases {
             };
 
             let deleted = match row.get_data(7, &mut del_buf) {
-                Ok(_) => del_buf.into_opt(),
+                Ok(()) => del_buf.into_opt(),
                 Err(_) => None,
             };
 
@@ -417,86 +420,74 @@ impl LegacyMigrationUseCases {
         I: IntoIterator<Item = RawProductRow>,
     {
         for (upc_opt, cat_opt, desc_opt, price_opt, upd_opt, add_opt, del_opt) in raw_rows {
-            let upc = match upc_opt {
-                Some(s) => {
-                    let t = s.trim();
-                    if !(t.len() == 8 || t.len() == 12 || t.len() == 14)
-                        || !t.chars().all(|c| c.is_ascii_digit())
-                    {
-                        warn!("skip product row: invalid UPC '{t}'");
-                        continue;
-                    }
-                    t.to_string()
-                }
-                None => {
-                    warn!("skip product row: missing UPC");
+            let upc = if let Some(s) = upc_opt {
+                let t = s.trim();
+                if !(t.len() == 8 || t.len() == 12 || t.len() == 14)
+                    || !t.chars().all(|c| c.is_ascii_digit())
+                {
+                    warn!("skip product row: invalid UPC '{t}'");
                     continue;
                 }
+                t.to_string()
+            } else {
+                warn!("skip product row: missing UPC");
+                continue;
             };
-            let category = match cat_opt {
-                Some(s) => {
-                    let t = s.trim();
-                    if t.is_empty() {
-                        warn!("skip product row: empty category");
-                        continue;
-                    }
-                    t.to_string()
-                }
-                None => {
-                    warn!("skip product row: missing category");
+            let category = if let Some(s) = cat_opt {
+                let t = s.trim();
+                if t.is_empty() {
+                    warn!("skip product row: empty category");
                     continue;
                 }
+                t.to_string()
+            } else {
+                warn!("skip product row: missing category");
+                continue;
             };
-            let desc = match desc_opt {
-                Some(d) => {
-                    let t = d.trim();
-                    if t.is_empty() {
-                        warn!("skip product row: empty description");
-                        continue;
-                    }
-                    t.to_string()
-                }
-                None => {
-                    warn!("skip product row: missing description");
+            let desc = if let Some(d) = desc_opt {
+                let t = d.trim();
+                if t.is_empty() {
+                    warn!("skip product row: empty description");
                     continue;
                 }
+                t.to_string()
+            } else {
+                warn!("skip product row: missing description");
+                continue;
             };
-            let price_cents = match price_opt {
-                Some(p) => (p * 100.0).round() as i32,
-                None => {
-                    warn!("skip product row: missing price");
-                    continue;
-                }
+            let price_cents = if let Some(p) = price_opt {
+                (p * 100.0).round() as i32
+            } else {
+                warn!("skip product row: missing price");
+                continue;
             };
             if price_cents <= 0 {
                 warn!("skip product row: zero or negative price {price_cents}");
                 continue;
             }
-            let updated = match upd_opt {
-                Some(ts) => match Self::ts_to_naive(ts) {
+            let updated = if let Some(ts) = upd_opt {
+                match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
                         warn!("skip product {upc}: bad updated date: {e}");
                         continue;
                     }
-                },
-                None => {
-                    warn!("skip product {upc}: updated was NULL");
-                    continue;
                 }
+            } else {
+                warn!("skip product {upc}: updated was NULL");
+                continue;
             };
-            let added = match add_opt {
-                Some(ts) => match Self::ts_to_naive(ts) {
+            let added = if let Some(ts) = add_opt {
+                match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
                         warn!("skip product {upc}: bad added date: {e}");
                         continue;
                     }
-                },
-                None => {
-                    warn!("skip product {upc}: added was NULL");
-                    continue;
                 }
+            } else {
+                warn!("skip product {upc}: added was NULL");
+                continue;
             };
             let deleted = match del_opt {
                 Some(ts) => match Self::ts_to_naive(ts) {
@@ -635,32 +626,28 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
             };
-            let name = match name_opt {
-                Some(s) => {
-                    let t = s.trim();
-                    if t.is_empty() {
-                        warn!("skip customer row: empty name");
-                        continue;
-                    }
-                    t.to_string()
-                }
-                None => {
-                    warn!("skip customer row: missing name");
+            let name = if let Some(s) = name_opt {
+                let t = s.trim();
+                if t.is_empty() {
+                    warn!("skip customer row: empty name");
                     continue;
                 }
+                t.to_string()
+            } else {
+                warn!("skip customer row: missing name");
+                continue;
             };
-            let dt = match added_opt {
-                Some(ts) => match Self::ts_to_naive(ts) {
+            let dt = if let Some(ts) = added_opt {
+                match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
                         warn!("skip customer row: invalid added date: {e}");
                         continue;
                     }
-                },
-                None => {
-                    warn!("skip customer row: missing added date");
-                    continue;
                 }
+            } else {
+                warn!("skip customer row: missing added date");
+                continue;
             };
 
             let cust = Customer {
@@ -739,12 +726,11 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
             };
-            let act_str = match act_opt {
-                Some(s) => s,
-                None => {
-                    warn!("skip club stmt row {id}: missing activity");
-                    continue;
-                }
+            let act_str = if let Some(s) = act_opt {
+                s
+            } else {
+                warn!("skip club stmt row {id}: missing activity");
+                continue;
             };
             // split "MM/DD/YYYY - MM/DD/YYYY"
             let parts: Vec<&str> = act_str.split(" - ").collect();
@@ -771,27 +757,23 @@ impl LegacyMigrationUseCases {
             let activity_from = chrono::NaiveDateTime::new(from_date, time);
             let activity_to = chrono::NaiveDateTime::new(to_date, time);
 
-            let source_file = match file_opt {
-                Some(f) => {
-                    let t = f.trim();
-                    if t.is_empty() {
-                        warn!("skip club stmt row {id}: empty source_file");
-                        continue;
-                    }
-                    t.to_string()
-                }
-                None => {
-                    warn!("skip club stmt row {id}: missing file name");
+            let source_file = if let Some(f) = file_opt {
+                let t = f.trim();
+                if t.is_empty() {
+                    warn!("skip club stmt row {id}: empty source_file");
                     continue;
                 }
+                t.to_string()
+            } else {
+                warn!("skip club stmt row {id}: missing file name");
+                continue;
             };
 
-            let imp_ts = match imp_opt {
-                Some(ts) => ts,
-                None => {
-                    warn!("skip club stmt row {id}: missing imported date");
-                    continue;
-                }
+            let imp_ts = if let Some(ts) = imp_opt {
+                ts
+            } else {
+                warn!("skip club stmt row {id}: missing imported date");
+                continue;
             };
             let date = match Self::ts_to_naive(imp_ts) {
                 Ok(dt) => dt,
@@ -803,10 +785,10 @@ impl LegacyMigrationUseCases {
 
             let stmt = ClubImport {
                 id,
+                date,
                 activity_from,
                 activity_to,
                 source_file,
-                date,
             };
             if let Err(e) = self.deps.club_imports_repo.create(&stmt) {
                 warn!("skip club_import {id}: insert error: {e}");
@@ -905,19 +887,17 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
             };
-            let received = match received_opt {
-                Some(s) => s.trim().to_string(),
-                None => {
-                    warn!("skip detail {id}: missing received");
-                    continue;
-                }
+            let received = if let Some(s) = received_opt {
+                s.trim().to_string()
+            } else {
+                warn!("skip detail {id}: missing received");
+                continue;
             };
-            let tx_type_str = match tx_opt {
-                Some(s) => s.trim().to_string(),
-                None => {
-                    warn!("skip detail {id}: missing tx type");
-                    continue;
-                }
+            let tx_type_str = if let Some(s) = tx_opt {
+                s.trim().to_string()
+            } else {
+                warn!("skip detail {id}: missing tx type");
+                continue;
             };
             let amount = ((amt_opt.unwrap_or_default()) * 100.0).round() as i32;
 
@@ -933,8 +913,7 @@ impl LegacyMigrationUseCases {
                 }
                 let name = received
                     .split_once(" (")
-                    .map(|(name, _)| name)
-                    .unwrap_or(received.as_str())
+                    .map_or(received.as_str(), |(name, _)| name)
                     .trim()
                     .to_string();
                 (name, mdoc_val)
@@ -942,21 +921,19 @@ impl LegacyMigrationUseCases {
                 if let Some(cap) = re_wd.captures(&received) {
                     let num = cap.get(2).and_then(|m| m.as_str().parse().ok());
                     if let Some(n) = num {
-                        let ent = match cap.get(3) {
-                            Some(m) => m.as_str().trim().to_string(),
-                            None => {
-                                warn!("skip detail {id}: regex capture group 3 missing");
-                                continue;
-                            }
+                        let ent = if let Some(m) = cap.get(3) {
+                            m.as_str().trim().to_string()
+                        } else {
+                            warn!("skip detail {id}: regex capture group 3 missing");
+                            continue;
                         };
                         (ent, Some(n))
                     } else {
-                        let ent = match cap.get(1) {
-                            Some(m) => m.as_str().trim().to_string(),
-                            None => {
-                                warn!("skip detail {id}: regex capture group 1 missing");
-                                continue;
-                            }
+                        let ent = if let Some(m) = cap.get(1) {
+                            m.as_str().trim().to_string()
+                        } else {
+                            warn!("skip detail {id}: regex capture group 1 missing");
+                            continue;
                         };
                         (ent, None)
                     }
@@ -974,18 +951,17 @@ impl LegacyMigrationUseCases {
                 _ => unreachable!(),
             };
 
-            let date = match dt_opt {
-                Some(ts) => match Self::ts_to_naive(ts) {
+            let date = if let Some(ts) = dt_opt {
+                match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
                         warn!("skip detail {id}: bad date: {e}");
                         continue;
                     }
-                },
-                None => {
-                    warn!("skip detail {id}: missing date");
-                    continue;
                 }
+            } else {
+                warn!("skip detail {id}: missing date");
+                continue;
             };
 
             let detail = ClubTransaction {
@@ -1127,12 +1103,11 @@ impl LegacyMigrationUseCases {
                 continue;
             }
             // created_at
-            let created_at = match ts_opt {
-                Some(ts) => Self::ts_to_naive(ts)?,
-                None => {
-                    warn!("skip inv {ref_order_id:?}: missing posted date");
-                    continue;
-                }
+            let created_at = if let Some(ts) = ts_opt {
+                Self::ts_to_naive(ts)?
+            } else {
+                warn!("skip inv {ref_order_id:?}: missing posted date");
+                continue;
             };
             // operator_mdoc
             let operator_mdoc = op_opt.unwrap_or(0);
@@ -1183,7 +1158,7 @@ impl LegacyMigrationUseCases {
             // customer_mdoc
             let mut cust_buf = Nullable::<i32>::null();
             let cust_opt = match row.get_data(2, &mut cust_buf) {
-                Ok(_) => cust_buf.into_opt(),
+                Ok(()) => cust_buf.into_opt(),
                 Err(e) => {
                     warn!("skip order row: bad customer_mdoc: {e}");
                     continue;
@@ -1193,7 +1168,7 @@ impl LegacyMigrationUseCases {
             // operator_mdoc
             let mut op_buf = Nullable::<i32>::null();
             let op_opt = match row.get_data(3, &mut op_buf) {
-                Ok(_) => op_buf.into_opt(),
+                Ok(()) => op_buf.into_opt(),
                 Err(e) => {
                     warn!("skip order row: bad operator_mdoc: {e}");
                     continue;
@@ -1203,7 +1178,7 @@ impl LegacyMigrationUseCases {
             // entry timestamp
             let mut dt_buf = Nullable::<Timestamp>::null();
             let dt_opt = match row.get_data(4, &mut dt_buf) {
-                Ok(_) => dt_buf.into_opt(),
+                Ok(()) => dt_buf.into_opt(),
                 Err(e) => {
                     warn!("skip order row: bad entry date: {e}");
                     continue;
@@ -1259,18 +1234,17 @@ impl LegacyMigrationUseCases {
             };
 
             // date required
-            let date = match dt_opt {
-                Some(ts) => match Self::ts_to_naive(ts) {
+            let date = if let Some(ts) = dt_opt {
+                match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
                         warn!("skip customer_order: bad entry date: {e}");
                         continue;
                     }
-                },
-                None => {
-                    warn!("skip customer_order: missing entry date");
-                    continue;
                 }
+            } else {
+                warn!("skip customer_order: missing entry date");
+                continue;
             };
 
             // note: optional, empty→None
@@ -1337,7 +1311,7 @@ impl LegacyMigrationUseCases {
             // order_id (foreign key)
             let mut order_buf = Nullable::<i32>::null();
             let order_opt = match row.get_data(2, &mut order_buf) {
-                Ok(_) => order_buf.into_opt(),
+                Ok(()) => order_buf.into_opt(),
                 Err(e) => {
                     warn!("skip detail row: bad order_id: {e}");
                     continue;
@@ -1357,7 +1331,7 @@ impl LegacyMigrationUseCases {
             // quantity
             let mut qty_buf = Nullable::<i32>::null();
             let qty_opt = match row.get_data(4, &mut qty_buf) {
-                Ok(_) => qty_buf.into_opt(),
+                Ok(()) => qty_buf.into_opt(),
                 Err(e) => {
                     warn!("skip detail row: bad qty: {e}");
                     continue;
@@ -1367,7 +1341,7 @@ impl LegacyMigrationUseCases {
             // price
             let mut price_buf = Nullable::<f64>::null();
             let price_opt = match row.get_data(5, &mut price_buf) {
-                Ok(_) => price_buf.into_opt(),
+                Ok(()) => price_buf.into_opt(),
                 Err(e) => {
                     warn!("skip detail row: bad price: {e}");
                     continue;
@@ -1423,28 +1397,24 @@ impl LegacyMigrationUseCases {
             };
 
             // quantity exists
-            let quantity = match qty_opt {
-                Some(n) => n,
-                None => {
-                    warn!("skip detail {order_id}: missing qty");
-                    continue;
-                }
+            let quantity = if let Some(n) = qty_opt {
+                n
+            } else {
+                warn!("skip detail {order_id}: missing qty");
+                continue;
             };
 
             // price must be > 0
-            let price_cents = match price_opt {
-                Some(p) => {
-                    let c = (p * 100.0).round() as i32;
-                    if c <= 0 {
-                        warn!("skip detail {order_id}: non-positive price_cents ({c})");
-                        continue;
-                    }
-                    c
-                }
-                None => {
-                    warn!("skip detail {order_id}: missing price");
+            let price_cents = if let Some(p) = price_opt {
+                let c = (p * 100.0).round() as i32;
+                if c <= 0 {
+                    warn!("skip detail {order_id}: non-positive price_cents ({c})");
                     continue;
                 }
+                c
+            } else {
+                warn!("skip detail {order_id}: missing price");
+                continue;
             };
 
             let detail = CustomerTxDetail {

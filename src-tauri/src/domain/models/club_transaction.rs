@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ValueRef};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClubTransaction {
     pub id: i32,
     pub import_id: i32,
@@ -13,7 +13,7 @@ pub struct ClubTransaction {
     pub date: NaiveDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TransactionType {
     Deposit,
     Withdrawal,
@@ -23,8 +23,8 @@ impl FromSql for TransactionType {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         // gets the text or returns an error
         match value.as_str()? {
-            "Deposit" => Ok(TransactionType::Deposit),
-            "Withdrawal" => Ok(TransactionType::Withdrawal),
+            "Deposit" => Ok(Self::Deposit),
+            "Withdrawal" => Ok(Self::Withdrawal),
             other => Err(FromSqlError::Other(Box::new(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 format!("Invalid TransactionType: {other}"),

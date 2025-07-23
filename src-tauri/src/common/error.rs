@@ -36,7 +36,7 @@ pub enum AppError {
 }
 
 impl From<AppError> for InvokeError {
-    fn from(val: AppError) -> InvokeError {
-        InvokeError::from(val.to_string())
+    fn from(val: AppError) -> Self {
+        Self::from(val.to_string())
     }
 }

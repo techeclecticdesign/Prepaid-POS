@@ -7,6 +7,7 @@ use chrono::TimeZone;
 pub struct CustomerTransactionPresenter;
 
 impl CustomerTransactionPresenter {
+    #[must_use]
     pub fn to_dto_list(txs: Vec<CustomerTransaction>) -> Vec<CustomerTransactionDto> {
         txs.into_iter()
             .map(|t| CustomerTransactionDto {
@@ -21,6 +22,7 @@ impl CustomerTransactionPresenter {
             .collect()
     }
 
+    #[must_use]
     pub fn to_dto(t: CustomerTransaction) -> CustomerTransactionDto {
         CustomerTransactionDto {
             order_id: t.order_id,
@@ -33,6 +35,7 @@ impl CustomerTransactionPresenter {
         }
     }
 
+    #[must_use]
     pub fn to_search_rows(
         rows: Vec<(CustomerTransaction, String, i64)>,
     ) -> Vec<CustomerTransactionSearchRow> {

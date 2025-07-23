@@ -8,7 +8,8 @@ pub struct MockInventoryTransactionRepo {
 }
 
 impl MockInventoryTransactionRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }
@@ -28,7 +29,7 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
             .lock()
             .unwrap()
             .iter()
-            .find(|x| x.id.map(|v| v as i64) == Some(id))
+            .find(|x| x.id.map(i64::from) == Some(id))
             .cloned())
     }
 
@@ -75,25 +76,17 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| t.created_at.map(|dt| dt.date() == parsed).unwrap_or(false))
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| t.created_at.is_some_and(|dt| dt.date() == parsed));
 
                 // Search match across multiple fields
-                let search_match = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        t.upc.contains(s)
-                            || t.operator_mdoc.to_string().contains(s)
-                            || t.customer_mdoc
-                                .map(|m| m.to_string().contains(s))
-                                .unwrap_or(false)
-                            || t.ref_order_id
-                                .map(|r| r.to_string().contains(s))
-                                .unwrap_or(false)
-                            || t.reference.as_ref().map(|r| r.contains(s)).unwrap_or(false)
-                    })
-                    .unwrap_or(true);
+                let search_match = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    t.upc.contains(s)
+                        || t.operator_mdoc.to_string().contains(s)
+                        || t.customer_mdoc.is_some_and(|m| m.to_string().contains(s))
+                        || t.ref_order_id.is_some_and(|r| r.to_string().contains(s))
+                        || t.reference.as_ref().is_some_and(|r| r.contains(s))
+                });
 
                 date_match && search_match
             })
@@ -118,23 +111,15 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| t.created_at.map(|dt| dt.date() == parsed).unwrap_or(false))
-                    .unwrap_or(true);
-                let search_match = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        t.upc.contains(s)
-                            || t.operator_mdoc.to_string().contains(s)
-                            || t.customer_mdoc
-                                .map(|m| m.to_string().contains(s))
-                                .unwrap_or(false)
-                            || t.ref_order_id
-                                .map(|r| r.to_string().contains(s))
-                                .unwrap_or(false)
-                            || t.reference.as_ref().map(|r| r.contains(s)).unwrap_or(false)
-                    })
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| t.created_at.is_some_and(|dt| dt.date() == parsed));
+                let search_match = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    t.upc.contains(s)
+                        || t.operator_mdoc.to_string().contains(s)
+                        || t.customer_mdoc.is_some_and(|m| m.to_string().contains(s))
+                        || t.ref_order_id.is_some_and(|r| r.to_string().contains(s))
+                        || t.reference.as_ref().is_some_and(|r| r.contains(s))
+                });
 
                 date_match && search_match
             })

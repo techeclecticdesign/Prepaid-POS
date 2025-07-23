@@ -8,7 +8,8 @@ pub struct MockProductRepo {
 }
 
 impl MockProductRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }
@@ -77,11 +78,8 @@ impl ProductRepoTrait for MockProductRepo {
         let mut products: Vec<Product> = guard
             .iter()
             .filter(|p| {
-                let desc_match = desc_like
-                    .as_ref()
-                    .map(|s| p.desc.contains(s))
-                    .unwrap_or(true);
-                let cat_match = category.as_ref().map(|c| &p.category == c).unwrap_or(true);
+                let desc_match = desc_like.as_ref().is_none_or(|s| p.desc.contains(s));
+                let cat_match = category.as_ref().is_none_or(|c| &p.category == c);
                 desc_match && cat_match
             })
             .cloned()
@@ -107,11 +105,8 @@ impl ProductRepoTrait for MockProductRepo {
         let count = guard
             .iter()
             .filter(|p| {
-                let desc_match = desc_like
-                    .as_ref()
-                    .map(|s| p.desc.contains(s))
-                    .unwrap_or(true);
-                let cat_match = category.as_ref().map(|c| &p.category == c).unwrap_or(true);
+                let desc_match = desc_like.as_ref().is_none_or(|s| p.desc.contains(s));
+                let cat_match = category.as_ref().is_none_or(|c| &p.category == c);
                 desc_match && cat_match
             })
             .count();

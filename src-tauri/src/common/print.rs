@@ -2,7 +2,7 @@ use crate::common::error::AppError;
 use crate::domain::models::CustomerTransaction;
 use crate::interface::dto::printer_dto::PrintableLineItem;
 use chrono::Local;
-use printpdf::*;
+use printpdf::{BuiltinFont, IndirectFontRef, Mm, PdfDocument, PdfLayerReference};
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
@@ -79,7 +79,7 @@ fn receipt_header(
     // Customer
     let label = "Customer:";
     layer.use_text(label, font_size, Mm(5.0), y, font);
-    let est_label_width = Mm(5.0 + label.len() as f32 * 1.7);
+    let est_label_width = Mm((label.len() as f32).mul_add(1.7, 5.0));
     let display_name = if customer_name.len() > 22 {
         format!("{}…", &customer_name[..21])
     } else {
@@ -100,7 +100,7 @@ pub fn print_customer_receipt(
     printer_name: &str,
 ) -> Result<(), AppError> {
     let lines = 3 + details.len() + 2;
-    let dynamic_height = (lines as f32) * 7.0 + 20.0;
+    let dynamic_height = (lines as f32).mul_add(7.0, 20.0);
     let min_height = 100.0;
     let page_height = Mm(dynamic_height.max(min_height));
     let (doc, page, layer) = PdfDocument::new("Customer Receipt", Mm(80.0), page_height, "L1");
@@ -135,7 +135,7 @@ pub fn print_customer_receipt(
         current.use_text(&desc, 8.0, Mm(5.0), y, &font);
         current.use_text(d.quantity.to_string(), 8.0, Mm(50.0), y, &font);
         current.use_text(
-            format!("{:.2}", d.price as f64 / 100.0),
+            format!("{:.2}", f64::from(d.price) / 100.0),
             8.0,
             Mm(60.0),
             y,
@@ -146,8 +146,8 @@ pub fn print_customer_receipt(
 
     // total
     y -= Mm(8.0);
-    let total = details.iter().map(|d| d.quantity * d.price).sum::<i32>() as f64 / 100.0;
-    current.use_text(format!("Total: {:.2}", total), 10.0, Mm(5.0), y, &bold_font);
+    let total = f64::from(details.iter().map(|d| d.quantity * d.price).sum::<i32>()) / 100.0;
+    current.use_text(format!("Total: {total:.2}"), 10.0, Mm(5.0), y, &bold_font);
 
     // printed timestamp
     y -= Mm(8.0);
@@ -181,7 +181,7 @@ pub fn print_business_receipt(
 ) -> Result<(), AppError> {
     //  Calculate a height that just fits header + items + footer:
     let lines = 3 + details.len() + 2;
-    let dynamic_height = (lines as f32) * 7.0 + 20.0;
+    let dynamic_height = (lines as f32).mul_add(7.0, 20.0);
     let min_height = 100.0;
     let page_height = Mm(dynamic_height.max(min_height));
     let (doc, page, layer) = PdfDocument::new("Customer Receipt", Mm(80.0), page_height, "L1");
@@ -216,7 +216,7 @@ pub fn print_business_receipt(
         current.use_text(&desc, 8.0, Mm(5.0), y, &font);
         current.use_text(d.quantity.to_string(), 8.0, Mm(50.0), y, &font);
         current.use_text(
-            format!("{:.2}", d.price as f64 / 100.0),
+            format!("{:.2}", f64::from(d.price) / 100.0),
             8.0,
             Mm(60.0),
             y,
@@ -227,13 +227,13 @@ pub fn print_business_receipt(
 
     // total
     y -= Mm(8.0);
-    let total = details.iter().map(|d| d.quantity * d.price).sum::<i32>() as f64 / 100.0;
-    current.use_text(format!("Total: {:.2}", total), 10.0, Mm(5.0), y, &bold_font);
+    let total = f64::from(details.iter().map(|d| d.quantity * d.price).sum::<i32>()) / 100.0;
+    current.use_text(format!("Total: {total:.2}"), 10.0, Mm(5.0), y, &bold_font);
 
     // balance
     y -= Mm(6.0);
     current.use_text(
-        format!("Balance: {:.2}", balance as f64 / 100.0),
+        format!("Balance: {:.2}", f64::from(balance) / 100.0),
         10.0,
         Mm(5.0),
         y,
@@ -252,11 +252,11 @@ pub fn print_business_receipt(
     // signature label centered
     y -= Mm(4.0);
     let label = "signature";
-    let text_x = Mm((80.0 - (label.len() as f32 * 8.0 * 0.35)) / 2.0);
+    let text_x = Mm((label.len() as f32 * 8.0).mul_add(-0.35, 80.0) / 2.0);
     current.use_text(label, 8.0, text_x, y, &font);
 
     // centered roughly
-    let text_x = Mm((80.0 - (label.len() as f32 * 8.0 * 0.35)) / 2.0);
+    let text_x = Mm((label.len() as f32 * 8.0).mul_add(-0.35, 80.0) / 2.0);
     current.use_text(label, 8.0, text_x, y, &font);
 
     // printed timestamp

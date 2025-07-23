@@ -42,11 +42,10 @@ impl ProductUseCases {
                     ..product
                 };
                 return self.repo.update_by_upc(&resurrected);
-            } else {
-                return Err(AppError::Validation(
-                    "Product with this UPC already exists".into(),
-                ));
             }
+            return Err(AppError::Validation(
+                "Product with this UPC already exists".into(),
+            ));
         }
         let now = Some(Utc::now().naive_utc());
         let new_product = Product {
@@ -147,7 +146,7 @@ impl ProductUseCases {
         page: u32,
     ) -> Result<Vec<(Product, i64)>, AppError> {
         let limit = 10;
-        let offset = (page.saturating_sub(1) as i64) * limit;
+        let offset = i64::from(page.saturating_sub(1)) * limit;
         self.repo.search(search, category, limit, offset)
     }
 
@@ -158,7 +157,7 @@ impl ProductUseCases {
         search: Option<String>,
     ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
         let limit = 10;
-        let offset = (page.saturating_sub(1) as i64) * limit;
+        let offset = i64::from(page.saturating_sub(1)) * limit;
         self.price_repo.search(limit, offset, date, search)
     }
 

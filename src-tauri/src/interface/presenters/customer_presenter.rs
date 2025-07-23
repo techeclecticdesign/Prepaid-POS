@@ -5,6 +5,7 @@ use chrono::{TimeZone, Utc};
 pub struct CustomerPresenter;
 
 impl CustomerPresenter {
+    #[must_use]
     pub fn to_dto(c: Customer) -> CustomerReadDto {
         CustomerReadDto {
             mdoc: c.mdoc,
@@ -18,6 +19,7 @@ impl CustomerPresenter {
         cs.into_iter().map(Self::to_dto).collect()
     }
 
+    #[must_use]
     pub fn to_search_rows(rows: Vec<(Customer, i64)>) -> Vec<CustomerSearchRow> {
         rows.into_iter()
             .map(|(c, balance)| CustomerSearchRow {
@@ -27,6 +29,7 @@ impl CustomerPresenter {
             .collect()
     }
 
+    #[must_use]
     pub fn to_pos_dto(c: Customer, balance: i32) -> CustomerPosDto {
         CustomerPosDto {
             customer: Self::to_dto(c),

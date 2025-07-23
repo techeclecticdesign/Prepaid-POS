@@ -7,7 +7,8 @@ pub struct LegacyMigrationController {
 }
 
 impl LegacyMigrationController {
-    pub fn new(deps: LegacyMigrationDeps) -> Self {
+    #[must_use]
+    pub const fn new(deps: LegacyMigrationDeps) -> Self {
         let uc = LegacyMigrationUseCases::new(deps);
         Self { uc }
     }

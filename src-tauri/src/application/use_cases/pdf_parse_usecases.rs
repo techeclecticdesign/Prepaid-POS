@@ -59,8 +59,6 @@ impl PdfParseUseCases {
             AppError::Unexpected(e.to_string())
         })?;
 
-        log::info!("{raw}");
-
         const RE_DATE_GRP: &str = r"(\d{1,2}/\d{1,2}/\d{4})";
         const RE_CURRENCY_GRP: &str = r"(\(?\$[\d,]+\.\d\d\)?)";
         const RE_RANGE: &str = r"(\d{1,2}/\d{1,2}/\d{4})\s*-\s*(\d{1,2}/\d{1,2}/\d{4})";
@@ -98,7 +96,7 @@ impl PdfParseUseCases {
             date: import_date,
             activity_from: from,
             activity_to: to,
-            source_file: filename.clone(),
+            source_file: filename,
         };
         self.import_repo.create(&import)?;
 
@@ -110,7 +108,6 @@ impl PdfParseUseCases {
             log::error!("Bad transaction regex: {e}");
             AppError::Unexpected("Internal parser regex error".into())
         })?;
-        log::info!("d");
         let mdoc_re = Regex::new(r"\((\d+)\)").map_err(|e| {
             log::error!("Bad mdoc regex: {e}");
             AppError::Unexpected("Internal parser regex error".into())
@@ -138,7 +135,7 @@ impl PdfParseUseCases {
             // parse as dollars then convert to cents
             let dollars = Self::parse_money(&c[4], format!("{tx_type:?}").as_str())?;
             let mut cents = (dollars * 100.0).round() as i32;
-            if let TransactionType::Withdrawal = tx_type {
+            if tx_type == TransactionType::Withdrawal {
                 cents = -cents;
             }
             // build tx
@@ -155,21 +152,18 @@ impl PdfParseUseCases {
             self.tx_repo.create(&tx)?;
 
             if let Some(m) = mdoc {
-                match self.cust_repo.get_by_mdoc(m)? {
-                    Some(mut existing) => {
-                        existing.updated = Utc::now().naive_utc();
-                        self.cust_repo.update(&existing)?;
-                    }
-                    None => {
-                        let new_c = Customer {
-                            mdoc: m,
-                            name: name.clone(),
-                            added: Utc::now().naive_utc(),
-                            updated: Utc::now().naive_utc(),
-                        };
-                        log::info!("Creating new customer: {new_c:?}");
-                        self.cust_repo.create(&new_c)?;
-                    }
+                if let Some(mut existing) = self.cust_repo.get_by_mdoc(m)? {
+                    existing.updated = Utc::now().naive_utc();
+                    self.cust_repo.update(&existing)?;
+                } else {
+                    let new_c = Customer {
+                        mdoc: m,
+                        name: name.clone(),
+                        added: Utc::now().naive_utc(),
+                        updated: Utc::now().naive_utc(),
+                    };
+                    log::info!("Creating new customer: {new_c:?}");
+                    self.cust_repo.create(&new_c)?;
                 }
             }
         }

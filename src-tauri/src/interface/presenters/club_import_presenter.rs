@@ -5,6 +5,7 @@ use chrono::{TimeZone, Utc};
 pub struct ClubImportPresenter;
 
 impl ClubImportPresenter {
+    #[must_use]
     pub fn to_import_dto(ci: ClubImport) -> ClubImportReadDto {
         ClubImportReadDto {
             id: ci.id,

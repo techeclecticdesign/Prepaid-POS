@@ -25,7 +25,7 @@ impl ClubUseCases {
         search: Option<String>,
     ) -> Result<Vec<(Customer, i64)>, AppError> {
         let limit = 10;
-        let offset = (page.saturating_sub(1) as i64) * limit;
+        let offset = i64::from(page.saturating_sub(1)) * limit;
         self.customer_repo.search(limit, offset, search)
     }
 
@@ -40,7 +40,7 @@ impl ClubUseCases {
         search: Option<String>,
     ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError> {
         let limit = 10;
-        let offset = (page.saturating_sub(1) as i64) * limit;
+        let offset = i64::from(page.saturating_sub(1)) * limit;
         self.tx_repo.search(limit, offset, date, search)
     }
 

@@ -8,7 +8,8 @@ pub struct MockCategoryRepo {
 }
 
 impl MockCategoryRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }

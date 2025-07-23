@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Product {
     pub upc: String,
     pub desc: String,

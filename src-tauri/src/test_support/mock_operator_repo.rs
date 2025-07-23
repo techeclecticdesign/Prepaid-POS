@@ -3,13 +3,14 @@ use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
 use std::sync::Mutex;
 
-/// Shared mock implementation for OperatorRepoTrait
+/// Shared mock implementation for `OperatorRepoTrait`
 pub struct MockOperatorRepo {
     store: Mutex<Vec<Operator>>,
 }
 
 impl MockOperatorRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }

@@ -9,7 +9,8 @@ pub struct MockCustomerTxDetailRepo {
 }
 
 impl MockCustomerTxDetailRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }
@@ -48,7 +49,7 @@ impl CustomerTxDetailRepoTrait for MockCustomerTxDetailRepo {
             .iter()
             .filter(|d| d.order_id == order_id)
             .cloned()
-            .map(|d| (d.clone(), "product".to_string()))
+            .map(|d| (d, "product".to_string()))
             .collect())
     }
 

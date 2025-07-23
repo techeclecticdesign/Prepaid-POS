@@ -46,8 +46,8 @@ impl TransactionUseCases {
                 "inventory adjustment error: upc={} operator={} error={e}",
                 tx.upc, tx.operator_mdoc
             ),
-        };
-        res.map(|_| tx)
+        }
+        res.map(|()| tx)
     }
 
     pub fn sale_transaction(
@@ -86,7 +86,7 @@ impl TransactionUseCases {
         search: Option<String>,
     ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
         let limit = 10;
-        let offset = (page.saturating_sub(1) as i64) * limit;
+        let offset = i64::from(page.saturating_sub(1)) * limit;
         self.inv_repo.search(limit, offset, date, search)
     }
 
@@ -120,7 +120,7 @@ impl TransactionUseCases {
         search: Option<String>,
     ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError> {
         let limit = 10;
-        let offset = (page.saturating_sub(1) as i64) * limit;
+        let offset = i64::from(page.saturating_sub(1)) * limit;
         self.cust_tx_repo.search(limit, offset, mdoc, date, search)
     }
 

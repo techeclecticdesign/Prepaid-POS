@@ -10,7 +10,7 @@ pub struct SqliteInventoryTransactionRepo {
 }
 
 impl SqliteInventoryTransactionRepo {
-    pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
+    pub const fn new(conn: Arc<Mutex<Connection>>) -> Self {
         Self { conn }
     }
 }
@@ -128,7 +128,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
                 o.name           LIKE ?\
             )",
             );
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let pat_ref = string_params
                 .last()
@@ -180,7 +180,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
         }
         if let Some(ref s) = search {
             sql.push_str(" AND (upc LIKE ? OR operator_mdoc LIKE ?)");
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let last = string_params
                 .last()

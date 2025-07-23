@@ -9,7 +9,7 @@ pub struct SqliteCategoryRepo {
 }
 
 impl SqliteCategoryRepo {
-    pub fn new(conn: Arc<Mutex<Connection>>) -> Self {
+    pub const fn new(conn: Arc<Mutex<Connection>>) -> Self {
         Self { conn }
     }
 }

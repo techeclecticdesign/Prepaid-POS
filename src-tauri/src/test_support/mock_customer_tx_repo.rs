@@ -4,13 +4,14 @@ use crate::domain::models::CustomerTransaction;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use std::sync::Mutex;
 
-/// Shared mock implementation for CustomerTransactionRepoTrait
+/// Shared mock implementation for `CustomerTransactionRepoTrait`
 pub struct MockCustomerTransactionRepo {
     store: Mutex<Vec<CustomerTransaction>>,
 }
 
 impl MockCustomerTransactionRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }
@@ -61,19 +62,15 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| ct.date.map(|dt| dt.date() == parsed).unwrap_or(false))
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| ct.date.is_some_and(|dt| dt.date() == parsed));
 
-                let search_match = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        ct.customer_mdoc.to_string().contains(s)
-                            || ct.operator_mdoc.to_string().contains(s)
-                            || ct.order_id.to_string().contains(s)
-                            || ct.note.as_ref().map(|n| n.contains(s)).unwrap_or(false)
-                    })
-                    .unwrap_or(true);
+                let search_match = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    ct.customer_mdoc.to_string().contains(s)
+                        || ct.operator_mdoc.to_string().contains(s)
+                        || ct.order_id.to_string().contains(s)
+                        || ct.note.as_ref().is_some_and(|n| n.contains(s))
+                });
 
                 mdoc_match && date_match && search_match
             })
@@ -103,19 +100,15 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
                 let date_match = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| ct.date.map(|dt| dt.date() == parsed).unwrap_or(false))
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| ct.date.is_some_and(|dt| dt.date() == parsed));
 
-                let search_match = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        ct.customer_mdoc.to_string().contains(s)
-                            || ct.operator_mdoc.to_string().contains(s)
-                            || ct.order_id.to_string().contains(s)
-                            || ct.note.as_ref().map(|n| n.contains(s)).unwrap_or(false)
-                    })
-                    .unwrap_or(true);
+                let search_match = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    ct.customer_mdoc.to_string().contains(s)
+                        || ct.operator_mdoc.to_string().contains(s)
+                        || ct.order_id.to_string().contains(s)
+                        || ct.note.as_ref().is_some_and(|n| n.contains(s))
+                });
 
                 mdoc_match && date_match && search_match
             })

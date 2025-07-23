@@ -4,6 +4,7 @@ use crate::interface::dto::printer_dto::PrinterDto;
 pub struct PrinterPresenter;
 
 impl PrinterPresenter {
+    #[must_use]
     pub fn to_dto(names: Vec<String>) -> Vec<PrinterDto> {
         names.into_iter().map(|name| PrinterDto { name }).collect()
     }

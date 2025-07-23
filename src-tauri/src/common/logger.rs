@@ -18,7 +18,7 @@ pub fn init() -> Result<(), Box<dyn std::error::Error>> {
                         chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
                         record.level(),
                         message
-                    ))
+                    ));
                 })
                 .chain(std::io::stdout()),
         )
@@ -34,7 +34,7 @@ pub fn init() -> Result<(), Box<dyn std::error::Error>> {
                         record.file().unwrap_or("unknown"),
                         record.line().unwrap_or(0),
                         message
-                    ))
+                    ));
                 })
                 .chain(fern::log_file("app.log")?),
         )

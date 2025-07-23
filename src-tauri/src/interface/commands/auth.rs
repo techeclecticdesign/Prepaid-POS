@@ -39,9 +39,8 @@ pub fn check_login_status(
             st.logged_in = false;
             st.last_activity = None;
             return Ok(false);
-        } else {
-            return Ok(true);
         }
+        return Ok(true);
     }
     Ok(false)
 }

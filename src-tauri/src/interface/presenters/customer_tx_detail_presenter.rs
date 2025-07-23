@@ -5,6 +5,7 @@ use crate::interface::dto::customer_tx_detail_dto::CustomerTxDetailDto;
 pub struct CustomerTxDetailPresenter;
 
 impl CustomerTxDetailPresenter {
+    #[must_use]
     pub fn to_dto(detail: CustomerTxDetail) -> CustomerTxDetailDto {
         CustomerTxDetailDto {
             detail_id: detail.detail_id,
@@ -16,6 +17,7 @@ impl CustomerTxDetailPresenter {
         }
     }
 
+    #[must_use]
     pub fn to_dto_list(rows: Vec<(CustomerTxDetail, String)>) -> Vec<CustomerTxDetailDto> {
         rows.into_iter()
             .map(|(d, product_name)| CustomerTxDetailDto {

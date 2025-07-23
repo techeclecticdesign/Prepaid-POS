@@ -8,7 +8,8 @@ pub struct MockClubTransactionRepo {
 }
 
 impl MockClubTransactionRepo {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
         }
@@ -57,19 +58,15 @@ impl ClubTransactionRepoTrait for MockClubTransactionRepo {
                 let date_ok = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| tx.date.date() == parsed)
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| tx.date.date() == parsed);
 
                 // search filter
-                let search_ok = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        tx.mdoc.is_some_and(|m| m.to_string().contains(s))
-                            || tx.entity_name.contains(s)
-                            || format!("{:?}", tx.tx_type).contains(s)
-                    })
-                    .unwrap_or(true);
+                let search_ok = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    tx.mdoc.is_some_and(|m| m.to_string().contains(s))
+                        || tx.entity_name.contains(s)
+                        || format!("{:?}", tx.tx_type).contains(s)
+                });
 
                 date_ok && search_ok
             })
@@ -95,18 +92,14 @@ impl ClubTransactionRepoTrait for MockClubTransactionRepo {
                 let date_ok = date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                    .map(|parsed| tx.date.date() == parsed)
-                    .unwrap_or(true);
+                    .is_none_or(|parsed| tx.date.date() == parsed);
 
-                let search_ok = search
-                    .as_ref()
-                    .map(|s| {
-                        let s = s.as_str();
-                        tx.mdoc.is_some_and(|m| m.to_string().contains(s))
-                            || tx.entity_name.contains(s)
-                            || format!("{:?}", tx.tx_type).contains(s)
-                    })
-                    .unwrap_or(true);
+                let search_ok = search.as_ref().is_none_or(|s| {
+                    let s = s.as_str();
+                    tx.mdoc.is_some_and(|m| m.to_string().contains(s))
+                        || tx.entity_name.contains(s)
+                        || format!("{:?}", tx.tx_type).contains(s)
+                });
 
                 date_ok && search_ok
             })

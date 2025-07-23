@@ -7,6 +7,7 @@ use chrono::{TimeZone, Utc};
 pub struct ClubTransactionPresenter;
 
 impl ClubTransactionPresenter {
+    #[must_use]
     pub fn to_transaction_dto(ct: ClubTransaction) -> ClubTransactionReadDto {
         ClubTransactionReadDto {
             id: ct.id,
@@ -21,6 +22,7 @@ impl ClubTransactionPresenter {
         cts.into_iter().map(Self::to_transaction_dto).collect()
     }
 
+    #[must_use]
     pub fn to_search_rows(
         rows: Vec<(ClubTransaction, Option<String>)>,
     ) -> Vec<ClubTransactionSearchRow> {

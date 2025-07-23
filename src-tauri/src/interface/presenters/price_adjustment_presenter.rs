@@ -5,6 +5,7 @@ use chrono::{TimeZone, Utc};
 pub struct PriceAdjustmentPresenter;
 
 impl PriceAdjustmentPresenter {
+    #[must_use]
     pub fn to_dto(pa: PriceAdjustment) -> PriceAdjustmentDto {
         PriceAdjustmentDto {
             upc: pa.upc,
@@ -20,6 +21,7 @@ impl PriceAdjustmentPresenter {
         pas.into_iter().map(Self::to_dto).collect()
     }
 
+    #[must_use]
     pub fn to_dto_search(
         rows: Vec<(PriceAdjustment, String, String)>,
     ) -> Vec<PriceAdjustmentSearchRow> {
