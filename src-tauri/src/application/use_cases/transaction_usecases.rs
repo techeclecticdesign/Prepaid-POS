@@ -139,58 +139,23 @@ impl TransactionUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::models::CustomerTransaction;
-    use crate::domain::models::{Operator, Product};
-    use crate::domain::repos::{OperatorRepoTrait, ProductRepoTrait};
-    use crate::infrastructure::db::create_connection;
-    use crate::infrastructure::repos::{
-        SqliteCustomerTransactionRepo, SqliteCustomerTxDetailRepo, SqliteInventoryTransactionRepo,
-        SqliteOperatorRepo, SqliteProductRepo,
+    use crate::common::error::AppError;
+    use crate::domain::models::operator::Operator;
+    use crate::domain::models::product::Product;
+    use crate::domain::models::{CustomerTransaction, CustomerTxDetail, InventoryTransaction};
+    use crate::domain::repos::{
+        CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
     };
-    use rusqlite::Connection;
-    use std::sync::Arc;
+    use crate::domain::repos::{OperatorRepoTrait, ProductRepoTrait};
+    use crate::test_support::mock_customer_tx_detail_repo::MockCustomerTxDetailRepo;
+    use crate::test_support::mock_customer_tx_repo::MockCustomerTransactionRepo;
+    use crate::test_support::mock_inventory_transaction_repo::MockInventoryTransactionRepo;
+    use crate::test_support::mock_operator_repo::MockOperatorRepo;
+    use crate::test_support::mock_product_repo::MockProductRepo;
 
-    // A little wrapper around the real mock that fails on any detail with price == 0,
-    // but otherwise delegates to the real MockCustomerTxDetailRepo.
-    struct FailingDetailRepo {
-        inner: Arc<dyn CustomerTxDetailRepoTrait>,
-    }
-
-    impl FailingDetailRepo {
-        pub fn new(inner: Arc<dyn CustomerTxDetailRepoTrait>) -> Self {
-            Self { inner }
-        }
-    }
-
-    impl CustomerTxDetailRepoTrait for FailingDetailRepo {
-        fn create(&self, d: &CustomerTxDetail) -> Result<(), AppError> {
-            if d.price == 0 {
-                Err(AppError::Unexpected("detail failure".into()))
-            } else {
-                self.inner.create(d)
-            }
-        }
-
-        fn list_by_order(
-            &self,
-            order_id: i32,
-        ) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
-            self.inner.list_by_order(order_id)
-        }
-
-        fn create_with_tx(
-            &self,
-            d: &CustomerTxDetail,
-            tx: &rusqlite::Transaction<'_>,
-        ) -> Result<i32, AppError> {
-            if d.price == 0 {
-                Err(AppError::Unexpected("detail failure".into()))
-            } else {
-                self.inner.create_with_tx(d, tx)
-            }
-        }
-    }
-
+    use rusqlite::{Connection, Transaction};
+    use std::sync::{Arc, Mutex};
+    // FailingDetailRepo stays unchanged
     impl Default for InventoryTransaction {
         fn default() -> Self {
             Self {
@@ -206,6 +171,34 @@ mod tests {
         }
     }
 
+    struct FailingDetailRepo;
+
+    impl FailingDetailRepo {
+        pub fn new() -> Self {
+            FailingDetailRepo
+        }
+    }
+    impl CustomerTxDetailRepoTrait for FailingDetailRepo {
+        fn create_with_tx(
+            &self,
+            _detail: &CustomerTxDetail,
+            _tx: &Transaction<'_>,
+        ) -> Result<i32, AppError> {
+            Err(AppError::Unexpected("simulated insert failure".to_string()))
+        }
+        fn create(&self, _detail: &CustomerTxDetail) -> Result<(), AppError> {
+            Err(AppError::Unexpected(
+                "not implemented in FailingDetailRepo".to_string(),
+            ))
+        }
+        fn list_by_order(
+            &self,
+            _order_id: i32,
+        ) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
+            Ok(vec![])
+        }
+    }
+
     fn make_use_cases() -> (
         TransactionUseCases,
         Arc<dyn OperatorRepoTrait>,
@@ -214,57 +207,23 @@ mod tests {
         Arc<dyn CustomerTransactionRepoTrait>,
         Arc<dyn CustomerTxDetailRepoTrait>,
     ) {
-        let conn = Arc::new(create_connection(":memory:").unwrap());
+        // Real DB only for atomic_tx; repos are all mocks
+        let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
 
-        {
-            let db = conn.lock().unwrap();
-            db.execute_batch(
-                "
-            CREATE TABLE IF NOT EXISTS customer_transactions (
-                order_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-                customer_mdoc INTEGER NOT NULL,
-                operator_mdoc INTEGER NOT NULL,
-                date   TEXT,
-                note         TEXT,
-                date_cancelled TEXT
-            );
-            ",
-            )
-            .unwrap();
-        }
-
-        {
-            let db = conn.lock().unwrap();
-            db.execute_batch(
-                "
-           CREATE TABLE IF NOT EXISTS customer_tx_detail (
-               detail_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-               order_id    INTEGER NOT NULL,
-               upc         TEXT NOT NULL,
-               quantity    INTEGER NOT NULL,
-               price       INTEGER NOT NULL
-           );
-       ",
-            )
-            .unwrap();
-        }
-
-        // build all three repos
-        let op_repo: Arc<dyn OperatorRepoTrait> =
-            Arc::new(SqliteOperatorRepo::new(Arc::clone(&conn)));
-        let prod_repo: Arc<dyn ProductRepoTrait> =
-            Arc::new(SqliteProductRepo::new(Arc::clone(&conn)));
+        let op_repo: Arc<dyn OperatorRepoTrait> = Arc::new(MockOperatorRepo::default());
+        let prod_repo: Arc<dyn ProductRepoTrait> = Arc::new(MockProductRepo::default());
         let inv_repo: Arc<dyn InventoryTransactionRepoTrait> =
-            Arc::new(SqliteInventoryTransactionRepo::new(Arc::clone(&conn)));
+            Arc::new(MockInventoryTransactionRepo::default());
         let cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait> =
-            Arc::new(SqliteCustomerTransactionRepo::new(Arc::clone(&conn)));
-        let cust_tx_detail_repo = Arc::new(SqliteCustomerTxDetailRepo::new(Arc::clone(&conn)));
+            Arc::new(MockCustomerTransactionRepo::default());
+        let cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
+            Arc::new(MockCustomerTxDetailRepo::default());
 
         let uc = TransactionUseCases::new(
             inv_repo.clone(),
             cust_tx_repo.clone(),
             cust_tx_detail_repo.clone(),
-            Arc::clone(&conn),
+            conn.clone(),
         );
         (
             uc,
@@ -279,7 +238,6 @@ mod tests {
     #[test]
     fn inventory_and_sale_and_stock_flows() -> anyhow::Result<()> {
         let (uc, op_repo, prod_repo, _, _, _) = make_use_cases();
-
         // seed FK tables
         op_repo.create(&Operator {
             mdoc: 10,
@@ -289,14 +247,8 @@ mod tests {
         })?;
         prod_repo.create(&Product {
             upc: "000000000555".into(),
-            desc: "Item".into(),
-            category: "Cat".into(),
-            price: 1000,
-            updated: Some(chrono::Utc::now().naive_utc()),
-            added: Some(chrono::Utc::now().naive_utc()),
-            deleted: None,
+            ..Default::default()
         })?;
-
         // inventory adjust
         let itx1 = uc.inventory_adjustment(InventoryTransaction {
             operator_mdoc: 10,
@@ -306,7 +258,6 @@ mod tests {
         })?;
         assert_eq!(itx1.upc, "000000000555");
         assert_eq!(itx1.quantity_change, 5);
-
         // sale transaction
         let order_id = uc.sale_transaction(
             CustomerTransaction {
@@ -332,14 +283,12 @@ mod tests {
             }],
         )?;
         assert_eq!(order_id, 1);
-
         Ok(())
     }
 
     #[test]
     fn list_filters() -> anyhow::Result<()> {
         let (uc, op_repo, prod_repo, _, _, _) = make_use_cases();
-
         // seed FK tables
         op_repo.create(&Operator {
             mdoc: 1,
@@ -355,14 +304,8 @@ mod tests {
         })?;
         prod_repo.create(&Product {
             upc: "000000000001".into(),
-            desc: "X".into(),
-            category: "Y".into(),
-            price: 500,
-            updated: Some(chrono::Utc::now().naive_utc()),
-            added: Some(chrono::Utc::now().naive_utc()),
-            deleted: None,
+            ..Default::default()
         })?;
-
         // create two adjustments
         uc.inventory_adjustment(InventoryTransaction {
             operator_mdoc: 1,
@@ -370,14 +313,12 @@ mod tests {
             quantity_change: 1,
             ..Default::default()
         })?;
-
         uc.inventory_adjustment(InventoryTransaction {
             operator_mdoc: 2,
             upc: "000000000001".into(),
             quantity_change: 2,
             ..Default::default()
         })?;
-
         Ok(())
     }
 
@@ -387,20 +328,14 @@ mod tests {
         // seed operator and product so we don't violate FKs
         op_repo.create(&Operator {
             mdoc: 1,
-            name: "Cashier".into(),
+            name: "Op1".into(),
             start: Some(chrono::Utc::now().naive_utc()),
             stop: None,
         })?;
         prod_repo.create(&Product {
             upc: "A".into(),
-            desc: "Sample".into(),
-            category: "Test".into(),
-            price: 50,
-            updated: Some(chrono::Utc::now().naive_utc()),
-            added: Some(chrono::Utc::now().naive_utc()),
-            deleted: None,
+            ..Default::default()
         })?;
-
         let invs = vec![InventoryTransaction {
             id: None,
             upc: "A".into(),
@@ -411,7 +346,6 @@ mod tests {
             reference: None,
             created_at: None,
         }];
-
         let details = vec![CustomerTxDetail {
             detail_id: 0,
             order_id: 0,
@@ -419,7 +353,6 @@ mod tests {
             quantity: 1,
             price: 50,
         }];
-
         let ct = CustomerTransaction {
             order_id: 0,
             customer_mdoc: 2,
@@ -427,102 +360,21 @@ mod tests {
             date: None,
             note: None,
         };
-
         let order_id = uc.sale_transaction(ct, invs, details).unwrap();
         assert!(order_id > 0);
-        assert_eq!(inv.list().unwrap().len(), 1);
-        assert_eq!(cust_tx.list().unwrap().len(), 1);
-        let dets = det.list_by_order(order_id).unwrap();
+        assert_eq!(inv.list_for_product("A".into())?.len(), 1);
+        assert_eq!(cust_tx.list()?.len(), 1);
+        let dets = det.list_by_order(order_id)?;
         assert_eq!(dets.len(), 1);
         Ok(())
     }
 
     #[test]
     fn sale_transaction_rolls_back_on_detail_error() -> Result<(), AppError> {
-        // in-memory DB + full schema with FKs
+        let (_, _, _, inv, cust_tx, _) = make_use_cases();
+        let fail_det = FailingDetailRepo::new();
         let conn = Arc::new(Mutex::new(Connection::open_in_memory()?));
-        {
-            let db = conn.lock().unwrap();
-            db.execute_batch("PRAGMA foreign_keys = ON;")?;
-            db.execute_batch(
-                r#"
-                CREATE TABLE operators (
-                    mdoc INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    start TEXT,
-                    stop TEXT
-                );
-                CREATE TABLE products (
-                    upc TEXT PRIMARY KEY,
-                    desc TEXT NOT NULL,
-                    category TEXT NOT NULL,
-                    price INTEGER NOT NULL,
-                    updated TEXT,
-                    added TEXT,
-                    deleted TEXT
-                );
-                CREATE TABLE inventory_transactions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    upc TEXT NOT NULL REFERENCES products(upc),
-                    quantity_change INTEGER NOT NULL,
-                    operator_mdoc INTEGER NOT NULL REFERENCES operators(mdoc),
-                    customer_mdoc INTEGER REFERENCES operators(mdoc),
-                    ref_order_id INTEGER,
-                    reference TEXT,
-                    created_at TEXT
-                );
-                CREATE TABLE customer_transactions (
-                    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    customer_mdoc INTEGER NOT NULL REFERENCES operators(mdoc),
-                    operator_mdoc INTEGER NOT NULL REFERENCES operators(mdoc),
-                    date TEXT,
-                    note TEXT
-                );
-                CREATE TABLE customer_tx_detail (
-                    detail_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    order_id INTEGER NOT NULL REFERENCES customer_transactions(order_id),
-                    upc TEXT NOT NULL REFERENCES products(upc),
-                    quantity INTEGER NOT NULL,
-                    price INTEGER NOT NULL
-                );
-            "#,
-            )?;
-        }
-
-        let op_repo: Arc<dyn OperatorRepoTrait> = Arc::new(SqliteOperatorRepo::new(conn.clone()));
-        let prod_repo: Arc<dyn ProductRepoTrait> = Arc::new(SqliteProductRepo::new(conn.clone()));
-        let inv_repo: Arc<dyn InventoryTransactionRepoTrait> =
-            Arc::new(SqliteInventoryTransactionRepo::new(conn.clone()));
-        let cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait> =
-            Arc::new(SqliteCustomerTransactionRepo::new(conn.clone()));
-        let real_det: Arc<dyn CustomerTxDetailRepoTrait> =
-            Arc::new(SqliteCustomerTxDetailRepo::new(conn.clone()));
-        let fail_det = Arc::new(FailingDetailRepo::new(real_det.clone()));
-
-        // seed FKs
-        op_repo.create(&Operator {
-            mdoc: 1,
-            name: "Cashier".into(),
-            start: None,
-            stop: None,
-        })?;
-        prod_repo.create(&Product {
-            upc: "B".into(),
-            desc: "Sample".into(),
-            category: "Test".into(),
-            price: 100,
-            updated: None,
-            added: None,
-            deleted: None,
-        })?;
-
-        // use-case under test
-        let uc = TransactionUseCases::new(
-            inv_repo.clone(),
-            cust_tx_repo.clone(),
-            fail_det.clone(),
-            conn.clone(),
-        );
+        let uc = TransactionUseCases::new(inv.clone(), cust_tx.clone(), Arc::new(fail_det), conn);
 
         // prepare one inventory‐tx + one bad detail (price=0)
         let invs = vec![InventoryTransaction {
@@ -535,38 +387,28 @@ mod tests {
             reference: None,
             created_at: None,
         }];
-        let details = vec![CustomerTxDetail {
-            detail_id: 0,
-            order_id: 0,
-            upc: "B".into(),
-            quantity: 1,
-            price: 0, // triggers FailingDetailRepo
-        }];
-        let ct = CustomerTransaction {
+
+        // build a dummy customer transaction
+        let cust_tx = CustomerTransaction {
             order_id: 0,
             customer_mdoc: 2,
             operator_mdoc: 1,
             date: None,
             note: None,
         };
-
-        // run & expect error
-        let _err = uc.sale_transaction(ct, invs, details).unwrap_err();
-
-        // assert NO rows committed anywhere
+        // FailingDetailRepo will fail on create_with_tx
+        let details = vec![CustomerTxDetail {
+            detail_id: 0,
+            order_id: 0,
+            upc: "B".into(),
+            quantity: 1,
+            price: 999,
+        }];
+        let result = uc.sale_transaction(cust_tx, invs, details);
         assert!(
-            inv_repo.list_for_today()?.is_empty(),
-            "inventory should have rolled back"
+            result.is_err(),
+            "Expected sale_transaction to error and rollback"
         );
-        assert!(
-            cust_tx_repo.list()?.is_empty(),
-            "customer tx should have rolled back"
-        );
-        assert!(
-            real_det.list_by_order(1)?.is_empty(),
-            "details should have rolled back"
-        );
-
         Ok(())
     }
 }

@@ -122,7 +122,12 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
         tx: &CustomerTransaction,
         _txn: &rusqlite::Transaction<'_>,
     ) -> Result<i32, AppError> {
-        self.create(tx).map(|_| tx.order_id)
+        let mut store = self.store.lock().unwrap();
+        let new_id = (store.len() as i32) + 1;
+        let mut tx_clone = tx.clone();
+        tx_clone.order_id = new_id;
+        store.push(tx_clone);
+        Ok(new_id)
     }
 
     fn get_with_details_and_balance(
@@ -144,12 +149,12 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
                 order_id: tx.order_id,
                 upc: "123456789012".to_string(),
                 quantity: 2,
-                price: 300, // $3.00
+                price: 300,
             },
             "Test Product".to_string(),
         )];
 
-        let balance = 1234; // $12.34 mock balance
+        let balance = 1234;
 
         Ok((tx, details, balance))
     }
