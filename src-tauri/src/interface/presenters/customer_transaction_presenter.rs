@@ -37,7 +37,7 @@ impl CustomerTransactionPresenter {
 
     #[must_use]
     pub fn to_search_rows(
-        rows: Vec<(CustomerTransaction, String, i64)>,
+        rows: Vec<(CustomerTransaction, String, i32)>,
     ) -> Vec<CustomerTransactionSearchRow> {
         rows.into_iter()
             .map(|(ct, operator_name, spent)| CustomerTransactionSearchRow {

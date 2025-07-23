@@ -23,13 +23,13 @@ impl Default for MockInventoryTransactionRepo {
 }
 
 impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
-    fn get_by_id(&self, id: i64) -> Result<Option<InventoryTransaction>, AppError> {
+    fn get_by_id(&self, id: i32) -> Result<Option<InventoryTransaction>, AppError> {
         Ok(self
             .store
             .lock()
             .unwrap()
             .iter()
-            .find(|x| x.id.map(i64::from) == Some(id))
+            .find(|x| x.id == Some(id))
             .cloned())
     }
 
@@ -62,8 +62,8 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
@@ -103,7 +103,7 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
         Ok(transactions.get(start..end).unwrap_or(&[]).to_vec())
     }
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError> {
         let guard = self.store.lock().unwrap();
         let count = guard
             .iter()
@@ -125,7 +125,7 @@ impl InventoryTransactionRepoTrait for MockInventoryTransactionRepo {
             })
             .count();
 
-        Ok(count as i64)
+        Ok(count as i32)
     }
 
     fn list_for_customer(&self, cust: i32) -> Result<Vec<InventoryTransaction>, AppError> {

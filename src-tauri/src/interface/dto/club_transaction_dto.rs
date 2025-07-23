@@ -13,7 +13,7 @@ pub struct ClubTransactionReadDto {
 #[derive(Serialize)]
 pub struct ClubTransactionSearchResult {
     pub items: Vec<ClubTransactionSearchRow>,
-    pub total_count: i64,
+    pub total_count: i32,
 }
 
 #[derive(Serialize)]

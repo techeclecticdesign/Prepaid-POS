@@ -21,26 +21,26 @@ impl ClubUseCases {
 
     pub fn search_customers(
         &self,
-        page: u32,
+        page: i32,
         search: Option<String>,
-    ) -> Result<Vec<(Customer, i64)>, AppError> {
+    ) -> Result<Vec<(Customer, i32)>, AppError> {
         let limit = 10;
-        let offset = i64::from(page.saturating_sub(1)) * limit;
+        let offset = page.saturating_sub(1) * limit;
         self.customer_repo.search(limit, offset, search)
     }
 
-    pub fn count_customers(&self, search: Option<String>) -> Result<u32, AppError> {
-        self.customer_repo.count(search).map(|c| c as u32)
+    pub fn count_customers(&self, search: Option<String>) -> Result<i32, AppError> {
+        self.customer_repo.count(search)
     }
 
     pub fn search_club_transactions(
         &self,
-        page: u32,
+        page: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError> {
         let limit = 10;
-        let offset = i64::from(page.saturating_sub(1)) * limit;
+        let offset = page.saturating_sub(1) * limit;
         self.tx_repo.search(limit, offset, date, search)
     }
 
@@ -48,7 +48,7 @@ impl ClubUseCases {
         &self,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<i64, AppError> {
+    ) -> Result<i32, AppError> {
         self.tx_repo.count(date, search)
     }
 }

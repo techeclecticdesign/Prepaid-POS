@@ -16,7 +16,7 @@ impl SqlitePriceAdjustmentRepo {
 }
 
 impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
-    fn get_by_id(&self, id: i64) -> Result<Option<PriceAdjustment>, AppError> {
+    fn get_by_id(&self, id: i32) -> Result<Option<PriceAdjustment>, AppError> {
         let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, operator_mdoc, upc, old, new, created_at \
@@ -25,7 +25,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
         let mut rows = stmt.query(params![id])?;
         if let Some(r) = rows.next()? {
             Ok(Some(PriceAdjustment {
-                id: r.get(0)?,
+                id: r.get::<_, i32>(0)?,
                 operator_mdoc: r.get(1)?,
                 upc: r.get(2)?,
                 old: r.get(3)?,
@@ -50,13 +50,13 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
         &self,
         a: &PriceAdjustment,
         tx: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError> {
+    ) -> Result<i32, AppError> {
         tx.execute(
             "INSERT INTO price_adjustments (operator_mdoc, upc, old, new, created_at) \
          VALUES (?1, ?2, ?3, ?4, datetime('now'))",
             rusqlite::params![a.operator_mdoc, a.upc, a.old, a.new],
         )?;
-        Ok(())
+        Ok(tx.last_insert_rowid() as i32)
     }
 
     fn list_for_operator(&self, operator_mdoc: i32) -> Result<Vec<PriceAdjustment>, AppError> {
@@ -142,8 +142,8 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
@@ -214,7 +214,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError> {
         let conn = self
             .conn
             .lock()

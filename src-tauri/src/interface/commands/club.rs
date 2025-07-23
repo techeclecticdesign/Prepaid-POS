@@ -8,7 +8,7 @@ use tauri::State;
 #[tauri::command]
 pub fn search_customers(
     controller: State<Arc<ClubController>>,
-    page: Option<u32>,
+    page: Option<i32>,
     search: Option<String>,
 ) -> Result<CustomerSearchResult, AppError> {
     let page = page.unwrap_or(1);
@@ -18,7 +18,7 @@ pub fn search_customers(
 #[tauri::command]
 pub fn search_club_transactions(
     controller: State<Arc<ClubController>>,
-    page: Option<u32>,
+    page: Option<i32>,
     date: Option<String>,
     search: Option<String>,
 ) -> Result<ClubTransactionSearchResult, AppError> {

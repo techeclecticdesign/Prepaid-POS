@@ -10,13 +10,13 @@ pub struct CreateCategoryDto {
 #[derive(serde::Deserialize, Validate)]
 pub struct DeleteCategoryDto {
     #[validate(range(min = 1, message = "id must be non-zero and positive"))]
-    pub id: i64,
+    pub id: i32,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Validate)]
 pub struct CategoryDto {
     #[validate(range(min = 1, message = "id must be non-zero and positive"))]
-    pub id: i64,
+    pub id: i32,
 
     #[validate(length(min = 1, message = "name cannot be empty"))]
     pub name: String,

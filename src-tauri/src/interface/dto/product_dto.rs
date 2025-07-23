@@ -46,13 +46,13 @@ pub struct ProductDto {
 #[derive(Serialize)]
 pub struct ProductSearchRow {
     pub product: ProductDto,
-    pub available: i64,
+    pub available: i32,
 }
 
 #[derive(Serialize)]
 pub struct ProductSearchResult {
     pub products: Vec<ProductSearchRow>,
-    pub total_count: u32,
+    pub total_count: i32,
 }
 
 #[cfg(test)]

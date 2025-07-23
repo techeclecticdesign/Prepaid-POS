@@ -68,8 +68,8 @@ impl ClubTransactionRepoTrait for SqliteClubTransactionRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError> {
@@ -126,7 +126,7 @@ impl ClubTransactionRepoTrait for SqliteClubTransactionRepo {
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError> {
         let conn = self
             .conn
             .lock()
@@ -147,7 +147,10 @@ impl ClubTransactionRepoTrait for SqliteClubTransactionRepo {
             params.push(last);
         }
         let mut stmt = conn.prepare(&sql)?;
-        stmt.query_row(params.as_slice(), |r| r.get(0))
-            .map_err(Into::into)
+        stmt.query_row(params.as_slice(), |r| {
+            let count: i64 = r.get(0)?;
+            Ok(count as i32)
+        })
+        .map_err(Into::into)
     }
 }

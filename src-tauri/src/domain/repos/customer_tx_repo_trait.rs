@@ -10,25 +10,25 @@ pub trait CustomerTransactionRepoTrait: Send + Sync {
     fn list(&self) -> Result<Vec<CustomerTransaction>, AppError>;
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError>;
+    ) -> Result<Vec<(CustomerTransaction, String, i32)>, AppError>;
 
     fn count(
         &self,
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<i64, AppError>;
+    ) -> Result<i32, AppError>;
 
     fn create_with_tx(
         &self,
         tx_data: &CustomerTransaction,
         tx: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError>;
+    ) -> Result<i32, AppError>;
 
     fn get_with_details_and_balance(&self, _order_id: i32) -> Result<SaleDetailsTuple, AppError>;
 }

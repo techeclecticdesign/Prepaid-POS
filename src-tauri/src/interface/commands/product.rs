@@ -54,7 +54,7 @@ pub fn search_products(
     controller: State<Arc<ProductController>>,
     search: Option<String>,
     category: Option<String>,
-    page: Option<u32>,
+    page: Option<i32>,
 ) -> Result<ProductSearchResult, AppError> {
     let page = page.unwrap_or(1);
     controller.search_products(search, category, page)
@@ -63,7 +63,7 @@ pub fn search_products(
 #[tauri::command]
 pub fn search_price_adjustments(
     controller: State<Arc<ProductController>>,
-    page: Option<u32>,
+    page: Option<i32>,
     date: Option<String>,
     search: Option<String>,
 ) -> Result<PriceAdjustmentSearchResult, AppError> {

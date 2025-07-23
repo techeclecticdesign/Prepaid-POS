@@ -57,12 +57,12 @@ impl CustomerRepoTrait for MockCustomerRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         search: Option<String>,
-    ) -> Result<Vec<(Customer, i64)>, AppError> {
+    ) -> Result<Vec<(Customer, i32)>, AppError> {
         let guard = self.store.lock().unwrap();
-        let mut items: Vec<(Customer, i64)> = guard
+        let mut items: Vec<(Customer, i32)> = guard
             .iter()
             .filter(|c| {
                 search.as_ref().is_none_or(|s| {
@@ -80,7 +80,7 @@ impl CustomerRepoTrait for MockCustomerRepo {
         Ok(items.get(start..end).unwrap_or(&[]).to_vec())
     }
 
-    fn count(&self, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, search: Option<String>) -> Result<i32, AppError> {
         let guard = self.store.lock().unwrap();
         let count = guard
             .iter()
@@ -91,7 +91,7 @@ impl CustomerRepoTrait for MockCustomerRepo {
                 })
             })
             .count();
-        Ok(count as i64)
+        Ok(count as i32)
     }
 
     fn list_customer_accounts(&self) -> Result<Vec<(Customer, i32)>, AppError> {

@@ -46,7 +46,7 @@ pub struct InventoryTransactionSearchRow {
 #[derive(Serialize)]
 pub struct InventoryTransactionSearchResult {
     pub transactions: Vec<InventoryTransactionSearchRow>,
-    pub total_count: u32,
+    pub total_count: i32,
 }
 
 #[cfg(test)]

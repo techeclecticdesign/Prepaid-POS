@@ -19,7 +19,7 @@ impl ProductPresenter {
     }
 
     #[must_use]
-    pub fn to_search_row(p: Product, available: i64) -> ProductSearchRow {
+    pub fn to_search_row(p: Product, available: i32) -> ProductSearchRow {
         ProductSearchRow {
             product: Self::to_dto(p),
             available,

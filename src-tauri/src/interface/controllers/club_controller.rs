@@ -22,7 +22,7 @@ impl ClubController {
 
     pub fn search_customers(
         &self,
-        page: u32,
+        page: i32,
         search: Option<String>,
     ) -> Result<CustomerSearchResult, AppError> {
         let tuples = self.uc.search_customers(page, search.clone())?;
@@ -35,7 +35,7 @@ impl ClubController {
 
     pub fn search_club_transactions(
         &self,
-        page: u32,
+        page: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<ClubTransactionSearchResult, AppError> {

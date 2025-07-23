@@ -43,8 +43,8 @@ impl ClubTransactionRepoTrait for MockClubTransactionRepo {
     }
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError> {
@@ -84,7 +84,7 @@ impl ClubTransactionRepoTrait for MockClubTransactionRepo {
     }
 
     // Count matching entries (ignore pagination)
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError> {
         let guard = self.store.lock().unwrap();
         let cnt = guard
             .iter()
@@ -105,6 +105,6 @@ impl ClubTransactionRepoTrait for MockClubTransactionRepo {
             })
             .count();
 
-        Ok(cnt as i64)
+        Ok(cnt as i32)
     }
 }

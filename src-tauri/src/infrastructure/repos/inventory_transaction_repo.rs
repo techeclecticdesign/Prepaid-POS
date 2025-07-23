@@ -16,7 +16,7 @@ impl SqliteInventoryTransactionRepo {
 }
 
 impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
-    fn get_by_id(&self, id: i64) -> Result<Option<InventoryTransaction>, AppError> {
+    fn get_by_id(&self, id: i32) -> Result<Option<InventoryTransaction>, AppError> {
         let conn = self.conn.safe_lock()?;
         let mut stmt = conn.prepare(
             "SELECT id, upc, quantity_change, operator_mdoc, customer_mdoc, ref_order_id, reference, created_at \
@@ -81,8 +81,8 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
@@ -161,7 +161,7 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError> {
         let conn = self
             .conn
             .lock()
@@ -189,8 +189,11 @@ impl InventoryTransactionRepoTrait for SqliteInventoryTransactionRepo {
             params.push(last);
         }
         let mut stmt = conn.prepare(&sql)?;
-        stmt.query_row(params.as_slice(), |r| r.get(0))
-            .map_err(Into::into)
+        stmt.query_row(params.as_slice(), |r| {
+            let cnt: i64 = r.get(0)?;
+            Ok(cnt as i32)
+        })
+        .map_err(Into::into)
     }
 
     fn list_for_customer(&self, customer_mdoc: i32) -> Result<Vec<InventoryTransaction>, AppError> {

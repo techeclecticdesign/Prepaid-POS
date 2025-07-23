@@ -11,14 +11,14 @@ pub struct CustomerReadDto {
 #[derive(Serialize)]
 pub struct CustomerSearchRow {
     pub customer: CustomerReadDto,
-    pub balance: i64,
+    pub balance: i32,
 }
 
 /// The full search result
 #[derive(Serialize)]
 pub struct CustomerSearchResult {
     pub customers: Vec<CustomerSearchRow>,
-    pub total_count: u32,
+    pub total_count: i32,
 }
 
 #[derive(Serialize)]

@@ -7,10 +7,10 @@ pub trait ClubTransactionRepoTrait: Send + Sync {
     fn create(&self, tx: &ClubTransaction) -> Result<(), AppError>;
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError>;
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError>;
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError>;
 }

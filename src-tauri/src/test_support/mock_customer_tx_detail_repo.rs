@@ -57,8 +57,8 @@ impl CustomerTxDetailRepoTrait for MockCustomerTxDetailRepo {
         &self,
         d: &CustomerTxDetail,
         _tx: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError> {
-        self.create(d)
+    ) -> Result<i32, AppError> {
+        self.create(d).map(|_| d.detail_id)
     }
 }
 

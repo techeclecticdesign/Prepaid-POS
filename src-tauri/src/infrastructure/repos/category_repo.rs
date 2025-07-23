@@ -48,7 +48,7 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
-    fn get_by_id(&self, id: i64) -> Result<Option<Category>, AppError> {
+    fn get_by_id(&self, id: i32) -> Result<Option<Category>, AppError> {
         let conn = self
             .conn
             .lock()
@@ -75,7 +75,7 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
         Ok(())
     }
 
-    fn soft_delete(&self, id: i64) -> Result<(), AppError> {
+    fn soft_delete(&self, id: i32) -> Result<(), AppError> {
         let conn = self
             .conn
             .lock()
@@ -105,7 +105,7 @@ impl CategoryRepoTrait for SqliteCategoryRepo {
         }
     }
 
-    fn undelete(&self, id: i64) -> Result<(), AppError> {
+    fn undelete(&self, id: i32) -> Result<(), AppError> {
         let conn = self
             .conn
             .lock()

@@ -38,7 +38,7 @@ impl CategoryRepoTrait for MockCategoryRepo {
             .collect())
     }
 
-    fn get_by_id(&self, id: i64) -> Result<Option<Category>, AppError> {
+    fn get_by_id(&self, id: i32) -> Result<Option<Category>, AppError> {
         Ok(self
             .store
             .lock()
@@ -51,7 +51,7 @@ impl CategoryRepoTrait for MockCategoryRepo {
     fn create(&self, c: String) -> Result<(), AppError> {
         let mut guard = self.store.lock().unwrap();
         let new_category = Category {
-            id: (guard.len() as i64) + 1,
+            id: (guard.len() as i32) + 1,
             name: c,
             deleted: None,
         };
@@ -59,7 +59,7 @@ impl CategoryRepoTrait for MockCategoryRepo {
         Ok(())
     }
 
-    fn soft_delete(&self, id: i64) -> Result<(), AppError> {
+    fn soft_delete(&self, id: i32) -> Result<(), AppError> {
         let mut guard = self.store.lock().unwrap();
         if let Some(cat) = guard.iter_mut().find(|c| c.id == id) {
             cat.deleted = Some(chrono::Utc::now().naive_utc());
@@ -77,7 +77,7 @@ impl CategoryRepoTrait for MockCategoryRepo {
             .cloned())
     }
 
-    fn undelete(&self, id: i64) -> Result<(), AppError> {
+    fn undelete(&self, id: i32) -> Result<(), AppError> {
         let mut guard = self.store.lock().unwrap();
         if let Some(cat) = guard.iter_mut().find(|c| c.id == id) {
             cat.deleted = None;

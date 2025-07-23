@@ -94,7 +94,7 @@ impl ProductUseCases {
             p.updated = Some(chrono::Utc::now().naive_utc());
             self.repo.update_by_upc_with_tx(&p, tx)?;
 
-            Ok(tx.last_insert_rowid())
+            Ok(tx.last_insert_rowid() as i32)
         })?;
 
         // now that TX is committed (and Mutex released), read back the row:
@@ -143,21 +143,21 @@ impl ProductUseCases {
         &self,
         search: Option<String>,
         category: Option<String>,
-        page: u32,
-    ) -> Result<Vec<(Product, i64)>, AppError> {
+        page: i32,
+    ) -> Result<Vec<(Product, i32)>, AppError> {
         let limit = 10;
-        let offset = i64::from(page.saturating_sub(1)) * limit;
+        let offset = page.saturating_sub(1) * limit;
         self.repo.search(search, category, limit, offset)
     }
 
     pub fn search_price_adjustments(
         &self,
-        page: u32,
+        page: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
         let limit = 10;
-        let offset = i64::from(page.saturating_sub(1)) * limit;
+        let offset = page.saturating_sub(1) * limit;
         self.price_repo.search(limit, offset, date, search)
     }
 
@@ -165,18 +165,15 @@ impl ProductUseCases {
         &self,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<u32, AppError> {
-        let count_i64 = self.price_repo.count(date, search)?;
-        let count_u32 = u32::try_from(count_i64)
-            .map_err(|_| AppError::Unexpected(format!("count overflow: {count_i64}")))?;
-        Ok(count_u32)
+    ) -> Result<i32, AppError> {
+        self.price_repo.count(date, search)
     }
 
     pub fn list_categories(&self) -> Result<Vec<Category>, AppError> {
         self.category_repo.list_active()
     }
 
-    pub fn delete_category(&self, id: i64) -> Result<(), AppError> {
+    pub fn delete_category(&self, id: i32) -> Result<(), AppError> {
         match self.category_repo.soft_delete(id) {
             Ok(()) => {
                 info!("category deleted: id={id}");
@@ -213,7 +210,7 @@ impl ProductUseCases {
         &self,
         search: Option<String>,
         category: Option<String>,
-    ) -> Result<u32, AppError> {
+    ) -> Result<i32, AppError> {
         self.repo.count(search, category)
     }
 }

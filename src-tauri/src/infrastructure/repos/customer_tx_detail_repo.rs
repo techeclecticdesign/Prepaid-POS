@@ -41,7 +41,7 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
         &self,
         d: &CustomerTxDetail,
         tx: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError> {
+    ) -> Result<i32, AppError> {
         if d.detail_id > 0 {
             tx.execute(
                 "INSERT INTO customer_tx_detail
@@ -57,7 +57,8 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
                 rusqlite::params![d.order_id, d.upc, d.quantity, d.price],
             )?;
         }
-        Ok(())
+        let detail_id = tx.last_insert_rowid() as i32;
+        Ok(detail_id)
     }
 
     fn list_by_order(&self, order_id: i32) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
@@ -75,9 +76,11 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
              WHERE d.order_id = ?1",
         )?;
         let rows = stmt.query_map(params![order_id], |r| {
+            let raw_detail_id: i64 = r.get(0)?;
+            let raw_order_id: i64 = r.get(1)?;
             let detail = CustomerTxDetail {
-                detail_id: r.get(0)?,
-                order_id: r.get(1)?,
+                detail_id: raw_detail_id as i32,
+                order_id: raw_order_id as i32,
                 upc: r.get(2)?,
                 quantity: r.get(4)?,
                 price: r.get(5)?,

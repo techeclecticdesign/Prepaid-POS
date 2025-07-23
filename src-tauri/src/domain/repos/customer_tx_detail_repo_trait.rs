@@ -11,5 +11,5 @@ pub trait CustomerTxDetailRepoTrait: Send + Sync {
         &self,
         d: &CustomerTxDetail,
         tx: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError>;
+    ) -> Result<i32, AppError>;
 }

@@ -20,7 +20,7 @@ impl CustomerPresenter {
     }
 
     #[must_use]
-    pub fn to_search_rows(rows: Vec<(Customer, i64)>) -> Vec<CustomerSearchRow> {
+    pub fn to_search_rows(rows: Vec<(Customer, i32)>) -> Vec<CustomerSearchRow> {
         rows.into_iter()
             .map(|(c, balance)| CustomerSearchRow {
                 customer: Self::to_dto(c),

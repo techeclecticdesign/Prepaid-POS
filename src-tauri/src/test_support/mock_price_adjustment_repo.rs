@@ -32,17 +32,17 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
         &self,
         adj: &PriceAdjustment,
         _tx: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError> {
-        self.create(adj)
+    ) -> Result<i32, AppError> {
+        self.create(adj).map(|_| adj.id)
     }
 
-    fn get_by_id(&self, id: i64) -> Result<Option<PriceAdjustment>, AppError> {
+    fn get_by_id(&self, id: i32) -> Result<Option<PriceAdjustment>, AppError> {
         Ok(self
             .store
             .lock()
             .unwrap()
             .iter()
-            .find(|x| x.id == id as i32)
+            .find(|x| x.id == id)
             .cloned())
     }
 
@@ -78,8 +78,8 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
@@ -114,7 +114,7 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
         Ok(adjustments.get(start..end).unwrap_or(&[]).to_vec())
     }
 
-    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError> {
         let guard = self.store.lock().unwrap();
 
         let count = guard
@@ -134,6 +134,6 @@ impl PriceAdjustmentRepoTrait for MockPriceAdjustmentRepo {
             })
             .count();
 
-        Ok(count as i64)
+        Ok(count as i32)
     }
 }

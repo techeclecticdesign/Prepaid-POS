@@ -46,12 +46,12 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError> {
+    ) -> Result<Vec<(CustomerTransaction, String, i32)>, AppError> {
         let mut items = self
             .store
             .lock()
@@ -75,7 +75,7 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
                 mdoc_match && date_match && search_match
             })
             .cloned()
-            .map(|ct| (ct, "operator".to_string(), 0))
+            .map(|ct| (ct, "operator".to_string(), 0_i32))
             .collect::<Vec<_>>();
 
         items.sort_by(|a, b| b.0.date.cmp(&a.0.date));
@@ -89,7 +89,7 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<i64, AppError> {
+    ) -> Result<i32, AppError> {
         let count = self
             .store
             .lock()
@@ -114,15 +114,15 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
             })
             .count();
 
-        Ok(count as i64)
+        Ok(count as i32)
     }
 
     fn create_with_tx(
         &self,
         tx: &CustomerTransaction,
         _txn: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError> {
-        self.create(tx)
+    ) -> Result<i32, AppError> {
+        self.create(tx).map(|_| tx.order_id)
     }
 
     fn get_with_details_and_balance(

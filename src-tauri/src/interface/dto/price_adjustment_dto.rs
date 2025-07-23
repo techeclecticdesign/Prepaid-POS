@@ -30,7 +30,7 @@ pub struct PriceAdjustmentSearchRow {
 #[derive(Serialize)]
 pub struct PriceAdjustmentSearchResult {
     pub adjustments: Vec<PriceAdjustmentSearchRow>,
-    pub total_count: u32,
+    pub total_count: i32,
 }
 
 #[cfg(test)]

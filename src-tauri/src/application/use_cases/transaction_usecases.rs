@@ -57,9 +57,7 @@ impl TransactionUseCases {
         mut details: Vec<CustomerTxDetail>,
     ) -> Result<i32, AppError> {
         atomic_tx(&self.conn, |tx| {
-            self.cust_tx_repo.create_with_tx(&cust_tx, tx)?;
-
-            let order_id = tx.last_insert_rowid() as i32;
+            let order_id = self.cust_tx_repo.create_with_tx(&cust_tx, tx)?;
 
             for inv in &invs {
                 self.inv_repo.create_with_tx(inv, tx)?;
@@ -81,12 +79,12 @@ impl TransactionUseCases {
 
     pub fn search_inventory_transactions(
         &self,
-        page: u32,
+        page: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
         let limit = 10;
-        let offset = i64::from(page.saturating_sub(1)) * limit;
+        let offset = page.saturating_sub(1) * limit;
         self.inv_repo.search(limit, offset, date, search)
     }
 
@@ -94,8 +92,8 @@ impl TransactionUseCases {
         &self,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<u32, AppError> {
-        self.inv_repo.count(date, search).map(|c| c as u32)
+    ) -> Result<i32, AppError> {
+        self.inv_repo.count(date, search)
     }
 
     pub fn list_for_customer(
@@ -114,13 +112,13 @@ impl TransactionUseCases {
 
     pub fn search_customer_transactions(
         &self,
-        page: u32,
+        page: i32,
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError> {
+    ) -> Result<Vec<(CustomerTransaction, String, i32)>, AppError> {
         let limit = 10;
-        let offset = i64::from(page.saturating_sub(1)) * limit;
+        let offset = page.saturating_sub(1) * limit;
         self.cust_tx_repo.search(limit, offset, mdoc, date, search)
     }
 
@@ -129,10 +127,8 @@ impl TransactionUseCases {
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<u32, AppError> {
-        self.cust_tx_repo
-            .count(mdoc, date, search)
-            .map(|c| c as u32)
+    ) -> Result<i32, AppError> {
+        self.cust_tx_repo.count(mdoc, date, search)
     }
 
     pub fn get_sale_details(&self, order_id: i32) -> Result<SaleDetailsTuple, AppError> {
@@ -186,7 +182,7 @@ mod tests {
             &self,
             d: &CustomerTxDetail,
             tx: &rusqlite::Transaction<'_>,
-        ) -> Result<(), AppError> {
+        ) -> Result<i32, AppError> {
             if d.price == 0 {
                 Err(AppError::Unexpected("detail failure".into()))
             } else {

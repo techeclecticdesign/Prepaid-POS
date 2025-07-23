@@ -48,7 +48,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         &self,
         tx_data: &CustomerTransaction,
         tx: &rusqlite::Transaction<'_>,
-    ) -> Result<(), AppError> {
+    ) -> Result<i32, AppError> {
         if tx_data.order_id > 0 {
             tx.execute(
                 "INSERT INTO customer_transactions
@@ -75,7 +75,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
                 ],
             )?;
         }
-        Ok(())
+        Ok(tx_data.order_id)
     }
 
     fn get(&self, order_id: i32) -> Result<Option<CustomerTransaction>, AppError> {
@@ -120,12 +120,12 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<Vec<(CustomerTransaction, String, i64)>, AppError> {
+    ) -> Result<Vec<(CustomerTransaction, String, i32)>, AppError> {
         let conn = self
             .conn
             .lock()
@@ -189,7 +189,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
             };
             let operator_name: String = r.get(5)?;
             let spent: i64 = r.get(6)?;
-            Ok((ct, operator_name, spent))
+            Ok((ct, operator_name, spent as i32))
         })?;
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
@@ -199,7 +199,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
-    ) -> Result<i64, AppError> {
+    ) -> Result<i32, AppError> {
         let conn = self
             .conn
             .lock()
@@ -228,8 +228,11 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         }
 
         let mut stmt = conn.prepare(&sql)?;
-        stmt.query_row(params.as_slice(), |r| r.get(0))
-            .map_err(Into::into)
+        stmt.query_row(params.as_slice(), |r| {
+            let cnt: i64 = r.get(0)?;
+            Ok(cnt as i32)
+        })
+        .map_err(Into::into)
     }
 
     fn get_with_details_and_balance(

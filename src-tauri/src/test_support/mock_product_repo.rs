@@ -71,9 +71,9 @@ impl ProductRepoTrait for MockProductRepo {
         &self,
         desc_like: Option<String>,
         category: Option<String>,
-        limit: i64,
-        offset: i64,
-    ) -> Result<Vec<(Product, i64)>, AppError> {
+        limit: i32,
+        offset: i32,
+    ) -> Result<Vec<(Product, i32)>, AppError> {
         let guard = self.store.lock().unwrap();
         let mut products: Vec<Product> = guard
             .iter()
@@ -87,20 +87,21 @@ impl ProductRepoTrait for MockProductRepo {
 
         products.sort_by(|a, b| b.added.cmp(&a.added));
 
-        let start = offset as usize;
-        let end = std::cmp::min(start + limit as usize, products.len());
+        let start = if offset < 0 { 0 } else { offset as usize };
+        let limit_usize = if limit < 0 { 0 } else { limit as usize };
+        let end = std::cmp::min(start + limit_usize, products.len());
         let sliced = if start < products.len() {
             &products[start..end]
         } else {
             &[]
         };
 
-        let v = sliced.iter().cloned().map(|p| (p, 0_i64)).collect();
+        let v = sliced.iter().cloned().map(|p| (p, 0_i32)).collect();
 
         Ok(v)
     }
 
-    fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<u32, AppError> {
+    fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<i32, AppError> {
         let guard = self.store.lock().unwrap();
         let count = guard
             .iter()
@@ -110,6 +111,6 @@ impl ProductRepoTrait for MockProductRepo {
                 desc_match && cat_match
             })
             .count();
-        Ok(count as u32)
+        Ok(count as i32)
     }
 }

@@ -82,7 +82,7 @@ impl ProductController {
         &self,
         search: Option<String>,
         category: Option<String>,
-        page: u32,
+        page: i32,
     ) -> Result<ProductSearchResult, AppError> {
         let tuples = self
             .uc
@@ -103,7 +103,7 @@ impl ProductController {
 
     pub fn search_price_adjustments(
         &self,
-        page: u32,
+        page: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<PriceAdjustmentSearchResult, AppError> {

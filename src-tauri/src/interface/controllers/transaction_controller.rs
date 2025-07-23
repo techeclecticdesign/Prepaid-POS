@@ -91,7 +91,7 @@ impl TransactionController {
 
     pub fn search_inventory_transactions(
         &self,
-        page: u32,
+        page: i32,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<InventoryTransactionSearchResult, AppError> {
@@ -118,12 +118,12 @@ impl TransactionController {
 
     pub fn search_customer_transactions(
         &self,
-        page: u32,
+        page: i32,
         mdoc: Option<i32>,
         date: Option<String>,
         search: Option<String>,
     ) -> Result<CustomerTransactionSearchResult, AppError> {
-        let tuples: Vec<(CustomerTransaction, String, i64)> = self
+        let tuples: Vec<(CustomerTransaction, String, i32)> = self
             .uc
             .search_customer_transactions(page, mdoc, date.clone(), search.clone())?;
         let total = self.uc.count_customer_transactions(mdoc, date, search)?;

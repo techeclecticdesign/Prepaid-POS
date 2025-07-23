@@ -50,10 +50,10 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
 
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         search: Option<String>,
-    ) -> Result<Vec<(Customer, i64)>, AppError> {
+    ) -> Result<Vec<(Customer, i32)>, AppError> {
         let conn = self
             .conn
             .lock()
@@ -113,13 +113,13 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
                 added: r.get(2)?,
                 updated: r.get(3)?,
             };
-            let balance: i64 = r.get(4)?;
+            let balance: i32 = r.get(4)?;
             Ok((cust, balance))
         })?;
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
-    fn count(&self, search: Option<String>) -> Result<i64, AppError> {
+    fn count(&self, search: Option<String>) -> Result<i32, AppError> {
         let conn = self
             .conn
             .lock()
@@ -140,8 +140,11 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
         }
 
         let mut stmt = conn.prepare(&sql)?;
-        stmt.query_row(params.as_slice(), |r| r.get(0))
-            .map_err(Into::into)
+        stmt.query_row(params.as_slice(), |r| {
+            let count: i64 = r.get(0)?;
+            Ok(count as i32) // cast as i32
+        })
+        .map_err(Into::into)
     }
 
     fn list_customer_accounts(&self) -> Result<Vec<(Customer, i32)>, AppError> {
@@ -186,7 +189,11 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
                     added: r.get(2)?,
                     updated: r.get(3)?,
                 },
-                r.get(4)?,
+                {
+                    // cast balance from i64 to i32
+                    let balance: i64 = r.get(4)?;
+                    balance as i32
+                },
             ))
         })?;
         rows.collect::<Result<_, _>>().map_err(Into::into)

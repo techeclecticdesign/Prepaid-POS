@@ -105,9 +105,9 @@ impl ProductRepoTrait for SqliteProductRepo {
         &self,
         desc_like: Option<String>,
         category: Option<String>,
-        limit: i64,
-        offset: i64,
-    ) -> Result<Vec<(Product, i64)>, AppError> {
+        limit: i32,
+        offset: i32,
+    ) -> Result<Vec<(Product, i32)>, AppError> {
         let conn = self
             .conn
             .lock()
@@ -164,14 +164,14 @@ impl ProductRepoTrait for SqliteProductRepo {
                 deleted: r.get(6)?,
             };
             let available: i64 = r.get(7)?;
-            Ok((product, available))
+            Ok((product, available as i32))
         })?;
 
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
     // Returns the total count of products matching the optional filters.
-    fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<u32, AppError> {
+    fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<i32, AppError> {
         let conn = self.conn.safe_lock()?;
         let mut sql = String::from("SELECT COUNT(*) FROM products");
         let mut clauses = Vec::new();
@@ -195,7 +195,7 @@ impl ProductRepoTrait for SqliteProductRepo {
             sql.push_str(&clauses.join(" AND "));
         }
 
-        let count: u32 = conn.query_row(&sql, params.as_slice(), |r| r.get(0))?;
+        let count: i32 = conn.query_row(&sql, params.as_slice(), |r| r.get(0))?;
         Ok(count)
     }
 }

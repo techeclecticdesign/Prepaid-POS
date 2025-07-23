@@ -8,11 +8,11 @@ pub trait CustomerRepoTrait: Send + Sync {
     fn create(&self, customer: &Customer) -> Result<(), AppError>;
     fn search(
         &self,
-        limit: i64,
-        offset: i64,
+        limit: i32,
+        offset: i32,
         search: Option<String>,
-    ) -> Result<Vec<(Customer, i64)>, AppError>;
+    ) -> Result<Vec<(Customer, i32)>, AppError>;
 
-    fn count(&self, search: Option<String>) -> Result<i64, AppError>;
+    fn count(&self, search: Option<String>) -> Result<i32, AppError>;
     fn list_customer_accounts(&self) -> Result<Vec<(Customer, i32)>, AppError>;
 }

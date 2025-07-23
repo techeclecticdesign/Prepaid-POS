@@ -54,7 +54,7 @@ pub fn sale_transaction(
 #[tauri::command]
 pub fn search_inventory_transactions(
     controller: State<Arc<TransactionController>>,
-    page: Option<u32>,
+    page: Option<i32>,
     date: Option<String>,
     search: Option<String>,
 ) -> Result<InventoryTransactionSearchResult, AppError> {
@@ -73,7 +73,7 @@ pub fn list_order_details(
 #[tauri::command]
 pub fn search_customer_transactions(
     controller: State<Arc<TransactionController>>,
-    page: Option<u32>,
+    page: Option<i32>,
     mdoc: Option<i32>,
     date: Option<String>,
     search: Option<String>,
