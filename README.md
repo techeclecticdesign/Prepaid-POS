@@ -1,6 +1,6 @@
 # Prepaid Point-of-Sale
 
-<img src="https://github.com/user-attachments/assets/7d399a0d-e3ac-42d3-9c85-2a066c04fedc" alt="Terminal Screenshot" width="700"/>
+![Terminal Screenshot](doc/terminal.png)
 
 A robust point-of-sale system built with **Tauri** and a **React** frontend, designed to run on Windows machines. It features frontend and backend validation, along with unit and integration tests to ensure stability during real-world use.
 
