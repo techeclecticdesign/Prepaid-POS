@@ -137,7 +137,7 @@ impl LegacyMigrationUseCases {
                 .deps
                 .sqlite_conn
                 .lock()
-                .map_err(|e| AppError::Unexpected(format!("mutex poisoned: {}", e)))?;
+                .map_err(|e| AppError::Unexpected(format!("mutex poisoned: {e}")))?;
             sqlite_conn
                 .execute_batch("BEGIN;")
                 .map_err(|e| AppError::Unexpected(e.to_string()))?;
@@ -164,7 +164,7 @@ impl LegacyMigrationUseCases {
                 .deps
                 .sqlite_conn
                 .lock()
-                .map_err(|e| AppError::Unexpected(format!("mutex poisoned: {}", e)))?;
+                .map_err(|e| AppError::Unexpected(format!("mutex poisoned: {e}")))?;
             sqlite_conn
                 .execute_batch("COMMIT;")
                 .map_err(|e| AppError::Unexpected(e.to_string()))?;
@@ -209,7 +209,7 @@ impl LegacyMigrationUseCases {
             let mdoc_opt = match row.get_data(1, &mut mdoc_buf) {
                 Ok(_) => mdoc_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip operator row: bad id: {}", e);
+                    warn!("skip operator row: bad id: {e}");
                     raws.push((None, None, None, None));
                     continue;
                 }
@@ -219,7 +219,7 @@ impl LegacyMigrationUseCases {
             let name_opt = match row.get_text(2, &mut name_buf) {
                 Ok(_) => Some(String::from_utf8_lossy(&name_buf).into_owned()),
                 Err(e) => {
-                    warn!("skip operator row: bad name: {}", e);
+                    warn!("skip operator row: bad name: {e}");
                     raws.push((None, None, None, None));
                     continue;
                 }
@@ -229,7 +229,7 @@ impl LegacyMigrationUseCases {
             let start_opt = match row.get_data(3, &mut start_buf) {
                 Ok(_) => start_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip operator row: bad start date: {}", e);
+                    warn!("skip operator row: bad start date: {e}");
                     raws.push((None, None, None, None));
                     continue;
                 }
@@ -239,7 +239,7 @@ impl LegacyMigrationUseCases {
             let stop_opt = match row.get_data(4, &mut stop_buf) {
                 Ok(_) => stop_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip operator row: bad stop date: {}", e);
+                    warn!("skip operator row: bad stop date: {e}");
                     raws.push((None, None, None, None));
                     continue;
                 }
@@ -261,7 +261,7 @@ impl LegacyMigrationUseCases {
             let mdoc = match mdoc_opt {
                 Some(id) if id > 0 => id,
                 Some(id) => {
-                    warn!("skip operator row: invalid mdoc <= 0: {}", id);
+                    warn!("skip operator row: invalid mdoc <= 0: {id}");
                     continue;
                 }
                 None => {
@@ -283,7 +283,7 @@ impl LegacyMigrationUseCases {
             }
             // skip duplicates
             if let Ok(Some(_)) = self.deps.op_repo.get_by_mdoc(mdoc) {
-                warn!("skip operator row: duplicate mdoc {}", mdoc);
+                warn!("skip operator row: duplicate mdoc {mdoc}");
                 continue;
             }
             // convert start
@@ -291,12 +291,12 @@ impl LegacyMigrationUseCases {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
-                        warn!("skip operator row {}: bad start date: {}", mdoc, e);
+                        warn!("skip operator row {mdoc}: bad start date: {e}");
                         continue;
                     }
                 },
                 None => {
-                    warn!("skip operator row {}: start NULL", mdoc);
+                    warn!("skip operator row {mdoc}: start NULL");
                     continue;
                 }
             };
@@ -305,7 +305,7 @@ impl LegacyMigrationUseCases {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => Some(dt),
                     Err(e) => {
-                        warn!("skip operator row {}: bad stop date: {}", mdoc, e);
+                        warn!("skip operator row {mdoc}: bad stop date: {e}");
                         continue;
                     }
                 },
@@ -319,7 +319,7 @@ impl LegacyMigrationUseCases {
                 stop,
             };
             if let Err(e) = self.deps.op_repo.create(&op) {
-                warn!("skip operator row {}: insert error: {}", mdoc, e);
+                warn!("skip operator row {mdoc}: insert error: {e}");
                 continue;
             }
         }
@@ -356,7 +356,7 @@ impl LegacyMigrationUseCases {
             let upc = match row.get_text(1, &mut upc_buf) {
                 Ok(_) => Some(String::from_utf8_lossy(&upc_buf).to_string()),
                 Err(e) => {
-                    warn!("skip product row: bad UPC ({})", e);
+                    warn!("skip product row: bad UPC ({e})");
                     None
                 }
             };
@@ -364,7 +364,7 @@ impl LegacyMigrationUseCases {
             let category = match row.get_text(2, &mut cat_buf) {
                 Ok(_) => Some(String::from_utf8_lossy(&cat_buf).to_string()),
                 Err(e) => {
-                    warn!("skip product row: bad category ({})", e);
+                    warn!("skip product row: bad category ({e})");
                     None
                 }
             };
@@ -372,7 +372,7 @@ impl LegacyMigrationUseCases {
             let desc = match row.get_text(3, &mut desc_buf) {
                 Ok(_) => Some(String::from_utf8_lossy(&desc_buf).to_string()),
                 Err(e) => {
-                    warn!("skip product row: bad description ({})", e);
+                    warn!("skip product row: bad description ({e})");
                     None
                 }
             };
@@ -380,7 +380,7 @@ impl LegacyMigrationUseCases {
             let price = match row.get_data(4, &mut price_buf) {
                 Ok(_) => price_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip product row: bad price ({})", e);
+                    warn!("skip product row: bad price ({e})");
                     None
                 }
             };
@@ -388,7 +388,7 @@ impl LegacyMigrationUseCases {
             let updated = match row.get_data(5, &mut upd_buf) {
                 Ok(_) => upd_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip product row: bad updated ({})", e);
+                    warn!("skip product row: bad updated ({e})");
                     None
                 }
             };
@@ -396,7 +396,7 @@ impl LegacyMigrationUseCases {
             let added = match row.get_data(6, &mut add_buf) {
                 Ok(_) => add_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip product row: bad added ({})", e);
+                    warn!("skip product row: bad added ({e})");
                     None
                 }
             };
@@ -423,7 +423,7 @@ impl LegacyMigrationUseCases {
                     if !(t.len() == 8 || t.len() == 12 || t.len() == 14)
                         || !t.chars().all(|c| c.is_ascii_digit())
                     {
-                        warn!("skip product row: invalid UPC '{}'", t);
+                        warn!("skip product row: invalid UPC '{t}'");
                         continue;
                     }
                     t.to_string()
@@ -469,19 +469,19 @@ impl LegacyMigrationUseCases {
                 }
             };
             if price_cents <= 0 {
-                warn!("skip product row: zero or negative price {}", price_cents);
+                warn!("skip product row: zero or negative price {price_cents}");
                 continue;
             }
             let updated = match upd_opt {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
-                        warn!("skip product {}: bad updated date: {}", upc, e);
+                        warn!("skip product {upc}: bad updated date: {e}");
                         continue;
                     }
                 },
                 None => {
-                    warn!("skip product {}: updated was NULL", upc);
+                    warn!("skip product {upc}: updated was NULL");
                     continue;
                 }
             };
@@ -489,12 +489,12 @@ impl LegacyMigrationUseCases {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
-                        warn!("skip product {}: bad added date: {}", upc, e);
+                        warn!("skip product {upc}: bad added date: {e}");
                         continue;
                     }
                 },
                 None => {
-                    warn!("skip product {}: added was NULL", upc);
+                    warn!("skip product {upc}: added was NULL");
                     continue;
                 }
             };
@@ -502,7 +502,7 @@ impl LegacyMigrationUseCases {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => Some(dt),
                     Err(e) => {
-                        warn!("skip product {}: bad deleted date: {}", upc, e);
+                        warn!("skip product {upc}: bad deleted date: {e}");
                         continue;
                     }
                 },
@@ -519,7 +519,7 @@ impl LegacyMigrationUseCases {
                 deleted,
             };
             if let Err(e) = self.deps.product_repo.create(&prod) {
-                warn!("skip product: insert error: {}", e);
+                warn!("skip product: insert error: {e}");
                 continue;
             }
         }
@@ -569,7 +569,7 @@ impl LegacyMigrationUseCases {
                     continue;
                 }
                 if let Err(e) = self.deps.category_repo.create(name.to_string()) {
-                    warn!("skip category '{}': insert error: {}", name, e);
+                    warn!("skip category '{name}': insert error: {e}");
                     continue;
                 }
             } else {
@@ -600,16 +600,16 @@ impl LegacyMigrationUseCases {
             .map_err(|e| AppError::Unexpected(e.to_string()))?
         {
             if let Err(e) = row.get_data(1, &mut mdoc_buf) {
-                warn!("skip customer row: bad mdoc: {}", e);
+                warn!("skip customer row: bad mdoc: {e}");
                 continue;
             }
             if let Err(e) = row.get_text(2, &mut name_buf) {
-                warn!("skip customer row: bad name: {}", e);
+                warn!("skip customer row: bad name: {e}");
                 continue;
             }
             // added timestamp
             if let Err(e) = row.get_data(3, &mut added_buf) {
-                warn!("skip customer row: bad added date: {}", e);
+                warn!("skip customer row: bad added date: {e}");
                 continue;
             }
 
@@ -653,7 +653,7 @@ impl LegacyMigrationUseCases {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
-                        warn!("skip customer row: invalid added date: {}", e);
+                        warn!("skip customer row: invalid added date: {e}");
                         continue;
                     }
                 },
@@ -670,7 +670,7 @@ impl LegacyMigrationUseCases {
                 updated: dt,
             };
             if let Err(e) = self.deps.customer_repo.create(&cust) {
-                warn!("skip customer row {}: insert error: {}", mdoc, e);
+                warn!("skip customer row {mdoc}: insert error: {e}");
                 continue;
             }
         }
@@ -700,19 +700,19 @@ impl LegacyMigrationUseCases {
             let mut imp_buf = Nullable::<Timestamp>::null();
 
             if let Err(e) = row.get_data(1, &mut id_buf) {
-                warn!("skip club stmt row: bad id ({})", e);
+                warn!("skip club stmt row: bad id ({e})");
                 continue;
             }
             if let Err(e) = row.get_text(2, &mut activity_buf) {
-                warn!("skip club stmt row: bad activity ({})", e);
+                warn!("skip club stmt row: bad activity ({e})");
                 continue;
             }
             if let Err(e) = row.get_text(3, &mut file_buf) {
-                warn!("skip club stmt row: bad file name ({})", e);
+                warn!("skip club stmt row: bad file name ({e})");
                 continue;
             }
             if let Err(e) = row.get_data(4, &mut imp_buf) {
-                warn!("skip club stmt row: bad imported date ({})", e);
+                warn!("skip club stmt row: bad imported date ({e})");
                 continue;
             }
 
@@ -742,27 +742,27 @@ impl LegacyMigrationUseCases {
             let act_str = match act_opt {
                 Some(s) => s,
                 None => {
-                    warn!("skip club stmt row {}: missing activity", id);
+                    warn!("skip club stmt row {id}: missing activity");
                     continue;
                 }
             };
             // split "MM/DD/YYYY - MM/DD/YYYY"
             let parts: Vec<&str> = act_str.split(" - ").collect();
             if parts.len() != 2 {
-                warn!("skip club stmt row {}: invalid activity '{}'", id, act_str);
+                warn!("skip club stmt row {id}: invalid activity '{act_str}'");
                 continue;
             }
             let from_date = match chrono::NaiveDate::parse_from_str(parts[0].trim(), "%m/%d/%Y") {
                 Ok(d) => d,
                 Err(e) => {
-                    warn!("skip club_import {}: bad from date: {}", id, e);
+                    warn!("skip club_import {id}: bad from date: {e}");
                     continue;
                 }
             };
             let to_date = match chrono::NaiveDate::parse_from_str(parts[1].trim(), "%m/%d/%Y") {
                 Ok(d) => d,
                 Err(e) => {
-                    warn!("skip club_import {}: bad to date: {}", id, e);
+                    warn!("skip club_import {id}: bad to date: {e}");
                     continue;
                 }
             };
@@ -775,13 +775,13 @@ impl LegacyMigrationUseCases {
                 Some(f) => {
                     let t = f.trim();
                     if t.is_empty() {
-                        warn!("skip club stmt row {}: empty source_file", id);
+                        warn!("skip club stmt row {id}: empty source_file");
                         continue;
                     }
                     t.to_string()
                 }
                 None => {
-                    warn!("skip club stmt row {}: missing file name", id);
+                    warn!("skip club stmt row {id}: missing file name");
                     continue;
                 }
             };
@@ -789,14 +789,14 @@ impl LegacyMigrationUseCases {
             let imp_ts = match imp_opt {
                 Some(ts) => ts,
                 None => {
-                    warn!("skip club stmt row {}: missing imported date", id);
+                    warn!("skip club stmt row {id}: missing imported date");
                     continue;
                 }
             };
             let date = match Self::ts_to_naive(imp_ts) {
                 Ok(dt) => dt,
                 Err(e) => {
-                    warn!("skip club_import {}: bad imported ts: {}", id, e);
+                    warn!("skip club_import {id}: bad imported ts: {e}");
                     continue;
                 }
             };
@@ -809,7 +809,7 @@ impl LegacyMigrationUseCases {
                 date,
             };
             if let Err(e) = self.deps.club_imports_repo.create(&stmt) {
-                warn!("skip club_import {}: insert error: {}", id, e);
+                warn!("skip club_import {id}: insert error: {e}");
                 continue;
             }
         }
@@ -886,9 +886,9 @@ impl LegacyMigrationUseCases {
         I: IntoIterator<Item = RawClubTransactionRow>,
     {
         let re_paren = regex::Regex::new(r"\((\d+)\)")
-            .map_err(|e| AppError::Unexpected(format!("invalid re_paren: {}", e)))?;
+            .map_err(|e| AppError::Unexpected(format!("invalid re_paren: {e}")))?;
         let re_wd = regex::Regex::new(r"^(.+?)\s+(\d+)\s+(.+)$")
-            .map_err(|e| AppError::Unexpected(format!("invalid re_wd: {}", e)))?;
+            .map_err(|e| AppError::Unexpected(format!("invalid re_wd: {e}")))?;
 
         for (id_opt, imp_opt, received_opt, tx_opt, amt_opt, dt_opt) in raw_rows {
             let id = match id_opt {
@@ -901,21 +901,21 @@ impl LegacyMigrationUseCases {
             let import_id = match imp_opt {
                 Some(i) if i > 0 => i,
                 _ => {
-                    warn!("skip detail {}: invalid import_id", id);
+                    warn!("skip detail {id}: invalid import_id");
                     continue;
                 }
             };
             let received = match received_opt {
                 Some(s) => s.trim().to_string(),
                 None => {
-                    warn!("skip detail {}: missing received", id);
+                    warn!("skip detail {id}: missing received");
                     continue;
                 }
             };
             let tx_type_str = match tx_opt {
                 Some(s) => s.trim().to_string(),
                 None => {
-                    warn!("skip detail {}: missing tx type", id);
+                    warn!("skip detail {id}: missing tx type");
                     continue;
                 }
             };
@@ -928,7 +928,7 @@ impl LegacyMigrationUseCases {
                     .and_then(|c| c.get(1))
                     .and_then(|m| m.as_str().parse().ok());
                 if mdoc_val.is_none() {
-                    warn!("skip detail {}: invalid mdoc in '{}'", id, received);
+                    warn!("skip detail {id}: invalid mdoc in '{received}'");
                     continue;
                 }
                 let name = received
@@ -945,7 +945,7 @@ impl LegacyMigrationUseCases {
                         let ent = match cap.get(3) {
                             Some(m) => m.as_str().trim().to_string(),
                             None => {
-                                warn!("skip detail {}: regex capture group 3 missing", id);
+                                warn!("skip detail {id}: regex capture group 3 missing");
                                 continue;
                             }
                         };
@@ -954,7 +954,7 @@ impl LegacyMigrationUseCases {
                         let ent = match cap.get(1) {
                             Some(m) => m.as_str().trim().to_string(),
                             None => {
-                                warn!("skip detail {}: regex capture group 1 missing", id);
+                                warn!("skip detail {id}: regex capture group 1 missing");
                                 continue;
                             }
                         };
@@ -964,7 +964,7 @@ impl LegacyMigrationUseCases {
                     (received.clone(), None)
                 }
             } else {
-                warn!("skip detail {}: unknown tx type '{}'", id, tx_type_str);
+                warn!("skip detail {id}: unknown tx type '{tx_type_str}'");
                 continue;
             };
 
@@ -978,12 +978,12 @@ impl LegacyMigrationUseCases {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
-                        warn!("skip detail {}: bad date: {}", id, e);
+                        warn!("skip detail {id}: bad date: {e}");
                         continue;
                     }
                 },
                 None => {
-                    warn!("skip detail {}: missing date", id);
+                    warn!("skip detail {id}: missing date");
                     continue;
                 }
             };
@@ -998,7 +998,7 @@ impl LegacyMigrationUseCases {
                 date,
             };
             if let Err(e) = self.deps.club_transaction_repo.create(&detail) {
-                warn!("skip detail {}: insert error: {}", id, e);
+                warn!("skip detail {id}: insert error: {e}");
                 continue;
             }
         }
@@ -1103,7 +1103,7 @@ impl LegacyMigrationUseCases {
             let refnum = ref_opt.as_deref().unwrap_or("").trim();
             let note = note_opt.as_deref().unwrap_or("").trim();
             let reference = if !refnum.is_empty() && !note.is_empty() {
-                Some(format!("{} - {}", refnum, note))
+                Some(format!("{refnum} - {note}"))
             } else if !refnum.is_empty() {
                 Some(refnum.to_string())
             } else if !note.is_empty() {
@@ -1116,21 +1116,21 @@ impl LegacyMigrationUseCases {
             if !((upc.len() == 8 || upc.len() == 12 || upc.len() == 14)
                 && upc.chars().all(|c| c.is_ascii_digit()))
             {
-                warn!("skip inv {:?}: invalid upc '{}'", ref_order_id, upc);
+                warn!("skip inv {ref_order_id:?}: invalid upc '{upc}'");
                 continue;
             }
             // amount
             let quantity_change = adj_opt.unwrap_or_default();
             // skip if amount is 0
             if quantity_change == 0 {
-                warn!("skip inv {:?}: zero quantity", ref_order_id);
+                warn!("skip inv {ref_order_id:?}: zero quantity");
                 continue;
             }
             // created_at
             let created_at = match ts_opt {
                 Some(ts) => Self::ts_to_naive(ts)?,
                 None => {
-                    warn!("skip inv {:?}: missing posted date", ref_order_id);
+                    warn!("skip inv {ref_order_id:?}: missing posted date");
                     continue;
                 }
             };
@@ -1151,7 +1151,7 @@ impl LegacyMigrationUseCases {
                 operator_mdoc,
             };
             if let Err(e) = self.deps.inv_repo.create(&itx) {
-                warn!("skip inventory tx for UPC {}: insert error: {}", itx.upc, e);
+                warn!("skip inventory tx for UPC {}: insert error: {e}", itx.upc);
                 continue;
             }
         }
@@ -1185,7 +1185,7 @@ impl LegacyMigrationUseCases {
             let cust_opt = match row.get_data(2, &mut cust_buf) {
                 Ok(_) => cust_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip order row: bad customer_mdoc: {}", e);
+                    warn!("skip order row: bad customer_mdoc: {e}");
                     continue;
                 }
             };
@@ -1195,7 +1195,7 @@ impl LegacyMigrationUseCases {
             let op_opt = match row.get_data(3, &mut op_buf) {
                 Ok(_) => op_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip order row: bad operator_mdoc: {}", e);
+                    warn!("skip order row: bad operator_mdoc: {e}");
                     continue;
                 }
             };
@@ -1205,7 +1205,7 @@ impl LegacyMigrationUseCases {
             let dt_opt = match row.get_data(4, &mut dt_buf) {
                 Ok(_) => dt_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip order row: bad entry date: {}", e);
+                    warn!("skip order row: bad entry date: {e}");
                     continue;
                 }
             };
@@ -1215,7 +1215,7 @@ impl LegacyMigrationUseCases {
             let note_opt = match row.get_text(5, &mut note_buf) {
                 Ok(_) => Some(String::from_utf8_lossy(&note_buf).to_string()),
                 Err(e) => {
-                    warn!("skip order row: bad note text: {}", e);
+                    warn!("skip order row: bad note text: {e}");
                     continue;
                 }
             };
@@ -1236,7 +1236,7 @@ impl LegacyMigrationUseCases {
             let customer_mdoc = match cust_opt {
                 Some(n) if n > 0 => n,
                 Some(n) => {
-                    warn!("skip customer_order: invalid customer_mdoc <= 0 ({})", n);
+                    warn!("skip customer_order: invalid customer_mdoc <= 0 ({n})");
                     continue;
                 }
                 None => {
@@ -1249,7 +1249,7 @@ impl LegacyMigrationUseCases {
             let operator_mdoc = match op_opt {
                 Some(n) if n > 0 => n,
                 Some(n) => {
-                    warn!("skip customer_order: invalid operator_mdoc <= 0 ({})", n);
+                    warn!("skip customer_order: invalid operator_mdoc <= 0 ({n})");
                     continue;
                 }
                 None => {
@@ -1263,7 +1263,7 @@ impl LegacyMigrationUseCases {
                 Some(ts) => match Self::ts_to_naive(ts) {
                     Ok(dt) => dt,
                     Err(e) => {
-                        warn!("skip customer_order: bad entry date: {}", e);
+                        warn!("skip customer_order: bad entry date: {e}");
                         continue;
                     }
                 },
@@ -1282,7 +1282,7 @@ impl LegacyMigrationUseCases {
             let order_id = match order_opt {
                 Some(n) if n > 0 => n,
                 Some(n) => {
-                    warn!("skip customer_order: invalid order_id <= 0 ({})", n);
+                    warn!("skip customer_order: invalid order_id <= 0 ({n})");
                     continue;
                 }
                 None => {
@@ -1299,7 +1299,7 @@ impl LegacyMigrationUseCases {
             };
 
             if let Err(e) = self.deps.customer_transaction_repo.create(&tx) {
-                warn!("skip customer_order {}: insert error: {}", order_id, e);
+                warn!("skip customer_order {order_id}: insert error: {e}");
                 continue;
             }
         }
@@ -1339,7 +1339,7 @@ impl LegacyMigrationUseCases {
             let order_opt = match row.get_data(2, &mut order_buf) {
                 Ok(_) => order_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip detail row: bad order_id: {}", e);
+                    warn!("skip detail row: bad order_id: {e}");
                     continue;
                 }
             };
@@ -1349,7 +1349,7 @@ impl LegacyMigrationUseCases {
             let upc_opt = match row.get_text(3, &mut upc_buf) {
                 Ok(_) => Some(String::from_utf8_lossy(&upc_buf).to_string()),
                 Err(e) => {
-                    warn!("skip detail row: bad UPC text: {}", e);
+                    warn!("skip detail row: bad UPC text: {e}");
                     continue;
                 }
             };
@@ -1359,7 +1359,7 @@ impl LegacyMigrationUseCases {
             let qty_opt = match row.get_data(4, &mut qty_buf) {
                 Ok(_) => qty_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip detail row: bad qty: {}", e);
+                    warn!("skip detail row: bad qty: {e}");
                     continue;
                 }
             };
@@ -1369,7 +1369,7 @@ impl LegacyMigrationUseCases {
             let price_opt = match row.get_data(5, &mut price_buf) {
                 Ok(_) => price_buf.into_opt(),
                 Err(e) => {
-                    warn!("skip detail row: bad price: {}", e);
+                    warn!("skip detail row: bad price: {e}");
                     continue;
                 }
             };
@@ -1399,7 +1399,7 @@ impl LegacyMigrationUseCases {
             let order_id = match order_opt {
                 Some(n) if n > 0 => n,
                 Some(n) => {
-                    warn!("skip detail: invalid order_id <= 0 ({})", n);
+                    warn!("skip detail: invalid order_id <= 0 ({n})");
                     continue;
                 }
                 None => {
@@ -1417,7 +1417,7 @@ impl LegacyMigrationUseCases {
                     s.trim().to_string()
                 }
                 _ => {
-                    warn!("skip detail {}: missing or bad UPC", order_id);
+                    warn!("skip detail {order_id}: missing or bad UPC");
                     continue;
                 }
             };
@@ -1426,7 +1426,7 @@ impl LegacyMigrationUseCases {
             let quantity = match qty_opt {
                 Some(n) => n,
                 None => {
-                    warn!("skip detail {}: missing qty", order_id);
+                    warn!("skip detail {order_id}: missing qty");
                     continue;
                 }
             };
@@ -1436,13 +1436,13 @@ impl LegacyMigrationUseCases {
                 Some(p) => {
                     let c = (p * 100.0).round() as i32;
                     if c <= 0 {
-                        warn!("skip detail {}: non-positive price_cents ({})", order_id, c);
+                        warn!("skip detail {order_id}: non-positive price_cents ({c})");
                         continue;
                     }
                     c
                 }
                 None => {
-                    warn!("skip detail {}: missing price", order_id);
+                    warn!("skip detail {order_id}: missing price");
                     continue;
                 }
             };
@@ -1456,7 +1456,7 @@ impl LegacyMigrationUseCases {
             };
 
             if let Err(e) = self.deps.cust_tx_detail_repo.create(&detail) {
-                warn!("skip detail {}: insert error: {}", order_id, e);
+                warn!("skip detail {order_id}: insert error: {e}");
                 continue;
             }
         }

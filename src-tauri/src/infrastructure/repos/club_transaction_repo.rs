@@ -100,7 +100,7 @@ impl ClubTransactionRepoTrait for SqliteClubTransactionRepo {
         // date filter
         if let Some(ref s) = search {
             sql.push_str(" AND (c.name LIKE ? OR t.mdoc LIKE ?)");
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let last = string_params.last().unwrap();
             params.push(last);
@@ -140,7 +140,7 @@ impl ClubTransactionRepoTrait for SqliteClubTransactionRepo {
         }
         if let Some(ref s) = search {
             sql.push_str(" AND (c.name LIKE ? OR t.mdoc LIKE ?)");
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let last = string_params.last().unwrap();
             params.push(last);

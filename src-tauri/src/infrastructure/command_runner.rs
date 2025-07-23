@@ -9,6 +9,6 @@ impl CommandRunner for WindowsCommandRunner {
         Command::new(program)
             .args(args)
             .output()
-            .map_err(|e| AppError::Unexpected(format!("Failed to run command: {}", e)))
+            .map_err(|e| AppError::Unexpected(format!("Failed to run command: {e}")))
     }
 }

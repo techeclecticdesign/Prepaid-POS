@@ -43,8 +43,8 @@ impl TransactionUseCases {
                 tx.upc, tx.quantity_change, tx.operator_mdoc
             ),
             Err(e) => error!(
-                "inventory adjustment error: upc={} operator={} error={}",
-                tx.upc, tx.operator_mdoc, e
+                "inventory adjustment error: upc={} operator={} error={e}",
+                tx.upc, tx.operator_mdoc
             ),
         };
         res.map(|_| tx)

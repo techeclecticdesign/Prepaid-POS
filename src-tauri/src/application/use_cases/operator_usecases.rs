@@ -34,7 +34,7 @@ impl OperatorUseCases {
         let res = self.repo.create(op);
         match &res {
             Ok(()) => info!("operator created: mdoc={} name={}", op.mdoc, op.name),
-            Err(e) => error!("operator create error: mdoc={} error={}", op.mdoc, e),
+            Err(e) => error!("operator create error: mdoc={} error={e}", op.mdoc),
         }
         res
     }
@@ -52,7 +52,7 @@ impl OperatorUseCases {
         let res = self.repo.update_by_mdoc(op);
         match &res {
             Ok(()) => info!("operator updated: mdoc={} name={}", op.mdoc, op.name),
-            Err(e) => error!("operator update error: mdoc={} error={}", op.mdoc, e),
+            Err(e) => error!("operator update error: mdoc={} error={e}", op.mdoc),
         }
         res
     }

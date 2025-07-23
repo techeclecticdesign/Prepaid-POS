@@ -27,7 +27,7 @@ impl FromSql for TransactionType {
             "Withdrawal" => Ok(TransactionType::Withdrawal),
             other => Err(FromSqlError::Other(Box::new(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
-                format!("Invalid TransactionType: {}", other),
+                format!("Invalid TransactionType: {other}"),
             )))),
         }
     }

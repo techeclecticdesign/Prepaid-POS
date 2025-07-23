@@ -36,7 +36,7 @@ use tauri::{Builder, WindowEvent};
 pub fn run() {
     // Initialize logger
     common::logger::init().unwrap_or_else(|e| {
-        eprintln!("Logger init failed: {}", e);
+        eprintln!("Logger init failed: {e}");
         std::process::exit(1);
     });
     log::info!("Annex POS is starting");
@@ -44,7 +44,7 @@ pub fn run() {
     dotenvy::dotenv().ok();
 
     let conn = Arc::new(create_connection("annex_data.sqlite").unwrap_or_else(|e| {
-        log::error!("DB init error: {}", e);
+        log::error!("DB init error: {e}");
         std::process::exit(1);
     }));
     // Define dependency injected objects
@@ -177,7 +177,7 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
-            log::error!("Tauri run failed: {}", e);
+            log::error!("Tauri run failed: {e}");
             std::process::exit(1);
         });
 }

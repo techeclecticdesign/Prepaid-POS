@@ -61,7 +61,7 @@ impl ProductUseCases {
                 "product created: upc={} desc={}",
                 new_product.upc, new_product.desc
             ),
-            Err(e) => error!("product create error: upc={} error={}", new_product.upc, e),
+            Err(e) => error!("product create error: upc={} error={e}", new_product.upc),
         }
         res
     }
@@ -70,12 +70,12 @@ impl ProductUseCases {
         let mut p = self
             .repo
             .get_by_upc(upc.clone())?
-            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
+            .ok_or_else(|| AppError::NotFound(format!("Product {upc} not found")))?;
         p.deleted = Some(Utc::now().naive_utc());
         let res = self.repo.update_by_upc(&p);
         match &res {
-            Ok(()) => info!("product deleted: upc={}", upc),
-            Err(e) => error!("product delete error: upc={} error={}", upc, e),
+            Ok(()) => info!("product deleted: upc={upc}"),
+            Err(e) => error!("product delete error: upc={upc} error={e}"),
         }
         res
     }
@@ -108,7 +108,7 @@ impl ProductUseCases {
                 a.old,
                 a.new
             ),
-            None => log::error!("price adjustment not found after insert: id={}", adj_id),
+            None => log::error!("price adjustment not found after insert: id={adj_id}"),
         }
 
         adj_loaded.ok_or_else(|| AppError::Unexpected("failed load price adj".into()))
@@ -132,7 +132,7 @@ impl ProductUseCases {
                 "product updated: upc={} desc={} category={}",
                 p.upc, p.desc, p.category
             ),
-            Err(e) => error!("product update error: upc={} error={}", p.upc, e),
+            Err(e) => error!("product update error: upc={} error={e}", p.upc),
         }
         res
     }
@@ -169,7 +169,7 @@ impl ProductUseCases {
     ) -> Result<u32, AppError> {
         let count_i64 = self.price_repo.count(date, search)?;
         let count_u32 = u32::try_from(count_i64)
-            .map_err(|_| AppError::Unexpected(format!("count overflow: {}", count_i64)))?;
+            .map_err(|_| AppError::Unexpected(format!("count overflow: {count_i64}")))?;
         Ok(count_u32)
     }
 
@@ -180,11 +180,11 @@ impl ProductUseCases {
     pub fn delete_category(&self, id: i64) -> Result<(), AppError> {
         match self.category_repo.soft_delete(id) {
             Ok(()) => {
-                info!("category deleted: id={}", id);
+                info!("category deleted: id={id}");
                 Ok(())
             }
             Err(e) => {
-                error!("category delete error: id={} error={}", id, e);
+                error!("category delete error: id={id} error={e}");
                 Err(e)
             }
         }
@@ -198,15 +198,14 @@ impl ProductUseCases {
             }
             // otherwise it's already active
             return Err(AppError::Unexpected(format!(
-                "Category `{}` already exists",
-                cat
+                "Category `{cat}` already exists"
             )));
         }
         // create new category
         let res = self.category_repo.create(cat.clone());
         match &res {
-            Ok(()) => info!("category created: name={}", cat),
-            Err(e) => error!("category create error: name={} error={}", cat, e),
+            Ok(()) => info!("category created: name={cat}"),
+            Err(e) => error!("category create error: name={cat} error={e}"),
         }
         res
     }

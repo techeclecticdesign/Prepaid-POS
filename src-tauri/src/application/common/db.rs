@@ -64,7 +64,7 @@ mod tests {
 
         // because of rollback, no operator should be persisted
         let all = repo.list()?;
-        assert!(all.is_empty(), "Expected rollback, but found {:?}", all);
+        assert!(all.is_empty(), "Expected rollback, but found {all:?}");
 
         Ok(())
     }

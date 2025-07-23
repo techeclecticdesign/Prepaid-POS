@@ -27,7 +27,7 @@ impl ProductRepoTrait for MockProductRepo {
         let p = guard
             .iter()
             .find(|p| p.upc == upc)
-            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", upc)))?;
+            .ok_or_else(|| AppError::NotFound(format!("Product {upc} not found")))?;
         Ok(p.price)
     }
 

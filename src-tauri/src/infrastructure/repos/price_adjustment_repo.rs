@@ -183,7 +183,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
                           OR p.desc LIKE ? \
                           OR pa.operator_mdoc LIKE ?)",
             );
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let last = string_params
                 .last()
@@ -239,7 +239,7 @@ impl PriceAdjustmentRepoTrait for SqlitePriceAdjustmentRepo {
                           OR p.desc LIKE ? \
                           OR pa.operator_mdoc LIKE ?)",
             );
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let last = string_params
                 .last()

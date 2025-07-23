@@ -12,7 +12,7 @@ impl<T> RwLockExt<T> for RwLock<T> {
         match self.read() {
             Ok(g) => Ok(g),
             Err(e) => {
-                log::error!("RwLock read poisoned: {}", e);
+                log::error!("RwLock read poisoned: {e}");
                 Err("RwLock read lock poisoned".to_string())
             }
         }
@@ -22,7 +22,7 @@ impl<T> RwLockExt<T> for RwLock<T> {
         match self.write() {
             Ok(g) => Ok(g),
             Err(e) => {
-                log::error!("RwLock write poisoned: {}", e);
+                log::error!("RwLock write poisoned: {e}");
                 Err("RwLock write lock poisoned".to_string())
             }
         }

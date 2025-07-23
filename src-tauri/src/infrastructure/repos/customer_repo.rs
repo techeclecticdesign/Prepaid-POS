@@ -92,7 +92,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
 
         if let Some(ref s) = search {
             sql.push_str(" AND (c.mdoc LIKE ? OR c.name LIKE ?)");
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let p = string_params
                 .last()
@@ -130,7 +130,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
 
         if let Some(ref s) = search {
             sql.push_str(" AND (mdoc LIKE ? OR name LIKE ?)");
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let p = string_params
                 .last()

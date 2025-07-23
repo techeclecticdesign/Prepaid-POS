@@ -161,7 +161,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         // search on multiple fields
         if let Some(ref s) = search {
             sql.push_str(" AND (t.customer_mdoc LIKE ? OR t.operator_mdoc LIKE ? OR t.order_id LIKE ? OR t.note LIKE ?)");
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let p = string_params.last().ok_or_else(|| {
                 AppError::Unexpected("customer_transactions pattern missing".into())
@@ -216,7 +216,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
         }
         if let Some(ref s) = search {
             sql.push_str(" AND (customer_mdoc LIKE ? OR operator_mdoc LIKE ? OR order_id LIKE ? OR note LIKE ?)");
-            let pat = format!("%{}%", s);
+            let pat = format!("%{s}%");
             string_params.push(pat);
             let p = string_params.last().ok_or_else(|| {
                 AppError::Unexpected("customer_transactions count pattern missing".into())

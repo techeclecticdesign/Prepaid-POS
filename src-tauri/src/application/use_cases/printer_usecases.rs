@@ -26,7 +26,7 @@ impl PrinterUseCases {
                     "Get-Printer | Select-Object -ExpandProperty Name",
                 ],
             )
-            .map_err(|e| AppError::Unexpected(format!("Runner failed: {}", e)))?;
+            .map_err(|e| AppError::Unexpected(format!("Runner failed: {e}")))?;
 
         if !output.status.success() {
             return Err(AppError::Unexpected(format!(

@@ -14,7 +14,7 @@ pub fn print_pdf_silently(pdf_path: &str, printer_name: &str) -> Result<(), AppE
     let abs_path = PathBuf::from(pdf_path)
         .canonicalize()
         .map(|p| p.to_string_lossy().trim_start_matches(r"\\?\").to_string())
-        .map_err(|e| AppError::Unexpected(format!("Failed to resolve PDF path: {}", e)))?;
+        .map_err(|e| AppError::Unexpected(format!("Failed to resolve PDF path: {e}")))?;
 
     let mut cmd = Command::new(sumatra);
 
@@ -30,7 +30,7 @@ pub fn print_pdf_silently(pdf_path: &str, printer_name: &str) -> Result<(), AppE
 
     let status = cmd
         .status()
-        .map_err(|e| AppError::Unexpected(format!("Failed to launch Sumatra: {}", e)))?;
+        .map_err(|e| AppError::Unexpected(format!("Failed to launch Sumatra: {e}")))?;
     if !status.success() {
         return Err(AppError::Unexpected(format!(
             "Sumatra exited with {:?}",
@@ -72,7 +72,7 @@ fn receipt_header(
     y -= Mm(4.0);
 
     // Operator
-    let op_line = format!("Operator: {} ({})", operator_name, cust_tx.operator_mdoc);
+    let op_line = format!("Operator: {operator_name} ({})", cust_tx.operator_mdoc);
     layer.use_text(&op_line, font_size, Mm(5.0), y, font);
     y -= Mm(4.0);
 
@@ -85,7 +85,7 @@ fn receipt_header(
     } else {
         customer_name.to_string()
     };
-    let bold_text = format!(" {} ({})", display_name, cust_tx.customer_mdoc);
+    let bold_text = format!(" {display_name} ({})", cust_tx.customer_mdoc);
     layer.use_text(&bold_text, font_size, est_label_width, y, bold_font);
     y -= Mm(8.0);
     y

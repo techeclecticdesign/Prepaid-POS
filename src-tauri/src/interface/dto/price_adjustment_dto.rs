@@ -60,7 +60,7 @@ mod tests {
             created_at: Some("bad".into()),
         };
         let errs = dto.validate().unwrap_err();
-        println!("Validation errors: {:?}", errs);
+        println!("Validation errors: {errs:?}");
 
         let err_map = errs.field_errors();
         assert!(err_map.contains_key("upc"));

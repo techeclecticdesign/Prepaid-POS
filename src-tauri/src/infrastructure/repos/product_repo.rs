@@ -130,7 +130,7 @@ impl ProductRepoTrait for SqliteProductRepo {
 
         if let Some(ref s) = desc_like {
             clauses.push("desc LIKE ?");
-            let formatted = format!("%{}%", s);
+            let formatted = format!("%{s}%");
             dynamic_params.push(formatted);
             let last = dynamic_params
                 .last()
@@ -180,7 +180,7 @@ impl ProductRepoTrait for SqliteProductRepo {
 
         if let Some(ref s) = desc_like {
             clauses.push("desc LIKE ?");
-            dyn_params.push(format!("%{}%", s));
+            dyn_params.push(format!("%{s}%"));
             let last = dyn_params
                 .last()
                 .ok_or_else(|| AppError::Unexpected("Internal param error".into()))?;

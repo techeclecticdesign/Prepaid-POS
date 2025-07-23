@@ -10,7 +10,7 @@ impl<T> MutexExt<T> for Mutex<T> {
         match self.lock() {
             Ok(guard) => Ok(guard),
             Err(poisoned) => {
-                log::error!("Mutex poisoned: {}", poisoned);
+                log::error!("Mutex poisoned: {poisoned}");
                 Err(AppError::LockPoisoned("Mutex was poisoned".into()))
             }
         }
