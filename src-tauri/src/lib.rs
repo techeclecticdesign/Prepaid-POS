@@ -8,11 +8,12 @@ pub mod test_support;
 use crate::application::use_cases::legacy_migration_usecases::LegacyMigrationDeps;
 use crate::application::use_cases::printer_usecases::{CommandRunner, PrinterUseCases};
 use crate::domain::repos::{
-    CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait,
-    CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
-    OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
+    CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CredentialRepoTrait,
+    CustomerRepoTrait, CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait,
+    InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
 };
 
+use crate::interface::controllers::auth_controller::AuthController;
 use crate::interface::controllers::club_controller::ClubController;
 use crate::interface::controllers::legacy_migration_controller::LegacyMigrationController;
 use crate::interface::controllers::operator_controller::OperatorController;
@@ -26,9 +27,10 @@ use infrastructure::command_runner::WindowsCommandRunner;
 use infrastructure::db::create_connection;
 use infrastructure::pdf_parser::LopdfParser;
 use infrastructure::repos::{
-    SqliteCategoryRepo, SqliteClubImportRepo, SqliteClubTransactionRepo, SqliteCustomerRepo,
-    SqliteCustomerTransactionRepo, SqliteCustomerTxDetailRepo, SqliteInventoryTransactionRepo,
-    SqliteOperatorRepo, SqlitePriceAdjustmentRepo, SqliteProductRepo,
+    SqliteCategoryRepo, SqliteClubImportRepo, SqliteClubTransactionRepo, SqliteCredentialRepo,
+    SqliteCustomerRepo, SqliteCustomerTransactionRepo, SqliteCustomerTxDetailRepo,
+    SqliteInventoryTransactionRepo, SqliteOperatorRepo, SqlitePriceAdjustmentRepo,
+    SqliteProductRepo,
 };
 use std::sync::{Arc, RwLock};
 use tauri::{Builder, WindowEvent};
@@ -47,7 +49,10 @@ pub fn run() {
         log::error!("DB init error: {e}");
         std::process::exit(1);
     }));
+    let auth_state = Arc::new(RwLock::new(common::auth::AuthState::default()));
     // Define dependency injected objects
+    let cred_repo: Arc<dyn CredentialRepoTrait> =
+        Arc::new(SqliteCredentialRepo::new(Arc::clone(&conn)));
     let category_repo: Arc<dyn CategoryRepoTrait> =
         Arc::new(SqliteCategoryRepo::new(Arc::clone(&conn)));
     let op_repo: Arc<dyn OperatorRepoTrait> = Arc::new(SqliteOperatorRepo::new(Arc::clone(&conn)));
@@ -67,6 +72,7 @@ pub fn run() {
         Arc::new(SqliteCustomerTransactionRepo::new(Arc::clone(&conn)));
     let cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
         Arc::new(SqliteCustomerTxDetailRepo::new(Arc::clone(&conn)));
+    let auth_ctrl = Arc::new(AuthController::new(auth_state.clone(), cred_repo.clone()));
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
     let product_ctrl = Arc::new(ProductController::new(
         Arc::clone(&product_repo),
@@ -129,7 +135,9 @@ pub fn run() {
         .manage(printer_ctrl)
         .manage(legacy_ctrl)
         .manage(pdf_ctrl)
+        .manage(auth_ctrl)
         .manage(RwLock::new(common::auth::AuthState::default()))
+        .manage(cred_repo)
         .manage(op_repo)
         .manage(product_repo)
         .manage(price_repo)
@@ -144,6 +152,9 @@ pub fn run() {
             interface::commands::auth::staff_login,
             interface::commands::auth::staff_logout,
             interface::commands::auth::update_activity,
+            interface::commands::auth::change_password,
+            interface::commands::auth::password_required,
+            interface::commands::auth::delete_password,
             interface::commands::operator::create_operator,
             interface::commands::operator::list_operators,
             interface::commands::operator::update_operator,

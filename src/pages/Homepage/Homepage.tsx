@@ -22,11 +22,11 @@ export default function App() {
 
   const operatorsRef = useRef<Operator[]>(operators);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { loggedIn, login, logout } = useAuth();
+  const { loggedIn, login, logout, setActiveOperator, passwordRequired } =
+    useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { setActiveOperator } = useAuth();
 
   const [showLegacyDataDialog, setShowLegacyDataDialog] = useState(false);
   const saved = localStorage.getItem("barcode");
@@ -147,7 +147,18 @@ export default function App() {
               />
             ))
           : null}
-        {!loggedIn ? (
+        {/* If no password is set, skip auth entirely */}
+        {!passwordRequired ? (
+          <AppButton
+            onClick={async () => {
+              // ensure loggedIn is true so /admin route exists
+              await login("");
+              navigate("/admin");
+            }}
+            text="Admin Controls"
+            sx={{ width: "14rem" }}
+          />
+        ) : !loggedIn ? (
           <AppButton
             onClick={() => setShowLogin(true)}
             text="Admin Login"
@@ -157,17 +168,20 @@ export default function App() {
           <AppButton onClick={logout} text="Log Out" />
         )}
       </Box>
-      <StaffLoginDialog
-        open={showLogin}
-        onClose={() => setShowLogin(false)}
-        onLoginSuccess={async (pw) => {
-          const ok = await login(pw);
-          if (ok) {
-            setShowLogin(false);
-            navigate("/admin");
-          }
-        }}
-      />
+      {/* Only show login dialog if password is actually required */}
+      {passwordRequired && (
+        <StaffLoginDialog
+          open={showLogin}
+          onClose={() => setShowLogin(false)}
+          onLoginSuccess={async (pw) => {
+            const ok = await login(pw);
+            if (ok) {
+              setShowLogin(false);
+              navigate("/admin");
+            }
+          }}
+        />
+      )}
 
       <LegacyDataDialog
         open={showLegacyDataDialog}

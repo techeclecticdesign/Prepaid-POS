@@ -1,3 +1,4 @@
+pub mod auth_usecases;
 pub mod club_usecases;
 pub mod legacy_migration_usecases;
 pub mod operator_usecases;

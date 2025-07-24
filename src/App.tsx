@@ -16,6 +16,7 @@ import CustomersPage from "./pages/Customers/Customers";
 import AccountsPage from "./pages/Accounts/Accounts";
 import BarcodeConfig from "./pages/BarcodeConfig/BarcodeConfig";
 import PrinterConfigPage from "./pages/PrinterConfig/PrinterConfig";
+import ChangePasswordPage from "./pages/Password/Password";
 
 export default function App() {
   const { loggedIn, activeOperator } = useAuth();
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/lost-inventory" element={<LostInventoryPage />} />
             <Route path="/barcode" element={<BarcodeConfig />} />
             <Route path="/printer" element={<PrinterConfigPage />} />
+            <Route path="/change-password" element={<ChangePasswordPage />} />
             <Route
               path="/price-adjustments"
               element={<PriceAdjustmentsPage />}

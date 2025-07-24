@@ -111,6 +111,15 @@ export default function AdminSidebar() {
         >
           Printer Config
         </Link>
+        <Link
+          component={RouterLink}
+          to="/change-password"
+          underline="hover"
+          color={isActive("/change-password") ? "text.secondary" : "primary"}
+          sx={linkSx("/change-password")}
+        >
+          Change Password
+        </Link>
       </nav>
       <Link
         onClick={() => {

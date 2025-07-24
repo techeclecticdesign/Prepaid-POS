@@ -1,6 +1,7 @@
 pub mod category_repo;
 pub mod club_import_repo;
 pub mod club_transaction_repo;
+pub mod credential_repo;
 pub mod customer_repo;
 pub mod customer_transaction_repo;
 pub mod customer_tx_detail_repo;
@@ -12,6 +13,7 @@ pub mod product_repo;
 pub use category_repo::SqliteCategoryRepo;
 pub use club_import_repo::SqliteClubImportRepo;
 pub use club_transaction_repo::SqliteClubTransactionRepo;
+pub use credential_repo::SqliteCredentialRepo;
 pub use customer_repo::SqliteCustomerRepo;
 pub use customer_transaction_repo::SqliteCustomerTransactionRepo;
 pub use customer_tx_detail_repo::SqliteCustomerTxDetailRepo;

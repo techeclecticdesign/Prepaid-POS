@@ -1,6 +1,7 @@
 pub mod category_repo_trait;
 pub mod club_import_repo_trait;
 pub mod club_transaction_repo_trait;
+pub mod credential_repo_trait;
 pub mod customer_repo_trait;
 pub mod customer_tx_detail_repo_trait;
 pub mod customer_tx_repo_trait;
@@ -12,6 +13,7 @@ pub mod product_repo_trait;
 pub use category_repo_trait::CategoryRepoTrait;
 pub use club_import_repo_trait::ClubImportRepoTrait;
 pub use club_transaction_repo_trait::ClubTransactionRepoTrait;
+pub use credential_repo_trait::CredentialRepoTrait;
 pub use customer_repo_trait::CustomerRepoTrait;
 pub use customer_tx_detail_repo_trait::CustomerTxDetailRepoTrait;
 pub use customer_tx_repo_trait::CustomerTransactionRepoTrait;

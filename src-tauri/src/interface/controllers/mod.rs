@@ -1,3 +1,4 @@
+pub mod auth_controller;
 pub mod club_controller;
 pub mod legacy_migration_controller;
 pub mod operator_controller;
