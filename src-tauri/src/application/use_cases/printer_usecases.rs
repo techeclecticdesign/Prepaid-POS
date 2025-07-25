@@ -1,8 +1,12 @@
 use crate::common::error::AppError;
+use crate::infrastructure::command_runner::CommandRunner;
+use crate::infrastructure::printing::reports::business_receipt::print_business_receipt;
+use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
+use crate::interface::dto::printer_dto::PrintableSaleDto;
 use std::sync::Arc;
 
-pub trait CommandRunner: Send + Sync {
-    fn run(&self, program: &str, args: &[&str]) -> Result<std::process::Output, AppError>;
+pub enum ReportType {
+    Receipt,
 }
 
 pub struct PrinterUseCases {
@@ -43,5 +47,41 @@ impl PrinterUseCases {
             .collect();
 
         Ok(names)
+    }
+
+    // Print both the customer & business receipts.
+    pub fn print_receipts(
+        &self,
+        printable: &PrintableSaleDto,
+        printer_name: &str,
+        operator_name: &str,
+        customer_name: &str,
+    ) -> Result<(), AppError> {
+        let PrintableSaleDto {
+            transaction,
+            items,
+            balance,
+        } = printable;
+
+        // customer copy
+        print_customer_receipt(
+            transaction,
+            items,
+            operator_name,
+            customer_name,
+            printer_name,
+        )?;
+
+        // business copy
+        print_business_receipt(
+            transaction,
+            items,
+            operator_name,
+            customer_name,
+            *balance,
+            printer_name,
+        )?;
+
+        Ok(())
     }
 }

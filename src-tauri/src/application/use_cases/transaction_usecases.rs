@@ -53,17 +53,17 @@ impl TransactionUseCases {
     pub fn sale_transaction(
         &self,
         cust_tx: CustomerTransaction,
-        invs: Vec<InventoryTransaction>,
+        mut invs: Vec<InventoryTransaction>,
         mut details: Vec<CustomerTxDetail>,
     ) -> Result<i32, AppError> {
         atomic_tx(&self.conn, |tx| {
             let order_id = self.cust_tx_repo.create_with_tx(&cust_tx, tx)?;
 
-            for inv in &invs {
+            for inv in &mut invs {
+                inv.ref_order_id = Some(order_id);
                 self.inv_repo.create_with_tx(inv, tx)?;
             }
 
-            // insert each detail, fixing its order_id FK
             for det in &mut details {
                 det.order_id = order_id;
                 self.cust_tx_detail_repo.create_with_tx(det, tx)?;

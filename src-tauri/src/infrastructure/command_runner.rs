@@ -1,8 +1,11 @@
-use crate::application::use_cases::printer_usecases::CommandRunner;
 use crate::common::error::AppError;
 use std::process::{Command, Output};
 
 pub struct WindowsCommandRunner;
+
+pub trait CommandRunner: Send + Sync {
+    fn run(&self, program: &str, args: &[&str]) -> Result<Output, AppError>;
+}
 
 impl CommandRunner for WindowsCommandRunner {
     fn run(&self, program: &str, args: &[&str]) -> Result<Output, AppError> {

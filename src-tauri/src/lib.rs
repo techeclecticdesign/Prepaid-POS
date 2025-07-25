@@ -6,7 +6,7 @@ pub mod interface;
 pub mod test_support;
 
 use crate::application::use_cases::legacy_migration_usecases::LegacyMigrationDeps;
-use crate::application::use_cases::printer_usecases::{CommandRunner, PrinterUseCases};
+use crate::application::use_cases::printer_usecases::PrinterUseCases;
 use crate::domain::repos::{
     CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CredentialRepoTrait,
     CustomerRepoTrait, CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait,
@@ -23,7 +23,7 @@ use crate::interface::controllers::printer_controller::PrinterController;
 use crate::interface::controllers::product_controller::ProductController;
 use crate::interface::controllers::transaction_controller::TransactionController;
 
-use infrastructure::command_runner::WindowsCommandRunner;
+use infrastructure::command_runner::{CommandRunner, WindowsCommandRunner};
 use infrastructure::db::create_connection;
 use infrastructure::pdf_parser::LopdfParser;
 use infrastructure::repos::{
@@ -72,6 +72,7 @@ pub fn run() {
         Arc::new(SqliteCustomerTransactionRepo::new(Arc::clone(&conn)));
     let cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
         Arc::new(SqliteCustomerTxDetailRepo::new(Arc::clone(&conn)));
+    let runner: Arc<dyn CommandRunner> = Arc::new(WindowsCommandRunner);
     let auth_ctrl = Arc::new(AuthController::new(auth_state.clone(), cred_repo.clone()));
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
     let product_ctrl = Arc::new(ProductController::new(
@@ -84,6 +85,7 @@ pub fn run() {
         Arc::clone(&inv_repo),
         Arc::clone(&cust_tx_repo),
         Arc::clone(&cust_tx_detail_repo),
+        Arc::clone(&runner),
         Arc::clone(&conn),
     ));
     let club_ctrl = Arc::new(ClubController::new(
@@ -113,7 +115,6 @@ pub fn run() {
         Arc::clone(&customer_repo),
     ));
 
-    let runner: Arc<dyn CommandRunner> = Arc::new(WindowsCommandRunner);
     let printer_uc = PrinterUseCases::new(Arc::clone(&runner));
     let printer_ctrl = Arc::new(PrinterController::new(printer_uc));
 

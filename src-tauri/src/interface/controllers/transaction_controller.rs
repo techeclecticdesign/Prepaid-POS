@@ -1,3 +1,4 @@
+use crate::application::use_cases::printer_usecases::PrinterUseCases;
 use crate::application::use_cases::transaction_usecases::TransactionUseCases;
 use crate::common::error::AppError;
 use crate::domain::models::customer_transaction::CustomerTransaction;
@@ -18,7 +19,8 @@ use std::sync::{Arc, Mutex};
 use validator::Validate;
 
 pub struct TransactionController {
-    uc: TransactionUseCases,
+    tx_uc: TransactionUseCases,
+    printer_uc: PrinterUseCases,
 }
 
 impl TransactionController {
@@ -26,11 +28,12 @@ impl TransactionController {
         inv_repo: Arc<dyn crate::domain::repos::InventoryTransactionRepoTrait>,
         cust_tx_repo: Arc<dyn crate::domain::repos::CustomerTransactionRepoTrait>,
         cust_tx_detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
+        runner: Arc<dyn crate::infrastructure::command_runner::CommandRunner>,
         conn: Arc<Mutex<rusqlite::Connection>>,
     ) -> Self {
-        Self {
-            uc: TransactionUseCases::new(inv_repo, cust_tx_repo, cust_tx_detail_repo, conn),
-        }
+        let tx_uc = TransactionUseCases::new(inv_repo, cust_tx_repo, cust_tx_detail_repo, conn);
+        let printer_uc = PrinterUseCases::new(runner);
+        Self { tx_uc, printer_uc }
     }
 
     pub fn inventory_adjustment(
@@ -50,11 +53,11 @@ impl TransactionController {
             created_at: None,
         };
 
-        let itx = self.uc.inventory_adjustment(tx)?;
+        let itx = self.tx_uc.inventory_adjustment(tx)?;
         Ok(InventoryTransactionPresenter::to_dto(itx))
     }
 
-    pub fn sale_transaction(&self, dto: SaleDto) -> Result<i32, AppError> {
+    pub fn sale_transaction(&self, dto: SaleDto, printer_name: &str) -> Result<i32, AppError> {
         let cust_tx = CustomerTransaction {
             order_id: 0,
             customer_mdoc: dto.customer_mdoc,
@@ -86,7 +89,17 @@ impl TransactionController {
             });
         }
 
-        self.uc.sale_transaction(cust_tx, invs, details)
+        let order_id = self.tx_uc.sale_transaction(cust_tx, invs, details);
+        if let Ok(order_id) = order_id {
+            let printable = self.get_sale_details(order_id)?;
+            self.printer_uc.print_receipts(
+                &printable,
+                printer_name,
+                &dto.customer_name,
+                &dto.operator_name,
+            )?;
+        }
+        order_id
     }
 
     pub fn search_inventory_transactions(
@@ -96,9 +109,9 @@ impl TransactionController {
         search: Option<String>,
     ) -> Result<InventoryTransactionSearchResult, AppError> {
         let items = self
-            .uc
+            .tx_uc
             .search_inventory_transactions(page, date.clone(), search.clone())?;
-        let total = self.uc.count_inventory_transactions(date, search)?;
+        let total = self.tx_uc.count_inventory_transactions(date, search)?;
         let rows = items
             .into_iter()
             .map(|(tx, pname, oname)| {
@@ -112,7 +125,7 @@ impl TransactionController {
     }
 
     pub fn list_order_details(&self, order_id: i32) -> Result<Vec<CustomerTxDetailDto>, AppError> {
-        let dets = self.uc.list_order_details(order_id)?;
+        let dets = self.tx_uc.list_order_details(order_id)?;
         Ok(CustomerTxDetailPresenter::to_dto_list(dets))
     }
 
@@ -124,9 +137,9 @@ impl TransactionController {
         search: Option<String>,
     ) -> Result<CustomerTransactionSearchResult, AppError> {
         let tuples: Vec<(CustomerTransaction, String, i32)> = self
-            .uc
+            .tx_uc
             .search_customer_transactions(page, mdoc, date.clone(), search.clone())?;
-        let total = self.uc.count_customer_transactions(mdoc, date, search)?;
+        let total = self.tx_uc.count_customer_transactions(mdoc, date, search)?;
         Ok(CustomerTransactionSearchResult {
             items: CustomerTransactionPresenter::to_search_rows(tuples),
             total_count: total,
@@ -134,7 +147,7 @@ impl TransactionController {
     }
 
     pub fn get_sale_details(&self, order_id: i32) -> Result<PrintableSaleDto, AppError> {
-        let (tx, details, balance) = self.uc.get_sale_details(order_id)?;
+        let (tx, details, balance) = self.tx_uc.get_sale_details(order_id)?;
         let items = details
             .into_iter()
             .map(|(d, desc)| PrintableLineItem {
