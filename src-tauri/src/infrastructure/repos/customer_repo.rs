@@ -19,7 +19,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
     fn list(&self) -> Result<Vec<Customer>, AppError> {
         let conn = self.conn.safe_lock()?;
         let mut stmt =
-            conn.prepare("SELECT mdoc, name, added, updated FROM customer ORDER BY added DESC")?;
+            conn.prepare("SELECT mdoc, name, added, updated FROM customer ORDER BY name DESC")?;
         let rows = stmt.query_map([], |r| {
             Ok(Customer {
                 mdoc: r.get(0)?,
@@ -90,18 +90,33 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
         let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
         let mut string_params: Vec<String> = Vec::new();
 
-        if let Some(ref s) = search {
+        // filter for any‐position matches
+        if let Some(s) = search.as_ref().filter(|s| !s.trim().is_empty()) {
+            let contains = format!("%{}%", s);
+            string_params.push(contains.clone());
+            string_params.push(contains.clone());
             sql.push_str(" AND (c.mdoc LIKE ? OR c.name LIKE ?)");
-            let pat = format!("%{s}%");
-            string_params.push(pat);
-            let p = string_params
-                .last()
-                .ok_or_else(|| AppError::Unexpected("customer search pattern missing".into()))?;
-            params.push(p);
-            params.push(p);
         }
 
-        sql.push_str(" ORDER BY c.added DESC LIMIT ? OFFSET ?");
+        // order prefix‐matches first, then contains, then by name
+        if let Some(s) = search.as_ref().filter(|s| !s.trim().is_empty()) {
+            let prefix = format!("{}%", s);
+            string_params.push(prefix.clone());
+            string_params.push(prefix.clone());
+            sql.push_str(
+                " ORDER BY
+               (CASE WHEN c.mdoc LIKE ? OR c.name LIKE ? THEN 0 ELSE 1 END),
+               c.name ASC
+            LIMIT ? OFFSET ?",
+            );
+        } else {
+            sql.push_str(" ORDER BY c.name ASC LIMIT ? OFFSET ?");
+        }
+        // bind all collected LIKE‐patterns (contains×2, prefix×2) in insertion order
+        for pat in &string_params {
+            params.push(pat);
+        }
+        // then bind pagination
         params.push(&limit);
         params.push(&offset);
 
@@ -190,7 +205,6 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
                     updated: r.get(3)?,
                 },
                 {
-                    // cast balance from i64 to i32
                     let balance: i64 = r.get(4)?;
                     balance as i32
                 },

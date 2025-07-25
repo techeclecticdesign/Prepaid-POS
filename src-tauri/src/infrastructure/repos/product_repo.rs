@@ -147,7 +147,7 @@ impl ProductRepoTrait for SqliteProductRepo {
             sql.push_str(&clauses.join(" AND "));
         }
 
-        sql.push_str(" ORDER BY added DESC LIMIT ? OFFSET ?");
+        sql.push_str(" ORDER BY desc ASC LIMIT ? OFFSET ?");
         params.push(&limit);
         params.push(&offset);
 
