@@ -89,6 +89,14 @@ export default function Sales() {
     setTransactionItems([]);
   };
 
+  // stabilize handlers passed to TransactionItems
+  const handleInsufficientFunds = useCallback(() => {
+    setIsInsufficientFundsDialogOpen(true);
+  }, []);
+  const handleTotalChange = useCallback((newTotal: number) => {
+    setTransactionTotal(newTotal);
+  }, []);
+
   // Scan Handler
   const handleScan = useCallback(
     (code: string) => {
@@ -365,11 +373,9 @@ export default function Sales() {
                 products={products}
                 transactionItems={transactionItems}
                 setTransactionItems={setTransactionItems}
-                onTotalChange={setTransactionTotal}
+                onTotalChange={handleTotalChange}
                 availableBalance={selectedCustomer.balance}
-                onInsufficientFunds={() =>
-                  setIsInsufficientFundsDialogOpen(true)
-                }
+                onInsufficientFunds={handleInsufficientFunds}
               />
             </Box>
           ) : (
