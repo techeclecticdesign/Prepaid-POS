@@ -28,10 +28,17 @@ impl TransactionController {
         inv_repo: Arc<dyn crate::domain::repos::InventoryTransactionRepoTrait>,
         cust_tx_repo: Arc<dyn crate::domain::repos::CustomerTransactionRepoTrait>,
         cust_tx_detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
+        limit_repo: Arc<dyn crate::domain::repos::WeeklyLimitRepoTrait>,
         runner: Arc<dyn crate::infrastructure::command_runner::CommandRunner>,
         conn: Arc<Mutex<rusqlite::Connection>>,
     ) -> Self {
-        let tx_uc = TransactionUseCases::new(inv_repo, cust_tx_repo, cust_tx_detail_repo, conn);
+        let tx_uc = TransactionUseCases::new(
+            inv_repo,
+            cust_tx_repo,
+            cust_tx_detail_repo,
+            limit_repo,
+            conn,
+        );
         let printer_uc = PrinterUseCases::new(runner);
         Self { tx_uc, printer_uc }
     }
@@ -163,5 +170,17 @@ impl TransactionController {
             items,
             balance,
         })
+    }
+
+    pub fn get_weekly_limit(&self) -> Result<i32, AppError> {
+        self.tx_uc.get_weekly_limit()
+    }
+
+    pub fn set_weekly_limit(&self, limit: i32) -> Result<(), AppError> {
+        self.tx_uc.set_weekly_limit(limit)
+    }
+
+    pub fn get_weekly_spent(&self, customer_mdoc: i32) -> Result<i32, AppError> {
+        self.tx_uc.get_weekly_spent(customer_mdoc)
     }
 }

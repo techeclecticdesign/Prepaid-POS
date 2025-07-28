@@ -2,6 +2,7 @@ use crate::common::error::AppError;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
 use crate::domain::repos::CustomerTransactionRepoTrait;
+use chrono::{Duration, NaiveDateTime};
 use std::sync::Mutex;
 
 /// Shared mock implementation for `CustomerTransactionRepoTrait`
@@ -157,5 +158,32 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
         let balance = 1234;
 
         Ok((tx, details, balance))
+    }
+
+    fn get_weekly_spent(
+        &self,
+        customer_mdoc: i32,
+        week_start: NaiveDateTime,
+    ) -> Result<i32, AppError> {
+        let week_end = week_start + Duration::days(7);
+        let store = self.store.lock().unwrap();
+
+        let total_spent = store
+            .iter()
+            .filter(|tx| {
+                tx.customer_mdoc == customer_mdoc
+                    && tx.date.is_some_and(|d| d >= week_start && d < week_end)
+            })
+            .map(|tx| {
+                let id_str = tx.order_id.to_string();
+                if id_str.ends_with('5') {
+                    800
+                } else {
+                    300
+                }
+            })
+            .sum::<i32>();
+
+        Ok(total_spent)
     }
 }

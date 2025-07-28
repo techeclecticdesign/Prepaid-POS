@@ -29,6 +29,8 @@ interface Props {
   onTotalChange: (newTotal: number) => void;
   availableBalance: number;
   onInsufficientFunds: () => void;
+  weeklyRemaining: number;
+  onWeeklyLimitExceeded: () => void;
 }
 
 export default function TransactionItems({
@@ -39,10 +41,11 @@ export default function TransactionItems({
   onTotalChange,
   availableBalance,
   onInsufficientFunds,
+  weeklyRemaining,
+  onWeeklyLimitExceeded,
 }: Props) {
   const theme = useTheme();
   const gridRef = useRef<HTMLDivElement>(null);
-
   const dataGridSx = {
     "& .MuiDataGrid-cell": {
       fontSize: {
@@ -114,12 +117,17 @@ export default function TransactionItems({
       // build the would-be cart
       const updatedItems = getScannedCart(prevItems, scannedUpc);
 
-      // calc new total and check balance
+      // calc new total
       const total = updatedItems.reduce(
         (s, it) => s + it.price * it.quantity,
         0,
       );
-
+      // check weekly limit
+      if (total > weeklyRemaining) {
+        onWeeklyLimitExceeded();
+        return prevItems;
+      }
+      // check funds
       if (total > availableBalance) {
         onInsufficientFunds();
         return prevItems;

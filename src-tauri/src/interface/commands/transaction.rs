@@ -57,3 +57,24 @@ pub fn search_customer_transactions(
     let page = page.unwrap_or(1);
     controller.search_customer_transactions(page, mdoc, date, search)
 }
+
+#[tauri::command]
+pub fn get_weekly_limit(controller: State<Arc<TransactionController>>) -> Result<i32, AppError> {
+    controller.get_weekly_limit()
+}
+
+#[tauri::command]
+pub fn set_weekly_limit(
+    controller: State<Arc<TransactionController>>,
+    limit: i32,
+) -> Result<(), AppError> {
+    controller.set_weekly_limit(limit)
+}
+
+#[tauri::command]
+pub fn get_weekly_spent(
+    controller: State<Arc<TransactionController>>,
+    customer_mdoc: i32,
+) -> Result<i32, AppError> {
+    controller.get_weekly_spent(customer_mdoc)
+}

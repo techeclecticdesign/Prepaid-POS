@@ -9,6 +9,7 @@ pub mod inventory_transaction_repo_trait;
 pub mod operator_repo_trait;
 pub mod price_adjustment_repo_trait;
 pub mod product_repo_trait;
+pub mod weekly_limit_repo_trait;
 
 pub use category_repo_trait::CategoryRepoTrait;
 pub use club_import_repo_trait::ClubImportRepoTrait;
@@ -21,3 +22,4 @@ pub use inventory_transaction_repo_trait::InventoryTransactionRepoTrait;
 pub use operator_repo_trait::OperatorRepoTrait;
 pub use price_adjustment_repo_trait::PriceAdjustmentRepoTrait;
 pub use product_repo_trait::ProductRepoTrait;
+pub use weekly_limit_repo_trait::WeeklyLimitRepoTrait;

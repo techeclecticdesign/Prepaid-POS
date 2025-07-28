@@ -1,9 +1,9 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useRef, useEffect, useState, useCallback } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { useTheme } from "@mui/material/styles";
 import BarcodeScanner from "../../lib/barcode";
-import { invoke } from "@tauri-apps/api/core";
 import TransactionFooter from "./components/TransactionFooter";
 import TransactionItems, {
   type TransactionItem,
@@ -34,6 +34,36 @@ export default function Sales() {
   );
   const [transactionTotal, setTransactionTotal] = useState(0);
   const [scannedUpc, setScannedUpc] = useState<string | null>(null);
+  const [weeklyLimit, setWeeklyLimit] = useState<number>(Infinity);
+  const [weeklySpent, setWeeklySpent] = useState<number>(0);
+
+  // Fetch weekly limit & spent when customer selected
+  useEffect(() => {
+    if (!selectedCustomer) {
+      setWeeklyLimit(Infinity);
+      setWeeklySpent(0);
+      return;
+    }
+    (async () => {
+      try {
+        const cap = await invoke<number>("get_weekly_limit");
+        setWeeklyLimit(cap);
+      } catch (err) {
+        console.error("get_weekly_limit failed:", err);
+        showSnackbar("Failed fetching weekly limit", "error");
+      }
+      try {
+        const spent = await invoke<number>("get_weekly_spent", {
+          customerMdoc: selectedCustomer.customer.mdoc,
+        });
+
+        setWeeklySpent(spent);
+      } catch (err) {
+        console.error("get_weekly_spent failed:", err);
+        showSnackbar("Failed fetching weekly spend", "error");
+      }
+    })();
+  }, [selectedCustomer]);
 
   // Session State
   const [sessionSales, setSessionSales] = useState(0);
@@ -48,6 +78,7 @@ export default function Sales() {
   const [isUnknownUpcDialogOpen, setIsUnknownUpcDialogOpen] = useState(false);
   const [isInsufficientFundsDialogOpen, setIsInsufficientFundsDialogOpen] =
     useState(false);
+  const [isWeeklyLimitDialogOpen, setIsWeeklyLimitDialogOpen] = useState(false);
 
   // Refs
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,6 +126,10 @@ export default function Sales() {
   }, []);
   const handleTotalChange = useCallback((newTotal: number) => {
     setTransactionTotal(newTotal);
+  }, []);
+
+  const handleWeeklyLimitExceeded = useCallback(() => {
+    setIsWeeklyLimitDialogOpen(true);
   }, []);
 
   // Scan Handler
@@ -376,6 +411,8 @@ export default function Sales() {
                 onTotalChange={handleTotalChange}
                 availableBalance={selectedCustomer.balance}
                 onInsufficientFunds={handleInsufficientFunds}
+                weeklyRemaining={Math.max(0, weeklyLimit - weeklySpent)}
+                onWeeklyLimitExceeded={handleWeeklyLimitExceeded}
               />
             </Box>
           ) : (
@@ -401,7 +438,6 @@ export default function Sales() {
           />
         </Box>
       </Box>
-
       {/* Snackbar Notifications */}
       <Box onClick={(e) => e.stopPropagation()}>
         <AppSnackbar
@@ -411,7 +447,7 @@ export default function Sales() {
           onClose={() => setSnackbarOpen(false)}
         />
       </Box>
-
+      {/* Error Dialogs */}
       <NotificationDialog
         open={isUnknownUpcDialogOpen}
         onClose={() => setIsUnknownUpcDialogOpen(false)}
@@ -420,7 +456,6 @@ export default function Sales() {
         Scanned product does not have a recognized UPC. Item cannot be sold
         until it has been registered in the Products page.
       </NotificationDialog>
-
       <NotificationDialog
         open={isInsufficientFundsDialogOpen}
         onClose={() => setIsInsufficientFundsDialogOpen(false)}
@@ -428,7 +463,13 @@ export default function Sales() {
       >
         Customer does not have enough funds to add item to transaction.
       </NotificationDialog>
-
+      <NotificationDialog
+        open={isWeeklyLimitDialogOpen}
+        onClose={() => setIsWeeklyLimitDialogOpen(false)}
+        title="Weekly Limit Exceeded"
+      >
+        This customer has reached their weekly spending limit.
+      </NotificationDialog>
       {/* Customer MDOC Dialog */}
       {isMdocDialogOpen && (
         <CustomerMdocDialog

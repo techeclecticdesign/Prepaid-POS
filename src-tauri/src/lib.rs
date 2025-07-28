@@ -11,6 +11,7 @@ use crate::domain::repos::{
     CategoryRepoTrait, ClubImportRepoTrait, ClubTransactionRepoTrait, CredentialRepoTrait,
     CustomerRepoTrait, CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait,
     InventoryTransactionRepoTrait, OperatorRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait,
+    WeeklyLimitRepoTrait,
 };
 
 use crate::interface::controllers::auth_controller::AuthController;
@@ -30,7 +31,7 @@ use infrastructure::repos::{
     SqliteCategoryRepo, SqliteClubImportRepo, SqliteClubTransactionRepo, SqliteCredentialRepo,
     SqliteCustomerRepo, SqliteCustomerTransactionRepo, SqliteCustomerTxDetailRepo,
     SqliteInventoryTransactionRepo, SqliteOperatorRepo, SqlitePriceAdjustmentRepo,
-    SqliteProductRepo,
+    SqliteProductRepo, SqliteWeeklyLimitRepo,
 };
 use std::sync::{Arc, RwLock};
 use tauri::{Builder, WindowEvent};
@@ -72,6 +73,8 @@ pub fn run() {
         Arc::new(SqliteCustomerTransactionRepo::new(Arc::clone(&conn)));
     let cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
         Arc::new(SqliteCustomerTxDetailRepo::new(Arc::clone(&conn)));
+    let limit_repo: Arc<dyn WeeklyLimitRepoTrait> =
+        Arc::new(SqliteWeeklyLimitRepo::new(Arc::clone(&conn)));
     let runner: Arc<dyn CommandRunner> = Arc::new(WindowsCommandRunner);
     let auth_ctrl = Arc::new(AuthController::new(auth_state.clone(), cred_repo.clone()));
     let op_ctrl = Arc::new(OperatorController::new(Arc::clone(&op_repo)));
@@ -85,6 +88,7 @@ pub fn run() {
         Arc::clone(&inv_repo),
         Arc::clone(&cust_tx_repo),
         Arc::clone(&cust_tx_detail_repo),
+        Arc::clone(&limit_repo),
         Arc::clone(&runner),
         Arc::clone(&conn),
     ));
@@ -146,6 +150,7 @@ pub fn run() {
         .manage(club_import_repo)
         .manage(club_tx_repo)
         .manage(customer_repo)
+        .manage(limit_repo)
         // add commands
         .invoke_handler(tauri::generate_handler![
             common::logger::process_frontend_error,
@@ -174,6 +179,9 @@ pub fn run() {
             interface::commands::transaction::list_order_details,
             interface::commands::transaction::search_customer_transactions,
             interface::commands::transaction::search_inventory_transactions,
+            interface::commands::transaction::set_weekly_limit,
+            interface::commands::transaction::get_weekly_limit,
+            interface::commands::transaction::get_weekly_spent,
             interface::commands::club::search_customers,
             interface::commands::club::search_club_transactions,
             interface::commands::pos::pos_init,

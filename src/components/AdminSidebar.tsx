@@ -120,6 +120,15 @@ export default function AdminSidebar() {
         >
           Change Password
         </Link>
+        <Link
+          component={RouterLink}
+          to="/weekly-limit"
+          underline="hover"
+          color={isActive("/weekly-limit") ? "text.secondary" : "primary"}
+          sx={linkSx("/weekly-limit")}
+        >
+          Weekly Limit
+        </Link>
       </nav>
       <Link
         onClick={() => {

@@ -5,6 +5,8 @@ use crate::domain::repos::customer_tx_repo_trait::SaleDetailsTuple;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use crate::domain::repos::CustomerTxDetailRepoTrait;
 use crate::domain::repos::InventoryTransactionRepoTrait;
+use crate::domain::repos::WeeklyLimitRepoTrait;
+use chrono::{Datelike, Duration, Utc};
 use log::{error, info};
 use std::sync::{Arc, Mutex};
 
@@ -12,6 +14,7 @@ pub struct TransactionUseCases {
     inv_repo: Arc<dyn InventoryTransactionRepoTrait>,
     cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
     cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
+    limit_repo: Arc<dyn WeeklyLimitRepoTrait>,
     conn: Arc<Mutex<rusqlite::Connection>>,
 }
 
@@ -20,12 +23,14 @@ impl TransactionUseCases {
         inv_repo: Arc<dyn InventoryTransactionRepoTrait>,
         cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
         cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
+        limit_repo: Arc<dyn WeeklyLimitRepoTrait>,
         conn: Arc<Mutex<rusqlite::Connection>>,
     ) -> Self {
         Self {
             inv_repo,
             cust_tx_repo,
             cust_tx_detail_repo,
+            limit_repo,
             conn,
         }
     }
@@ -57,7 +62,12 @@ impl TransactionUseCases {
         mut details: Vec<CustomerTxDetail>,
     ) -> Result<i32, AppError> {
         atomic_tx(&self.conn, |tx| {
-            let order_id = self.cust_tx_repo.create_with_tx(&cust_tx, tx)?;
+            // add timestamp
+            let mut tx_to_insert = cust_tx.clone();
+            if tx_to_insert.date.is_none() {
+                tx_to_insert.date = Some(chrono::Utc::now().naive_utc());
+            }
+            let order_id = self.cust_tx_repo.create_with_tx(&tx_to_insert, tx)?;
 
             for inv in &mut invs {
                 inv.ref_order_id = Some(order_id);
@@ -134,6 +144,26 @@ impl TransactionUseCases {
     pub fn get_sale_details(&self, order_id: i32) -> Result<SaleDetailsTuple, AppError> {
         self.cust_tx_repo.get_with_details_and_balance(order_id)
     }
+
+    pub fn get_weekly_limit(&self) -> Result<i32, AppError> {
+        self.limit_repo.get_limit()
+    }
+
+    pub fn set_weekly_limit(&self, limit: i32) -> Result<(), AppError> {
+        self.limit_repo.set_limit(limit)
+    }
+
+    pub fn get_weekly_spent(&self, customer_mdoc: i32) -> Result<i32, AppError> {
+        let now = Utc::now().naive_utc();
+        let weekday = now.weekday().num_days_from_sunday() as i64;
+        let date = now.date();
+        let midnight = date
+            .and_hms_opt(0, 0, 0)
+            .ok_or_else(|| AppError::Unexpected("Could not construct midnight time".to_string()))?;
+        let week_start = midnight - Duration::days(weekday);
+        self.cust_tx_repo
+            .get_weekly_spent(customer_mdoc, week_start)
+    }
 }
 
 #[cfg(test)]
@@ -145,6 +175,7 @@ mod tests {
     use crate::domain::models::{CustomerTransaction, CustomerTxDetail, InventoryTransaction};
     use crate::domain::repos::{
         CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
+        WeeklyLimitRepoTrait,
     };
     use crate::domain::repos::{OperatorRepoTrait, ProductRepoTrait};
     use crate::test_support::mock_customer_tx_detail_repo::MockCustomerTxDetailRepo;
@@ -152,6 +183,7 @@ mod tests {
     use crate::test_support::mock_inventory_transaction_repo::MockInventoryTransactionRepo;
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
+    use crate::test_support::mock_weekly_limit_repo::MockWeeklyLimitRepo;
 
     use rusqlite::{Connection, Transaction};
     use std::sync::{Arc, Mutex};
@@ -206,6 +238,7 @@ mod tests {
         Arc<dyn InventoryTransactionRepoTrait>,
         Arc<dyn CustomerTransactionRepoTrait>,
         Arc<dyn CustomerTxDetailRepoTrait>,
+        Arc<dyn WeeklyLimitRepoTrait>,
     ) {
         // Real DB only for atomic_tx; repos are all mocks
         let conn = Arc::new(Mutex::new(Connection::open_in_memory().unwrap()));
@@ -218,11 +251,13 @@ mod tests {
             Arc::new(MockCustomerTransactionRepo::default());
         let cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait> =
             Arc::new(MockCustomerTxDetailRepo::default());
+        let limit_repo: Arc<dyn WeeklyLimitRepoTrait> = Arc::new(MockWeeklyLimitRepo::default());
 
         let uc = TransactionUseCases::new(
             inv_repo.clone(),
             cust_tx_repo.clone(),
             cust_tx_detail_repo.clone(),
+            limit_repo.clone(),
             conn.clone(),
         );
         (
@@ -232,12 +267,13 @@ mod tests {
             inv_repo,
             cust_tx_repo,
             cust_tx_detail_repo,
+            limit_repo,
         )
     }
 
     #[test]
     fn inventory_and_sale_and_stock_flows() -> anyhow::Result<()> {
-        let (uc, op_repo, prod_repo, _, _, _) = make_use_cases();
+        let (uc, op_repo, prod_repo, _, _, _, _) = make_use_cases();
         // seed FK tables
         op_repo.create(&Operator {
             mdoc: 10,
@@ -288,7 +324,7 @@ mod tests {
 
     #[test]
     fn list_filters() -> anyhow::Result<()> {
-        let (uc, op_repo, prod_repo, _, _, _) = make_use_cases();
+        let (uc, op_repo, prod_repo, _, _, _, _) = make_use_cases();
         // seed FK tables
         op_repo.create(&Operator {
             mdoc: 1,
@@ -324,7 +360,7 @@ mod tests {
 
     #[test]
     fn sale_transaction_commits_all_repos() -> Result<(), Box<dyn std::error::Error>> {
-        let (uc, op_repo, prod_repo, inv, cust_tx, det) = make_use_cases();
+        let (uc, op_repo, prod_repo, inv, cust_tx, det, _) = make_use_cases();
         // seed operator and product so we don't violate FKs
         op_repo.create(&Operator {
             mdoc: 1,
@@ -371,10 +407,16 @@ mod tests {
 
     #[test]
     fn sale_transaction_rolls_back_on_detail_error() -> Result<(), AppError> {
-        let (_, _, _, inv, cust_tx, _) = make_use_cases();
+        let (_, _, _, inv, cust_tx, _, _) = make_use_cases();
         let fail_det = FailingDetailRepo::new();
         let conn = Arc::new(Mutex::new(Connection::open_in_memory()?));
-        let uc = TransactionUseCases::new(inv.clone(), cust_tx.clone(), Arc::new(fail_det), conn);
+        let uc = TransactionUseCases::new(
+            inv.clone(),
+            cust_tx.clone(),
+            Arc::new(fail_det),
+            Arc::new(MockWeeklyLimitRepo::new()),
+            conn,
+        );
 
         // prepare one inventory‐tx + one bad detail (price=0)
         let invs = vec![InventoryTransaction {

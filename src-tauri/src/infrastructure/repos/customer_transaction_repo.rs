@@ -3,6 +3,7 @@ use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
 use crate::domain::repos::CustomerTransactionRepoTrait;
+use chrono::{Duration, NaiveDateTime};
 use rusqlite::{params, Connection};
 use std::sync::{Arc, Mutex};
 
@@ -305,12 +306,36 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
 
         Ok((tx, details, balance))
     }
+
+    // Get total for mdoc between `week_start` (inclusive) and `week_start + 7 days` (exclusive).
+    fn get_weekly_spent(
+        &self,
+        customer_mdoc: i32,
+        week_start: NaiveDateTime,
+    ) -> Result<i32, AppError> {
+        let conn = self.conn.safe_lock()?;
+        let week_end = week_start + Duration::days(7);
+        let mut stmt = conn.prepare(
+            "SELECT COALESCE(SUM(d.quantity * d.price), 0)
+             FROM customer_transactions t
+             JOIN customer_tx_detail d ON t.order_id = d.order_id
+             WHERE t.customer_mdoc = ?1
+               AND t.date >= ?2
+               AND t.date <  ?3",
+        )?;
+
+        let spent: i32 =
+            stmt.query_row(params![customer_mdoc, week_start, week_end], |r| r.get(0))?;
+
+        Ok(spent)
+    }
 }
 
 #[cfg(test)]
 mod repo_tests {
     use super::*;
     use crate::infrastructure::db::create_connection;
+    use chrono::Utc;
     use std::sync::Arc;
 
     impl SqliteCustomerTransactionRepo {
@@ -346,7 +371,7 @@ mod repo_tests {
             order_id: 0,
             customer_mdoc: 3,
             operator_mdoc: 4,
-            date: None,
+            date: Some(Utc::now().naive_utc()),
             note: Some("hi".into()),
         };
         repo.create(&tx).unwrap();

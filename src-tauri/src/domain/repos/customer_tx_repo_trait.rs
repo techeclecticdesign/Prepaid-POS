@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
+use chrono::NaiveDateTime;
 
 pub type SaleDetailsTuple = (CustomerTransaction, Vec<(CustomerTxDetail, String)>, i32);
 
@@ -31,4 +32,11 @@ pub trait CustomerTransactionRepoTrait: Send + Sync {
     ) -> Result<i32, AppError>;
 
     fn get_with_details_and_balance(&self, _order_id: i32) -> Result<SaleDetailsTuple, AppError>;
+
+    // Get total for mdoc between `week_start` (inclusive) and `week_start + 7 days` (exclusive).
+    fn get_weekly_spent(
+        &self,
+        customer_mdoc: i32,
+        week_start: NaiveDateTime,
+    ) -> Result<i32, AppError>;
 }

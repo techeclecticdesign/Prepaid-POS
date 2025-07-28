@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS customer_transactions (
     order_id       INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_mdoc  INTEGER NOT NULL,
     operator_mdoc  INTEGER NOT NULL,
-    date           TEXT,
+    date           DATETIME NOT NULL,
     note           TEXT
 );
 
