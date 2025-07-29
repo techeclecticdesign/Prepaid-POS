@@ -18,28 +18,32 @@ use crate::interface::presenters::inventory_transaction_presenter::InventoryTran
 use std::sync::{Arc, Mutex};
 use validator::Validate;
 
+pub struct TransactionControllerDeps {
+    pub inv_repo: Arc<dyn crate::domain::repos::InventoryTransactionRepoTrait>,
+    pub cust_tx_repo: Arc<dyn crate::domain::repos::CustomerTransactionRepoTrait>,
+    pub cust_tx_detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
+    pub limit_repo: Arc<dyn crate::domain::repos::WeeklyLimitRepoTrait>,
+    pub runner: Arc<dyn crate::infrastructure::command_runner::CommandRunner>,
+    pub customer_repo: Arc<dyn crate::domain::repos::CustomerRepoTrait>,
+    pub prod_repo: Arc<dyn crate::domain::repos::ProductRepoTrait>,
+    pub conn: Arc<Mutex<rusqlite::Connection>>,
+}
+
 pub struct TransactionController {
     tx_uc: TransactionUseCases,
     printer_uc: PrinterUseCases,
 }
 
 impl TransactionController {
-    pub fn new(
-        inv_repo: Arc<dyn crate::domain::repos::InventoryTransactionRepoTrait>,
-        cust_tx_repo: Arc<dyn crate::domain::repos::CustomerTransactionRepoTrait>,
-        cust_tx_detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
-        limit_repo: Arc<dyn crate::domain::repos::WeeklyLimitRepoTrait>,
-        runner: Arc<dyn crate::infrastructure::command_runner::CommandRunner>,
-        conn: Arc<Mutex<rusqlite::Connection>>,
-    ) -> Self {
+    pub fn new(deps: TransactionControllerDeps) -> Self {
         let tx_uc = TransactionUseCases::new(
-            inv_repo,
-            cust_tx_repo,
-            cust_tx_detail_repo,
-            limit_repo,
-            conn,
+            deps.inv_repo,
+            deps.cust_tx_repo,
+            deps.cust_tx_detail_repo,
+            deps.limit_repo,
+            deps.conn,
         );
-        let printer_uc = PrinterUseCases::new(runner);
+        let printer_uc = PrinterUseCases::new(deps.runner, deps.customer_repo, deps.prod_repo);
         Self { tx_uc, printer_uc }
     }
 

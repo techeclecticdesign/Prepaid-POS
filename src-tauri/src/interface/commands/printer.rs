@@ -11,3 +11,11 @@ pub fn list_printers(
 ) -> Result<Vec<PrinterDto>, AppError> {
     controller.list_printers()
 }
+
+#[tauri::command]
+pub fn print_prod_inv_rpt(
+    controller: State<'_, Arc<PrinterController>>,
+    printer_name: String,
+) -> Result<(), AppError> {
+    controller.print_prod_inv_rpt(printer_name)
+}

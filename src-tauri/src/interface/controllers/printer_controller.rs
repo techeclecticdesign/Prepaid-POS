@@ -34,4 +34,8 @@ impl PrinterController {
         let names = self.uc.list_printers()?;
         Ok(PrinterPresenter::to_dto(names))
     }
+
+    pub fn print_prod_inv_rpt(&self, printer_name: String) -> Result<(), AppError> {
+        self.uc.print_prod_inv_rpt(printer_name).map(|_| ())
+    }
 }

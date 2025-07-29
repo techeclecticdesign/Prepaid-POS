@@ -1,7 +1,10 @@
 use crate::common::error::AppError;
+use crate::domain::repos::CustomerRepoTrait;
+use crate::domain::repos::ProductRepoTrait;
 use crate::infrastructure::command_runner::CommandRunner;
 use crate::infrastructure::printing::reports::business_receipt::print_business_receipt;
 use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
+use crate::infrastructure::printing::reports::prod_inv_report::print_inventory_report;
 use crate::interface::dto::printer_dto::PrintableSaleDto;
 use std::sync::Arc;
 
@@ -11,11 +14,21 @@ pub enum ReportType {
 
 pub struct PrinterUseCases {
     runner: Arc<dyn CommandRunner>,
+    customer_repo: Arc<dyn CustomerRepoTrait>,
+    product_repo: Arc<dyn ProductRepoTrait>,
 }
 
 impl PrinterUseCases {
-    pub fn new(runner: Arc<dyn CommandRunner>) -> Self {
-        Self { runner }
+    pub fn new(
+        runner: Arc<dyn CommandRunner>,
+        customer_repo: Arc<dyn CustomerRepoTrait>,
+        product_repo: Arc<dyn ProductRepoTrait>,
+    ) -> Self {
+        Self {
+            runner,
+            customer_repo,
+            product_repo,
+        }
     }
 
     // List installed printers on Windows by invoking PowerShell.
@@ -82,6 +95,15 @@ impl PrinterUseCases {
             printer_name,
         )?;
 
+        Ok(())
+    }
+
+    pub fn print_prod_inv_rpt(&self, printer_name: String) -> Result<(), AppError> {
+        let rows = self.product_repo.report_by_category()?;
+        let total_amount = self.customer_repo.sum_all_balances()?;
+        let product_totals = self.product_repo.get_inventory_totals()?;
+
+        print_inventory_report(&rows, product_totals, total_amount, &printer_name)?;
         Ok(())
     }
 }

@@ -22,7 +22,9 @@ use crate::interface::controllers::parse_pdf_controller::PdfParseController;
 use crate::interface::controllers::pos_controller::PosController;
 use crate::interface::controllers::printer_controller::PrinterController;
 use crate::interface::controllers::product_controller::ProductController;
-use crate::interface::controllers::transaction_controller::TransactionController;
+use crate::interface::controllers::transaction_controller::{
+    TransactionController, TransactionControllerDeps,
+};
 
 use infrastructure::command_runner::{CommandRunner, WindowsCommandRunner};
 use infrastructure::db::create_connection;
@@ -84,14 +86,16 @@ pub fn run() {
         Arc::clone(&category_repo),
         Arc::clone(&conn),
     ));
-    let tx_ctrl = Arc::new(TransactionController::new(
-        Arc::clone(&inv_repo),
-        Arc::clone(&cust_tx_repo),
-        Arc::clone(&cust_tx_detail_repo),
-        Arc::clone(&limit_repo),
-        Arc::clone(&runner),
-        Arc::clone(&conn),
-    ));
+    let tx_ctrl = Arc::new(TransactionController::new(TransactionControllerDeps {
+        inv_repo: Arc::clone(&inv_repo),
+        cust_tx_repo: Arc::clone(&cust_tx_repo),
+        cust_tx_detail_repo: Arc::clone(&cust_tx_detail_repo),
+        limit_repo: Arc::clone(&limit_repo),
+        runner: Arc::clone(&runner),
+        customer_repo: Arc::clone(&customer_repo),
+        prod_repo: Arc::clone(&product_repo),
+        conn: Arc::clone(&conn),
+    }));
     let club_ctrl = Arc::new(ClubController::new(
         Arc::clone(&customer_repo),
         Arc::clone(&club_tx_repo),
@@ -119,7 +123,11 @@ pub fn run() {
         Arc::clone(&customer_repo),
     ));
 
-    let printer_uc = PrinterUseCases::new(Arc::clone(&runner));
+    let printer_uc = PrinterUseCases::new(
+        Arc::clone(&runner),
+        Arc::clone(&customer_repo),
+        Arc::clone(&product_repo),
+    );
     let printer_ctrl = Arc::new(PrinterController::new(printer_uc));
 
     // filter spammy tao / winit event loop spam in console
@@ -189,6 +197,7 @@ pub fn run() {
             interface::commands::legacy_migration::do_legacy_data_import,
             interface::commands::parse_pdf::parse_pdf,
             interface::commands::printer::list_printers,
+            interface::commands::printer::print_prod_inv_rpt
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

@@ -1137,10 +1137,13 @@ impl LegacyMigrationUseCases {
     pub fn migrate_customer_orders(&self, conn: &odbc_api::Connection<'_>) -> Result<(), AppError> {
         let mut raws: Vec<RawCustomerOrderRow> = Vec::new();
 
+        // get data - filtering out orders that don't exist in tblCustomerAccount
         let mut cursor = conn
             .execute(
-                "SELECT idnOrderId, lngCustomerMdoc, lngOperatorMdoc, datEntry, txtOrderNote \
-                 FROM tblCustomerOrder",
+                "SELECT o.idnOrderId, o.lngCustomerMdoc, o.lngOperatorMdoc, o.datEntry, o.txtOrderNote \
+                 FROM tblCustomerOrder o \
+                 INNER JOIN (SELECT DISTINCT lngOrderId FROM tblCustomerAccount) a \
+                   ON o.idnOrderId = a.lngOrderId",
                 (),
                 None::<usize>,
             )

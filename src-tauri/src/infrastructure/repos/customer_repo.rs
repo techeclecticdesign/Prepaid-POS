@@ -70,7 +70,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
               SELECT mdoc,
                      SUM(CASE 
                            WHEN tx_type = 'Deposit'    THEN amount
-                           WHEN tx_type = 'Withdrawal' THEN -amount
+                           WHEN tx_type = 'Withdrawal' THEN amount
                            ELSE 0
                          END) AS added
               FROM club_transactions
@@ -179,7 +179,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
                      SUM(
                        CASE 
                          WHEN tx_type = 'Deposit'    THEN amount
-                         WHEN tx_type = 'Withdrawal' THEN -amount
+                         WHEN tx_type = 'Withdrawal' THEN amount
                          ELSE 0
                        END
                      ) AS added
@@ -252,7 +252,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
             SELECT mdoc, \
                    SUM(CASE \
                          WHEN tx_type = 'Deposit' THEN amount \
-                         WHEN tx_type = 'Withdrawal' THEN -amount \
+                         WHEN tx_type = 'Withdrawal' THEN amount \
                          ELSE 0 END) AS added \
             FROM club_transactions \
             GROUP BY mdoc\

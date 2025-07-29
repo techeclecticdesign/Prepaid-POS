@@ -1,5 +1,7 @@
 use crate::common::error::AppError;
 use crate::domain::models::Product;
+use crate::domain::report_models::product_inventory::ProductInventoryReport;
+use crate::domain::report_models::product_inventory::ProductInventoryTotals;
 
 pub trait ProductRepoTrait: Send + Sync {
     fn get_by_upc(&self, upc: String) -> Result<Option<Product>, AppError>;
@@ -20,4 +22,6 @@ pub trait ProductRepoTrait: Send + Sync {
         offset: i32,
     ) -> Result<Vec<(Product, i32)>, AppError>;
     fn count(&self, desc_like: Option<String>, category: Option<String>) -> Result<i32, AppError>;
+    fn report_by_category(&self) -> Result<Vec<ProductInventoryReport>, AppError>;
+    fn get_inventory_totals(&self) -> Result<ProductInventoryTotals, AppError>;
 }

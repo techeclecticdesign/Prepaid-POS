@@ -1,6 +1,8 @@
 use crate::common::error::AppError;
 use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::Product;
+use crate::domain::report_models::product_inventory::ProductInventoryReport;
+use crate::domain::report_models::product_inventory::ProductInventoryTotals;
 use crate::domain::repos::ProductRepoTrait;
 use rusqlite::{params, Connection};
 use std::sync::{Arc, Mutex};
@@ -197,5 +199,81 @@ impl ProductRepoTrait for SqliteProductRepo {
 
         let count: i32 = conn.query_row(&sql, params.as_slice(), |r| r.get(0))?;
         Ok(count)
+    }
+
+    // to keep architecture thin we use CTE to do 2 queries, and union them into a combined result
+    fn report_by_category(&self) -> Result<Vec<ProductInventoryReport>, AppError> {
+        let conn = self.conn.safe_lock()?;
+        let sql = r#"
+            WITH detail AS (
+                SELECT
+                  p.category,
+                  p.upc,
+                  p.desc    AS name,
+                  p.price,
+                  COALESCE(SUM(it.quantity_change), 0) AS quantity,
+                  COALESCE(SUM(it.quantity_change), 0) * p.price AS total
+                FROM products p
+                LEFT JOIN inventory_transactions it
+                  ON p.upc = it.upc
+                GROUP BY p.category, p.upc
+                HAVING quantity != 0
+            ), summary AS (
+                SELECT
+                  category,
+                  NULL    AS upc,
+                  NULL    AS name,
+                  NULL    AS price,
+                  SUM(quantity) AS quantity,
+                  SUM(total)    AS total
+                FROM detail
+                GROUP BY category
+                HAVING SUM(quantity) != 0
+            )
+            SELECT *, 0 AS is_summary FROM detail
+            UNION ALL
+            SELECT *, 1 AS is_summary FROM summary
+            ORDER BY category, is_summary, name;
+        "#;
+        let mut stmt = conn.prepare(sql)?;
+        let rows = stmt.query_map([], |r| {
+            Ok(ProductInventoryReport {
+                category: r.get("category")?,
+                upc: r.get("upc")?,
+                name: r.get("name")?,
+                price: r.get("price")?,
+                quantity: r.get("quantity")?,
+                total: r.get("total")?,
+                is_summary: r.get::<_, i32>("is_summary")? != 0,
+            })
+        })?;
+        let rows = rows.collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    fn get_inventory_totals(&self) -> Result<ProductInventoryTotals, AppError> {
+        let conn = self.conn.safe_lock()?;
+        let sql = r#"
+            SELECT
+              SUM(quantity) AS total_quantity,
+              SUM(total)    AS total_value
+            FROM (
+              SELECT
+                COALESCE(SUM(it.quantity_change), 0) AS quantity,
+                COALESCE(SUM(it.quantity_change), 0) * p.price AS total
+              FROM products p
+              LEFT JOIN inventory_transactions it ON p.upc = it.upc
+              GROUP BY p.upc
+              HAVING quantity != 0
+            )
+        "#;
+
+        let row = conn.query_row(sql, [], |r| {
+            Ok(ProductInventoryTotals {
+                total_quantity: r.get::<_, i32>(0)?,
+                total_value: r.get::<_, i32>(1)?,
+            })
+        })?;
+        Ok(row)
     }
 }

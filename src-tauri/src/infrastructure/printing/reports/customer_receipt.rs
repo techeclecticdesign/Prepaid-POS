@@ -10,7 +10,7 @@ use std::io::BufWriter;
 use super::common::receipt_header;
 use crate::infrastructure::printing::print::print_pdf_silently;
 
-/// Prints the customer copy PDF and sends to printer.
+// Prints the customer copy PDF and sends to printer.
 pub fn print_customer_receipt(
     tx: &CustomerTransaction,
     details: &[PrintableLineItem],
@@ -22,8 +22,12 @@ pub fn print_customer_receipt(
     let height = Mm((lines as f32 * 7.0) + 20.0).max(Mm(100.0));
     let (doc, page, layer) = PdfDocument::new("Customer Receipt", Mm(80.0), height, "L1");
     let current = doc.get_page(page).get_layer(layer);
-    let font = doc.add_builtin_font(printpdf::BuiltinFont::Helvetica)?;
-    let bold_font = doc.add_builtin_font(printpdf::BuiltinFont::HelveticaBold)?;
+    let font = doc
+        .add_builtin_font(printpdf::BuiltinFont::Helvetica)
+        .map_err(AppError::Pdf)?;
+    let bold_font = doc
+        .add_builtin_font(printpdf::BuiltinFont::HelveticaBold)
+        .map_err(AppError::Pdf)?;
     let mut y = receipt_header(
         &current,
         &font,
