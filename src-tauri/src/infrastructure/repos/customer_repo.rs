@@ -240,4 +240,33 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
         )?;
         Ok(())
     }
+
+    // Sum total of all customer account balances (deposits minus spent)
+    fn sum_all_balances(&self) -> Result<i32, AppError> {
+        let conn = self.conn.safe_lock()?;
+        let sql = "\
+        SELECT SUM(balance) FROM (\
+          SELECT (COALESCE(ct.added,0) - COALESCE(sp.spent,0)) AS balance \
+          FROM customer c \
+          LEFT JOIN (\
+            SELECT mdoc, \
+                   SUM(CASE \
+                         WHEN tx_type = 'Deposit' THEN amount \
+                         WHEN tx_type = 'Withdrawal' THEN -amount \
+                         ELSE 0 END) AS added \
+            FROM club_transactions \
+            GROUP BY mdoc\
+          ) ct ON c.mdoc = ct.mdoc \
+          LEFT JOIN (\
+            SELECT t.customer_mdoc AS mdoc, \
+                   SUM(d.quantity * d.price) AS spent \
+            FROM customer_transactions t \
+            JOIN customer_tx_detail d \
+              ON t.order_id = d.order_id \
+            GROUP BY t.customer_mdoc\
+          ) sp ON c.mdoc = sp.mdoc \
+        )";
+        let total: i64 = conn.query_row(sql, [], |r| r.get(0))?;
+        Ok(total as i32)
+    }
 }

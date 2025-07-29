@@ -153,4 +153,11 @@ impl ClubTransactionRepoTrait for SqliteClubTransactionRepo {
         })
         .map_err(Into::into)
     }
+
+    fn get_account_total(&self) -> Result<i32, AppError> {
+        let conn = self.conn.safe_lock()?;
+        let mut stmt = conn.prepare("SELECT SUM(amount) FROM club_transactions")?;
+        let total: Option<i64> = stmt.query_row([], |row| row.get(0))?;
+        Ok(total.unwrap_or(0) as i32)
+    }
 }

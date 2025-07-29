@@ -99,4 +99,8 @@ impl CustomerRepoTrait for MockCustomerRepo {
         let guard = self.store.lock().unwrap();
         Ok(guard.iter().cloned().map(|c| (c, 0)).collect())
     }
+
+    fn sum_all_balances(&self) -> Result<i32, AppError> {
+        Ok(0)
+    }
 }

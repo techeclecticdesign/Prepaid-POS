@@ -107,4 +107,10 @@ impl ClubTransactionRepoTrait for MockClubTransactionRepo {
 
         Ok(cnt as i32)
     }
+
+    fn get_account_total(&self) -> Result<i32, AppError> {
+        let guard = self.store.lock().unwrap();
+        let sum: i64 = guard.iter().map(|tx| tx.amount as i64).sum();
+        Ok(sum as i32)
+    }
 }

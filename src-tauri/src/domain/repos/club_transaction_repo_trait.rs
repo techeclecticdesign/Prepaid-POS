@@ -13,4 +13,5 @@ pub trait ClubTransactionRepoTrait: Send + Sync {
         search: Option<String>,
     ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError>;
     fn count(&self, date: Option<String>, search: Option<String>) -> Result<i32, AppError>;
+    fn get_account_total(&self) -> Result<i32, AppError>;
 }

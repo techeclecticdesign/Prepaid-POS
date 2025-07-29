@@ -15,4 +15,5 @@ pub trait CustomerRepoTrait: Send + Sync {
 
     fn count(&self, search: Option<String>) -> Result<i32, AppError>;
     fn list_customer_accounts(&self) -> Result<Vec<(Customer, i32)>, AppError>;
+    fn sum_all_balances(&self) -> Result<i32, AppError>;
 }
