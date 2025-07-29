@@ -89,6 +89,17 @@ export default function OperatorSidebar() {
         >
           Accounts
         </Link>
+        <Link
+          component={RouterLink}
+          to="/reports"
+          underline="hover"
+          color={
+            location.pathname === "/reports" ? "text.secondary" : "primary"
+          }
+          sx={linkSx("/reports")}
+        >
+          Reports
+        </Link>
       </nav>
       <Link
         underline="hover"
