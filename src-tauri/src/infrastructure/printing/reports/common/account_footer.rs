@@ -19,7 +19,7 @@ pub fn account_footer(
 
     // Account total line
     let total_value = total_amount as f64 / 100.0;
-    let total_text = format!("Account Total: ${:.2}", total_value);
+    let total_text = format!("Account Total: ${total_value:.2}");
     layer.use_text(&total_text, font_size, Mm(90.0), y, bold_font);
 
     y

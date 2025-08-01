@@ -92,7 +92,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
 
         // filter for any‐position matches
         if let Some(s) = search.as_ref().filter(|s| !s.trim().is_empty()) {
-            let contains = format!("%{}%", s);
+            let contains = format!("%{s}%");
             string_params.push(contains.clone());
             string_params.push(contains.clone());
             sql.push_str(" AND (c.mdoc LIKE ? OR c.name LIKE ?)");
@@ -100,7 +100,7 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
 
         // order prefix‐matches first, then contains, then by name
         if let Some(s) = search.as_ref().filter(|s| !s.trim().is_empty()) {
-            let prefix = format!("{}%", s);
+            let prefix = format!("{s}%");
             string_params.push(prefix.clone());
             string_params.push(prefix.clone());
             sql.push_str(
@@ -193,7 +193,8 @@ impl CustomerRepoTrait for SqliteCustomerRepo {
               JOIN customer_tx_detail d ON t.order_id = d.order_id AND d.order_id IS NOT NULL
               GROUP BY t.customer_mdoc
             ) sp ON c.mdoc = sp.mdoc
-            WHERE 1=1
+            WHERE (COALESCE(ct.added,0) - COALESCE(sp.spent,0)) != 0
+            ORDER BY c.name
         ";
         let mut stmt = conn.prepare(sql)?;
         let rows = stmt.query_map([], |r| {

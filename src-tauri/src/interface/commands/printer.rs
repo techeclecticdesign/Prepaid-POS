@@ -19,3 +19,11 @@ pub fn print_prod_inv_rpt(
 ) -> Result<(), AppError> {
     controller.print_prod_inv_rpt(printer_name)
 }
+
+#[tauri::command]
+pub fn print_cust_bal_rpt(
+    controller: State<'_, Arc<PrinterController>>,
+    printer_name: String,
+) -> Result<(), AppError> {
+    controller.print_cust_bal_rpt(printer_name)
+}

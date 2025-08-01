@@ -3,6 +3,7 @@ use crate::domain::repos::CustomerRepoTrait;
 use crate::domain::repos::ProductRepoTrait;
 use crate::infrastructure::command_runner::CommandRunner;
 use crate::infrastructure::printing::reports::business_receipt::print_business_receipt;
+use crate::infrastructure::printing::reports::customer_balance_report::print_customer_balance_report;
 use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
 use crate::infrastructure::printing::reports::prod_inv_report::print_inventory_report;
 use crate::interface::dto::printer_dto::PrintableSaleDto;
@@ -104,6 +105,14 @@ impl PrinterUseCases {
         let product_totals = self.product_repo.get_inventory_totals()?;
 
         print_inventory_report(&rows, product_totals, total_amount, &printer_name)?;
+        Ok(())
+    }
+
+    pub fn print_cust_bal_rpt(&self, printer_name: String) -> Result<(), AppError> {
+        let data = self.customer_repo.list_customer_accounts()?;
+        let total_amount = self.customer_repo.sum_all_balances()?;
+
+        print_customer_balance_report(&data, total_amount, &printer_name)?;
         Ok(())
     }
 }

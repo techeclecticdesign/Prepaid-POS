@@ -12,7 +12,7 @@ impl std::str::FromStr for ReportType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "receipt" => Ok(ReportType::Receipt),
-            _ => Err(AppError::NotFound(format!("Unknown report: {}", s))),
+            _ => Err(AppError::NotFound(format!("Unknown report: {s}"))),
         }
     }
 }
@@ -37,5 +37,9 @@ impl PrinterController {
 
     pub fn print_prod_inv_rpt(&self, printer_name: String) -> Result<(), AppError> {
         self.uc.print_prod_inv_rpt(printer_name).map(|_| ())
+    }
+
+    pub fn print_cust_bal_rpt(&self, printer_name: String) -> Result<(), AppError> {
+        self.uc.print_cust_bal_rpt(printer_name).map(|_| ())
     }
 }

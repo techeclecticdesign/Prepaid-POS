@@ -40,10 +40,14 @@ export default function Reports() {
             }}
           />
           <AppButton
-            text={"Lorem"}
+            text={"Customer Balances"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
+            onClick={async () => {
+              await invoke("print_cust_bal_rpt", {
+                printerName: localStorage.getItem("fullpage_printer") ?? "",
+              });
+            }}
           />
           <AppButton
             text={"Ipsum"}
