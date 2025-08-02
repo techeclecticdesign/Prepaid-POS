@@ -50,10 +50,14 @@ export default function Reports() {
             }}
           />
           <AppButton
-            text={"Ipsum"}
+            text={"Product Catalog"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
+            onClick={async () => {
+              await invoke("print_product_catalog", {
+                printerName: localStorage.getItem("fullpage_printer") ?? "",
+              });
+            }}
           />
           <AppButton
             text={"Dolor"}

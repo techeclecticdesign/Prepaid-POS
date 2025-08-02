@@ -85,8 +85,13 @@ impl ProductRepoTrait for SqliteProductRepo {
 
     fn list(&self) -> Result<Vec<Product>, AppError> {
         let conn = self.conn.safe_lock()?;
-        let mut stmt = conn
-            .prepare("SELECT upc, desc, category, price, updated, added, deleted FROM products")?;
+        // filter: nonzero price, not deleted; sort by category then name
+        let mut stmt = conn.prepare(
+            "SELECT upc, desc, category, price, updated, added, deleted
+            FROM products
+            WHERE price != 0 AND deleted IS NULL
+            ORDER BY category, desc",
+        )?;
         let prods = stmt
             .query_map([], |r| {
                 Ok(Product {

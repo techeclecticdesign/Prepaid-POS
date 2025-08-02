@@ -42,4 +42,8 @@ impl PrinterController {
     pub fn print_cust_bal_rpt(&self, printer_name: String) -> Result<(), AppError> {
         self.uc.print_cust_bal_rpt(printer_name).map(|_| ())
     }
+
+    pub fn print_product_catalog(&self, printer_name: String) -> Result<(), AppError> {
+        self.uc.print_product_catalog(printer_name).map(|_| ())
+    }
 }

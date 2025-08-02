@@ -6,6 +6,7 @@ use crate::infrastructure::printing::reports::business_receipt::print_business_r
 use crate::infrastructure::printing::reports::customer_balance_report::print_customer_balance_report;
 use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
 use crate::infrastructure::printing::reports::prod_inv_report::print_inventory_report;
+use crate::infrastructure::printing::reports::product_catalog::print_product_catalog_report;
 use crate::interface::dto::printer_dto::PrintableSaleDto;
 use std::sync::Arc;
 
@@ -113,6 +114,13 @@ impl PrinterUseCases {
         let total_amount = self.customer_repo.sum_all_balances()?;
 
         print_customer_balance_report(&data, total_amount, &printer_name)?;
+        Ok(())
+    }
+
+    pub fn print_product_catalog(&self, printer_name: String) -> Result<(), AppError> {
+        // fetch the same rows as inventory report
+        let rows = self.product_repo.list()?;
+        print_product_catalog_report(&rows, &printer_name)?;
         Ok(())
     }
 }

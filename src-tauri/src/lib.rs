@@ -198,7 +198,8 @@ pub fn run() {
             interface::commands::parse_pdf::parse_pdf,
             interface::commands::printer::list_printers,
             interface::commands::printer::print_prod_inv_rpt,
-            interface::commands::printer::print_cust_bal_rpt
+            interface::commands::printer::print_cust_bal_rpt,
+            interface::commands::printer::print_product_catalog,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {
