@@ -2,6 +2,7 @@ use crate::common::error::AppError;
 use crate::domain::models::Product;
 use crate::infrastructure::printing::print::print_pdf_silently;
 use crate::infrastructure::printing::reports::common::util::truncate_desc;
+use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument};
 use std::io::Write;
 
@@ -12,6 +13,15 @@ pub fn print_product_catalog_report(rows: &[Product], printer_name: &str) -> Res
     let margin_top = Mm(25.0);
     let margin_bot = Mm(15.0);
     let line_h = Mm(5.0);
+
+    // build centered title + club name
+    let facility = var("CLUB_NAME").unwrap_or_default();
+    let title = format!("{facility} Product Catalog");
+    let title_size = 14.0;
+    let avg_char_w_mm = title_size * 0.5 * 0.3528;
+    let title_w = Mm(avg_char_w_mm * title.len() as f32);
+    let title_x = Mm((page_w.0 - title_w.0) / 2.0);
+    let title_y = page_h - margin_top;
 
     // three column X offsets
     let col_x = [Mm(10.0), Mm(10.0 + 67.0), Mm(10.0 + 134.0)];
@@ -28,8 +38,16 @@ pub fn print_product_catalog_report(rows: &[Product], printer_name: &str) -> Res
     let mut layer_idx = first_layer;
     let mut layer = doc.get_page(page_idx).get_layer(layer_idx);
 
+    // draw title once on the first page
+    layer.use_text(&title, title_size, title_x, title_y, &bold);
+    // push down the three columns' starting Y so they don’t overlap the title
+    let mut y_pos = [
+        page_h - margin_top - Mm(title_size * 1.5), /* left col */
+        page_h - margin_top - Mm(title_size * 1.5), /* middle */
+        page_h - margin_top - Mm(title_size * 1.5),
+    ]; /* right */
+
     // track independent Y for each column
-    let mut y_pos = [page_h - margin_top; 3];
     let mut last_cat = [None; 3];
     let mut col = 0;
 

@@ -4,6 +4,7 @@ use crate::infrastructure::printing::reports::common::account_footer;
 use crate::infrastructure::printing::reports::common::horizontal_line;
 use crate::infrastructure::printing::{paginator::Paginator, print::print_pdf_silently};
 use chrono::NaiveDateTime;
+use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument, PdfLayerReference};
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -26,6 +27,19 @@ pub fn print_sales_detail_report(
     let line_height = Mm(7.0);
     let footer_height = Mm(12.0);
 
+    // prepare title string with facility name
+    let facility_name = var("CLUB_NAME").unwrap_or_default();
+    let title = format!(
+        "{} Transactions from {} to {}",
+        facility_name,
+        start.format("%Y-%m-%d"),
+        end.format("%Y-%m-%d")
+    );
+    let title_font_size = 14.0;
+    let avg_char_width_pt = title_font_size * 0.5;
+    let title_width_mm = Mm(avg_char_width_pt * (title.len() as f32) * 0.3528);
+    let centered_x = Mm((w.0 - title_width_mm.0) / 2.0);
+
     // create PDF
     let (doc, first_page, first_layer) = PdfDocument::new("Tx History", w, h, "Layer1");
     let font = Arc::new(doc.add_builtin_font(BuiltinFont::Helvetica)?);
@@ -34,8 +48,9 @@ pub fn print_sales_detail_report(
     // draw title flag
     let first_flag = Arc::new(AtomicBool::new(true));
     let draw_header = {
+        let facility_name = var("CLUB_NAME").unwrap_or_else(|_| "".into());
         let title = format!(
-            "Transactions from {} to {}",
+            "{facility_name} - Transactions from {} to {}",
             start.format("%Y-%m-%d"),
             end.format("%Y-%m-%d")
         );
@@ -45,7 +60,7 @@ pub fn print_sales_detail_report(
             let mut y = h - margin_top;
             // on first invocation only:
             if flag.swap(false, Ordering::SeqCst) {
-                layer.use_text(&title, 12.0, Mm(5.0), y, &bold);
+                layer.use_text(&title, title_font_size, centered_x, y, &bold);
                 y -= line_height;
             }
             layer.use_text("Order#", 10.0, Mm(15.0), y, &bold);

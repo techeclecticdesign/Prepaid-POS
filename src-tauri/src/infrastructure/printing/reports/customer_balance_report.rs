@@ -2,6 +2,7 @@ use crate::common::error::AppError;
 use crate::domain::models::Customer;
 use crate::infrastructure::printing::print::print_pdf_silently;
 use crate::infrastructure::printing::reports::common::{account_footer, util::format_cents};
+use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument};
 use std::io::Write;
 
@@ -31,6 +32,15 @@ pub fn print_customer_balance_report(
     let font = doc.add_builtin_font(BuiltinFont::Helvetica)?;
     let bold = doc.add_builtin_font(BuiltinFont::HelveticaBold)?;
 
+    // prepare title once
+    let facility = var("CLUB_NAME").unwrap_or_default();
+    let title = format!("{facility} Customer Balances Report");
+    let title_size = 14.0;
+    let avg_char_w = title_size * 0.5;
+    let title_w = Mm(avg_char_w * (title.len() as f32) * 0.3528);
+    let center_x = Mm((page_w.0 - title_w.0) / 2.0);
+    let mut first_page_drawn = false;
+
     for (pidx, page_chunk) in pages.iter().enumerate() {
         // for the very first page we reuse the one from PdfDocument::new
         let (page, layer) = if pidx == 0 {
@@ -39,8 +49,15 @@ pub fn print_customer_balance_report(
             doc.add_page(page_w, page_h, format!("Layer{}", pidx + 1))
         };
         let layer_ref = doc.get_page(page).get_layer(layer);
-        // header row
+        // draw title once, then header row
         let mut y = page_h - margin_top;
+        if !first_page_drawn {
+            layer_ref.use_text(&title, title_size, center_x, y, &bold);
+            y -= Mm(10.0);
+            first_page_drawn = true;
+        }
+
+        // column labels
         for &x_off in &[Mm(10.0), Mm(113.0)] {
             layer_ref.use_text("MDOC", 11.0, x_off, y, &bold);
             layer_ref.use_text("Name", 11.0, x_off + Mm(18.0), y, &bold);

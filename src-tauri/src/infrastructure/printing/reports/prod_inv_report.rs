@@ -5,6 +5,7 @@ use crate::infrastructure::printing::paginator::Paginator;
 use crate::infrastructure::printing::print::print_pdf_silently;
 use crate::infrastructure::printing::reports::common::account_footer;
 use crate::infrastructure::printing::reports::common::util::format_cents;
+use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument, PdfLayerReference};
 use std::io::Write;
 use std::sync::{
@@ -22,7 +23,7 @@ pub fn print_inventory_report(
     // layout constants
     let page_width = Mm(210.0);
     let page_height = Mm(297.0);
-    let margin_top = Mm(25.0);
+    let margin_top = Mm(15.0);
     let margin_bottom = Mm(15.0);
     let line_height = Mm(7.0);
     let footer_height = Mm(10.0 + 4.0);
@@ -38,7 +39,8 @@ pub fn print_inventory_report(
     let bold_for_closure = bold.clone();
 
     // prepare a one‐time title on first page
-    let title = "Product Inventory Report".to_string();
+    let facility_name = var("CLUB_NAME").unwrap_or_else(|_| "".into());
+    let title = format!("{facility_name} Product Inventory Report");
     let title_font_size = 14.0;
     let avg_char_width_pt = title_font_size * 0.5;
     let is_first = Arc::new(AtomicBool::new(true));
@@ -54,7 +56,7 @@ pub fn print_inventory_report(
             // title only once
             if is_first.swap(false, Ordering::SeqCst) {
                 layer.use_text(&title, title_font_size, centered_x, y, &bold);
-                y -= line_height * 2.0;
+                y -= line_height * 1.1;
             }
             // column labels
             layer.use_text("Qty", 11.0, Mm(25.0), y, &bold);
