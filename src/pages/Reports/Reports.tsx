@@ -1,9 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import AppButton from "../../components/AppButton";
+import AppSnackbar from "../../components/AppSnackbar";
 
 export default function Reports() {
+  const [open, setOpen] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackMsg, setSnackMsg] = useState("");
   return (
     <>
       <Typography
@@ -60,10 +74,10 @@ export default function Reports() {
             }}
           />
           <AppButton
-            text={"Dolor"}
+            text={"Sales Detail Report"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
+            onClick={() => setOpen(true)}
           />
           <AppButton
             text={"Sit"}
@@ -101,20 +115,65 @@ export default function Reports() {
             sx={{ width: "14rem", height: "3rem" }}
             onClick={async () => {}}
           />
-          <AppButton
-            text={"Do"}
-            variant="outlined"
-            sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
-          />
-          <AppButton
-            text={"Eiusmod"}
-            variant="outlined"
-            sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
-          />
         </Box>
       </Box>
+      {/* Date‐picker Dialog */}
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>Choose Report Dates</DialogTitle>
+        <DialogContent>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="Start Date"
+              value={startDate}
+              onChange={setStartDate}
+              slotProps={{
+                textField: { margin: "dense", fullWidth: true },
+              }}
+            />
+            <DatePicker
+              label="End Date"
+              value={endDate}
+              onChange={setEndDate}
+              slotProps={{
+                textField: { margin: "dense", fullWidth: true },
+              }}
+            />
+          </LocalizationProvider>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button
+            onClick={async () => {
+              if (!startDate || !endDate) {
+                setSnackMsg("Please select both start and end dates.");
+                setSnackOpen(true);
+                return;
+              }
+              try {
+                await invoke("print_sales_detail_report", {
+                  startDate: startDate.toISOString(),
+                  endDate: endDate.toISOString(),
+                  printerName: localStorage.getItem("fullpage_printer") ?? "",
+                });
+                setOpen(false);
+              } catch (e) {
+                setSnackMsg(`Failed: ${e}`);
+                setSnackOpen(true);
+              }
+            }}
+          >
+            Run
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for validation/errors */}
+      <AppSnackbar
+        open={snackOpen}
+        message={snackMsg}
+        severity="warning"
+        onClose={() => setSnackOpen(false)}
+      />
     </>
   );
 }

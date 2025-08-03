@@ -1,5 +1,6 @@
 use crate::common::error::AppError;
 use crate::domain::repos::CustomerRepoTrait;
+use crate::domain::repos::CustomerTransactionRepoTrait;
 use crate::domain::repos::ProductRepoTrait;
 use crate::infrastructure::command_runner::CommandRunner;
 use crate::infrastructure::printing::reports::business_receipt::print_business_receipt;
@@ -7,6 +8,7 @@ use crate::infrastructure::printing::reports::customer_balance_report::print_cus
 use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
 use crate::infrastructure::printing::reports::prod_inv_report::print_inventory_report;
 use crate::infrastructure::printing::reports::product_catalog::print_product_catalog_report;
+use crate::infrastructure::printing::reports::sales_detail_report::print_sales_detail_report;
 use crate::interface::dto::printer_dto::PrintableSaleDto;
 use std::sync::Arc;
 
@@ -18,6 +20,7 @@ pub struct PrinterUseCases {
     runner: Arc<dyn CommandRunner>,
     customer_repo: Arc<dyn CustomerRepoTrait>,
     product_repo: Arc<dyn ProductRepoTrait>,
+    cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
 }
 
 impl PrinterUseCases {
@@ -25,11 +28,13 @@ impl PrinterUseCases {
         runner: Arc<dyn CommandRunner>,
         customer_repo: Arc<dyn CustomerRepoTrait>,
         product_repo: Arc<dyn ProductRepoTrait>,
+        cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
     ) -> Self {
         Self {
             runner,
             customer_repo,
             product_repo,
+            cust_tx_repo,
         }
     }
 
@@ -121,6 +126,20 @@ impl PrinterUseCases {
         // fetch the same rows as inventory report
         let rows = self.product_repo.list()?;
         print_product_catalog_report(&rows, &printer_name)?;
+        Ok(())
+    }
+
+    pub fn print_sales_detail_report(
+        &self,
+        start_date: chrono::NaiveDateTime,
+        end_date: chrono::NaiveDateTime,
+        printer_name: String,
+    ) -> Result<(), AppError> {
+        let data = self
+            .cust_tx_repo
+            .get_sales_details_data(start_date, end_date)?;
+        let total_amount = self.customer_repo.sum_all_balances()?;
+        print_sales_detail_report(&data, start_date, end_date, total_amount, &printer_name)?;
         Ok(())
     }
 }

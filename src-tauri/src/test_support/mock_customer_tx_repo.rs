@@ -1,6 +1,8 @@
 use crate::common::error::AppError;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
+use crate::domain::report_models::sales_details::SalesReportDetailRow;
+use crate::domain::report_models::sales_details::SalesReportDetails;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use chrono::{Duration, NaiveDateTime};
 use std::sync::Mutex;
@@ -185,5 +187,43 @@ impl CustomerTransactionRepoTrait for MockCustomerTransactionRepo {
             .sum::<i32>();
 
         Ok(total_spent)
+    }
+
+    fn get_sales_details_data(
+        &self,
+        start: NaiveDateTime,
+        _end: NaiveDateTime,
+    ) -> Result<Vec<SalesReportDetails>, AppError> {
+        let txs = vec![SalesReportDetails {
+            tx: CustomerTransaction {
+                order_id: 1,
+                customer_mdoc: 123,
+                operator_mdoc: 888,
+                date: Some(start + chrono::Duration::hours(1)),
+                note: Some("Mocked transaction".to_string()),
+            },
+            customer_name: "Test Customer".to_string(),
+            item_count: 3,
+            order_total: 1500,
+            details: vec![
+                SalesReportDetailRow {
+                    detail_id: 10,
+                    order_id: 1,
+                    upc: "1111".to_string(),
+                    quantity: 1,
+                    price: 500,
+                    product_name: "Mock Product A".to_string(),
+                },
+                SalesReportDetailRow {
+                    detail_id: 11,
+                    order_id: 1,
+                    upc: "2222".to_string(),
+                    quantity: 2,
+                    price: 500,
+                    product_name: "Mock Product B".to_string(),
+                },
+            ],
+        }];
+        Ok(txs)
     }
 }

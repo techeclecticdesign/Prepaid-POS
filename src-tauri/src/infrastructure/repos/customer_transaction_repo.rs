@@ -2,9 +2,12 @@ use crate::common::error::AppError;
 use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
+use crate::domain::report_models::sales_details::SalesReportDetailRow;
+use crate::domain::report_models::sales_details::SalesReportDetails;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use chrono::{Duration, NaiveDateTime};
 use rusqlite::{params, Connection};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 pub struct SqliteCustomerTransactionRepo {
@@ -328,6 +331,105 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
             stmt.query_row(params![customer_mdoc, week_start, week_end], |r| r.get(0))?;
 
         Ok(spent)
+    }
+
+    fn get_sales_details_data(
+        &self,
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+    ) -> Result<Vec<SalesReportDetails>, AppError> {
+        let conn = self.conn.safe_lock()?;
+
+        // fetch the "header" rows with aggregates
+        let mut hdr_stmt = conn.prepare(
+            "SELECT
+                t.order_id,
+                t.customer_mdoc,
+                t.operator_mdoc,
+                t.date,
+                t.note,
+                c.name,
+                SUM(d.quantity)    AS item_count,
+                SUM(d.quantity*d.price) AS order_total
+             FROM customer_transactions t
+             JOIN customer_tx_detail d ON d.order_id = t.order_id
+             JOIN customer c ON t.customer_mdoc = c.mdoc
+             WHERE t.date >= ?1 AND t.date < ?2
+             GROUP BY t.order_id
+             ORDER BY t.date, t.order_id",
+        )?;
+
+        let mut headers = Vec::new();
+        let rows = hdr_stmt.query_map(params![start, end], |r| {
+            Ok((
+                CustomerTransaction {
+                    order_id: r.get(0)?,
+                    customer_mdoc: r.get(1)?,
+                    operator_mdoc: r.get(2)?,
+                    date: r.get(3)?,
+                    note: r.get(4)?,
+                },
+                r.get::<_, String>(5)?,     // customer_name
+                r.get::<_, i64>(6)? as i32, // item_count
+                r.get::<_, i64>(7)? as i32, // order_total
+            ))
+        })?;
+
+        for hdr in rows {
+            let (tx, customer_name, item_count, order_total) = hdr?;
+            headers.push((tx, customer_name, item_count, order_total));
+        }
+
+        if headers.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // fetch details for all these orders in one go
+        let ids: Vec<i32> = headers.iter().map(|(tx, _, _, _)| tx.order_id).collect();
+        let placeholders = std::iter::repeat_n("?", ids.len())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let query = format!(
+            "SELECT d.detail_id, d.order_id, d.upc, d.quantity, d.price, p.desc
+             FROM customer_tx_detail d
+             JOIN products p ON d.upc = p.upc
+             WHERE d.order_id IN ({placeholders})
+             ORDER BY d.order_id, d.detail_id"
+        );
+
+        let mut det_stmt = conn.prepare(&query)?;
+        let det_rows = det_stmt.query_map(rusqlite::params_from_iter(ids.iter()), |r| {
+            Ok(SalesReportDetailRow {
+                detail_id: r.get(0)?,
+                order_id: r.get(1)?,
+                upc: r.get(2)?,
+                quantity: r.get(3)?,
+                price: r.get(4)?,
+                product_name: r.get(5)?,
+            })
+        })?;
+
+        // group details by order_id
+        let mut details_map: HashMap<i32, Vec<SalesReportDetailRow>> = HashMap::new();
+        for det in det_rows {
+            let det = det?;
+            details_map.entry(det.order_id).or_default().push(det);
+        }
+
+        // assemble
+        let mut out = Vec::with_capacity(headers.len());
+        for (tx, customer_name, item_count, order_total) in headers {
+            let details = details_map.remove(&tx.order_id).unwrap_or_default();
+            out.push(SalesReportDetails {
+                tx,
+                customer_name,
+                item_count,
+                order_total,
+                details,
+            });
+        }
+
+        Ok(out)
     }
 }
 

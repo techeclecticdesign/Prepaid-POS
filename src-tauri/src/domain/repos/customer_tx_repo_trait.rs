@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::CustomerTransaction;
+use crate::domain::report_models::sales_details::SalesReportDetails;
 use chrono::NaiveDateTime;
 
 pub type SaleDetailsTuple = (CustomerTransaction, Vec<(CustomerTxDetail, String)>, i32);
@@ -39,4 +40,10 @@ pub trait CustomerTransactionRepoTrait: Send + Sync {
         customer_mdoc: i32,
         week_start: NaiveDateTime,
     ) -> Result<i32, AppError>;
+
+    fn get_sales_details_data(
+        &self,
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+    ) -> Result<Vec<SalesReportDetails>, AppError>;
 }

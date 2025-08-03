@@ -37,13 +37,18 @@ pub struct TransactionController {
 impl TransactionController {
     pub fn new(deps: TransactionControllerDeps) -> Self {
         let tx_uc = TransactionUseCases::new(
-            deps.inv_repo,
-            deps.cust_tx_repo,
-            deps.cust_tx_detail_repo,
-            deps.limit_repo,
-            deps.conn,
+            deps.inv_repo.clone(),
+            deps.cust_tx_repo.clone(),
+            deps.cust_tx_detail_repo.clone(),
+            deps.limit_repo.clone(),
+            deps.conn.clone(),
         );
-        let printer_uc = PrinterUseCases::new(deps.runner, deps.customer_repo, deps.prod_repo);
+        let printer_uc = PrinterUseCases::new(
+            deps.runner,
+            deps.customer_repo,
+            deps.prod_repo,
+            deps.cust_tx_repo,
+        );
         Self { tx_uc, printer_uc }
     }
 

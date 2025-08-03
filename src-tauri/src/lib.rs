@@ -127,6 +127,7 @@ pub fn run() {
         Arc::clone(&runner),
         Arc::clone(&customer_repo),
         Arc::clone(&product_repo),
+        Arc::clone(&cust_tx_repo),
     );
     let printer_ctrl = Arc::new(PrinterController::new(printer_uc));
 
@@ -200,6 +201,7 @@ pub fn run() {
             interface::commands::printer::print_prod_inv_rpt,
             interface::commands::printer::print_cust_bal_rpt,
             interface::commands::printer::print_product_catalog,
+            interface::commands::printer::print_sales_detail_report,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

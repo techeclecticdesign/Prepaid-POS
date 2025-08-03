@@ -1,5 +1,6 @@
 use crate::application::use_cases::printer_usecases::PrinterUseCases;
 use crate::common::error::AppError;
+use crate::interface::common::date_utils::parse_rfc3339;
 use crate::interface::presenters::printer_presenter::PrinterPresenter;
 #[derive(Debug)]
 enum ReportType {
@@ -45,5 +46,20 @@ impl PrinterController {
 
     pub fn print_product_catalog(&self, printer_name: String) -> Result<(), AppError> {
         self.uc.print_product_catalog(printer_name).map(|_| ())
+    }
+
+    pub fn print_sales_detail_report(
+        &self,
+        start_date: String,
+        end_date: String,
+        printer_name: String,
+    ) -> Result<(), AppError> {
+        // convert dates into NaiveDateTime
+        let start_date = parse_rfc3339(&start_date)?;
+        let end_date = parse_rfc3339(&end_date)?;
+
+        self.uc
+            .print_sales_detail_report(start_date, end_date, printer_name)
+            .map(|_| ())
     }
 }
