@@ -48,6 +48,7 @@ impl TransactionController {
             deps.customer_repo,
             deps.prod_repo,
             deps.cust_tx_repo,
+            deps.cust_tx_detail_repo,
         );
         Self { tx_uc, printer_uc }
     }

@@ -185,9 +185,11 @@ mod tests {
     use crate::test_support::mock_product_repo::MockProductRepo;
     use crate::test_support::mock_weekly_limit_repo::MockWeeklyLimitRepo;
 
+    use crate::domain::report_models::product_sales::{ProductSalesByCategory, SalesTotals};
+    use chrono::NaiveDateTime;
     use rusqlite::{Connection, Transaction};
     use std::sync::{Arc, Mutex};
-    // FailingDetailRepo stays unchanged
+
     impl Default for InventoryTransaction {
         fn default() -> Self {
             Self {
@@ -228,6 +230,24 @@ mod tests {
             _order_id: i32,
         ) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
             Ok(vec![])
+        }
+        fn sales_by_category(
+            &self,
+            _from: NaiveDateTime,
+            _to: NaiveDateTime,
+        ) -> Result<Vec<ProductSalesByCategory>, AppError> {
+            Err(AppError::Unexpected(
+                "sales_by_category not implemented".into(),
+            ))
+        }
+        fn get_sales_totals(
+            &self,
+            _from: NaiveDateTime,
+            _to: NaiveDateTime,
+        ) -> Result<SalesTotals, AppError> {
+            Err(AppError::Unexpected(
+                "get_sales_totals not implemented".into(),
+            ))
         }
     }
 

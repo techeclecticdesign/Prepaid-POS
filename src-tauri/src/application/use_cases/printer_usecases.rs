@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
 use crate::domain::repos::CustomerRepoTrait;
 use crate::domain::repos::CustomerTransactionRepoTrait;
+use crate::domain::repos::CustomerTxDetailRepoTrait;
 use crate::domain::repos::ProductRepoTrait;
 use crate::infrastructure::command_runner::CommandRunner;
 use crate::infrastructure::printing::reports::business_receipt::print_business_receipt;
@@ -8,8 +9,10 @@ use crate::infrastructure::printing::reports::customer_balance_report::print_cus
 use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
 use crate::infrastructure::printing::reports::prod_inv_report::print_inventory_report;
 use crate::infrastructure::printing::reports::product_catalog::print_product_catalog_report;
+use crate::infrastructure::printing::reports::product_sales::print_product_sales;
 use crate::infrastructure::printing::reports::sales_detail_report::print_sales_detail_report;
 use crate::interface::dto::printer_dto::PrintableSaleDto;
+use chrono::NaiveDateTime;
 use std::sync::Arc;
 
 pub enum ReportType {
@@ -21,6 +24,7 @@ pub struct PrinterUseCases {
     customer_repo: Arc<dyn CustomerRepoTrait>,
     product_repo: Arc<dyn ProductRepoTrait>,
     cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
+    cust_tx_detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
 }
 
 impl PrinterUseCases {
@@ -29,12 +33,14 @@ impl PrinterUseCases {
         customer_repo: Arc<dyn CustomerRepoTrait>,
         product_repo: Arc<dyn ProductRepoTrait>,
         cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
+        cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
     ) -> Self {
         Self {
             runner,
             customer_repo,
             product_repo,
             cust_tx_repo,
+            cust_tx_detail_repo,
         }
     }
 
@@ -140,6 +146,19 @@ impl PrinterUseCases {
             .get_sales_details_data(start_date, end_date)?;
         let total_amount = self.customer_repo.sum_all_balances()?;
         print_sales_detail_report(&data, start_date, end_date, total_amount, &printer_name)?;
+        Ok(())
+    }
+
+    pub fn sales_by_category(
+        &self,
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+        printer_name: String,
+    ) -> Result<(), AppError> {
+        let data = self.cust_tx_detail_repo.sales_by_category(start, end)?;
+        let sales_totals = self.cust_tx_detail_repo.get_sales_totals(start, end)?;
+        let total_amount = self.customer_repo.sum_all_balances()?;
+        print_product_sales(&data, start, end, sales_totals, total_amount, &printer_name)?;
         Ok(())
     }
 }

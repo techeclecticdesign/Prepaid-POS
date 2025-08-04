@@ -14,6 +14,7 @@ import AppSnackbar from "../../components/AppSnackbar";
 
 export default function Reports() {
   const [open, setOpen] = useState(false);
+  const [dateReport, setDateReport] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [snackOpen, setSnackOpen] = useState(false);
@@ -74,16 +75,22 @@ export default function Reports() {
             }}
           />
           <AppButton
-            text={"Sales Detail Report"}
+            text={"Orders By Date"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
-            onClick={() => setOpen(true)}
+            onClick={async () => {
+              setDateReport("bycustomer");
+              setOpen(true);
+            }}
           />
           <AppButton
-            text={"Sit"}
+            text={"Sales Summary By Date"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
+            onClick={async () => {
+              setDateReport("byproduct");
+              setOpen(true);
+            }}
           />
           <AppButton
             text={"Amet"}
@@ -150,11 +157,19 @@ export default function Reports() {
                 return;
               }
               try {
-                await invoke("print_sales_detail_report", {
-                  startDate: startDate.toISOString(),
-                  endDate: endDate.toISOString(),
-                  printerName: localStorage.getItem("fullpage_printer") ?? "",
-                });
+                if (dateReport === "bycustomer") {
+                  await invoke("print_sales_detail_report", {
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    printerName: localStorage.getItem("fullpage_printer") ?? "",
+                  });
+                } else if (dateReport === "byproduct") {
+                  await invoke("print_product_sales_by_category", {
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    printerName: localStorage.getItem("fullpage_printer") ?? "",
+                  });
+                }
                 setOpen(false);
               } catch (e) {
                 setSnackMsg(`Failed: ${e}`);

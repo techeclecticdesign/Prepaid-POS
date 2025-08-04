@@ -1,18 +1,27 @@
 use crate::common::error::AppError;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
+use crate::domain::models::product::Product;
+use crate::domain::report_models::product_sales::ProductSalesByCategory;
+use crate::domain::report_models::product_sales::SalesTotals;
 use crate::domain::repos::customer_tx_detail_repo_trait::CustomerTxDetailRepoTrait;
+use chrono::NaiveDateTime;
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 // In‑memory mock for CustomerTxDetailRepoTrait
 pub struct MockCustomerTxDetailRepo {
     store: Mutex<Vec<CustomerTxDetail>>,
+    products: Mutex<HashMap<String, Product>>,
+    data: Mutex<Vec<CustomerTxDetail>>,
 }
 
 impl MockCustomerTxDetailRepo {
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             store: Mutex::new(vec![]),
+            products: Mutex::new(HashMap::new()),
+            data: Mutex::new(vec![]),
         }
     }
 
@@ -59,6 +68,52 @@ impl CustomerTxDetailRepoTrait for MockCustomerTxDetailRepo {
         _tx: &rusqlite::Transaction<'_>,
     ) -> Result<i32, AppError> {
         self.create(d).map(|_| d.detail_id)
+    }
+
+    fn sales_by_category(
+        &self,
+        _start: NaiveDateTime,
+        _end: NaiveDateTime,
+    ) -> Result<Vec<ProductSalesByCategory>, AppError> {
+        let mut map: HashMap<(String, String), ProductSalesByCategory> = HashMap::new();
+        for tx in self.data.lock().unwrap().iter() {
+            let products = self.products.lock().unwrap();
+            let Some(prod) = products.get(&tx.upc) else {
+                continue;
+            };
+            let key = (prod.category.clone(), tx.upc.clone());
+            let entry = map.entry(key.clone()).or_insert(ProductSalesByCategory {
+                category: prod.category.clone(),
+                upc: tx.upc.clone(),
+                name: prod.desc.clone(),
+                quantity_sold: 0,
+                price: tx.price,
+                total_sales: 0,
+                is_summary: false,
+            });
+            entry.quantity_sold += tx.quantity;
+            entry.total_sales += tx.quantity * tx.price;
+        }
+        Ok(map.into_values().collect())
+    }
+
+    fn get_sales_totals(
+        &self,
+        _start: NaiveDateTime,
+        _end: NaiveDateTime,
+    ) -> Result<SalesTotals, AppError> {
+        let total_quantity = self.data.lock().unwrap().iter().map(|tx| tx.quantity).sum();
+        let total_value = self
+            .data
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|tx| tx.quantity * tx.price)
+            .sum();
+        Ok(SalesTotals {
+            total_quantity,
+            total_value,
+        })
     }
 }
 
