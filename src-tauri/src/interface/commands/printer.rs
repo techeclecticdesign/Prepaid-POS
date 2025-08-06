@@ -55,3 +55,13 @@ pub fn print_product_sales_by_category(
 ) -> Result<(), AppError> {
     controller.print_product_sales_by_category(start_date, end_date, printer_name)
 }
+
+#[tauri::command]
+pub fn print_daily_sales_report(
+    controller: State<'_, Arc<PrinterController>>,
+    start_date: String,
+    end_date: String,
+    printer_name: String,
+) -> Result<(), AppError> {
+    controller.print_daily_sales_report(start_date, end_date, printer_name)
+}

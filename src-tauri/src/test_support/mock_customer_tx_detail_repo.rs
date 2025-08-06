@@ -1,7 +1,10 @@
 use crate::common::error::AppError;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
 use crate::domain::models::product::Product;
+use crate::domain::models::CustomerTransaction;
+use crate::domain::report_models::daily_sales::DailySales;
 use crate::domain::report_models::product_sales::ProductSalesByCategory;
+
 use crate::domain::report_models::product_sales::SalesTotals;
 use crate::domain::repos::customer_tx_detail_repo_trait::CustomerTxDetailRepoTrait;
 use chrono::NaiveDateTime;
@@ -13,6 +16,7 @@ pub struct MockCustomerTxDetailRepo {
     store: Mutex<Vec<CustomerTxDetail>>,
     products: Mutex<HashMap<String, Product>>,
     data: Mutex<Vec<CustomerTxDetail>>,
+    transactions: Mutex<Vec<CustomerTransaction>>,
 }
 
 impl MockCustomerTxDetailRepo {
@@ -22,6 +26,7 @@ impl MockCustomerTxDetailRepo {
             store: Mutex::new(vec![]),
             products: Mutex::new(HashMap::new()),
             data: Mutex::new(vec![]),
+            transactions: Mutex::new(vec![]),
         }
     }
 
@@ -114,6 +119,44 @@ impl CustomerTxDetailRepoTrait for MockCustomerTxDetailRepo {
             total_quantity,
             total_value,
         })
+    }
+
+    fn sales_by_day(
+        &self,
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+    ) -> Result<Vec<DailySales>, AppError> {
+        // 1) Build a map from order_id -> date (NaiveDateTime)
+        let txs = self.transactions.lock().unwrap();
+        let mut date_map: HashMap<i32, NaiveDateTime> = HashMap::new();
+        for tx in txs.iter() {
+            // only include those in the requested window
+            if let Some(tx_date) = tx.date {
+                if tx_date >= start && tx_date < end {
+                    date_map.insert(tx.order_id, tx_date);
+                }
+            }
+        }
+        drop(txs);
+
+        // 2) Sum up `quantity * price` per day
+        let mut daily_totals: HashMap<_, i32> = HashMap::new();
+        for detail in self.data.lock().unwrap().iter() {
+            if let Some(&tx_date) = date_map.get(&detail.order_id) {
+                // group by date (YYYY-MM-DD)
+                let day = tx_date.date();
+                let amount = detail.quantity * detail.price;
+                *daily_totals.entry(day).or_insert(0) += amount;
+            }
+        }
+
+        // 3) Turn into a sorted Vec<DailySales>
+        let mut result: Vec<DailySales> = daily_totals
+            .into_iter()
+            .map(|(day, total_sales)| DailySales { day, total_sales })
+            .collect();
+        result.sort_by_key(|r| r.day);
+        Ok(result)
     }
 }
 

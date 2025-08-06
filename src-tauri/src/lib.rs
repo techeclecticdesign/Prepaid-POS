@@ -204,6 +204,7 @@ pub fn run() {
             interface::commands::printer::print_product_catalog,
             interface::commands::printer::print_sales_detail_report,
             interface::commands::printer::print_product_sales_by_category,
+            interface::commands::printer::print_daily_sales_report,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

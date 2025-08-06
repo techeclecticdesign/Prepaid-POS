@@ -7,6 +7,7 @@ use crate::infrastructure::command_runner::CommandRunner;
 use crate::infrastructure::printing::reports::business_receipt::print_business_receipt;
 use crate::infrastructure::printing::reports::customer_balance_report::print_customer_balance_report;
 use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
+use crate::infrastructure::printing::reports::print_daily_sales::print_daily_sales;
 use crate::infrastructure::printing::reports::prod_inv_report::print_inventory_report;
 use crate::infrastructure::printing::reports::product_catalog::print_product_catalog_report;
 use crate::infrastructure::printing::reports::product_sales::print_product_sales;
@@ -159,6 +160,18 @@ impl PrinterUseCases {
         let sales_totals = self.cust_tx_detail_repo.get_sales_totals(start, end)?;
         let total_amount = self.customer_repo.sum_all_balances()?;
         print_product_sales(&data, start, end, sales_totals, total_amount, &printer_name)?;
+        Ok(())
+    }
+
+    pub fn sales_by_day(
+        &self,
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+        printer_name: String,
+    ) -> Result<(), AppError> {
+        let data = self.cust_tx_detail_repo.sales_by_day(start, end)?;
+        let total_amount = self.customer_repo.sum_all_balances()?;
+        print_daily_sales(&data, start, end, total_amount, &printer_name)?;
         Ok(())
     }
 }

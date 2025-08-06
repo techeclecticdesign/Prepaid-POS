@@ -77,4 +77,19 @@ impl PrinterController {
             .sales_by_category(start_date, end_date, printer_name)
             .map(|_| ())
     }
+
+    pub fn print_daily_sales_report(
+        &self,
+        start_date: String,
+        end_date: String,
+        printer_name: String,
+    ) -> Result<(), AppError> {
+        // convert dates into NaiveDateTime
+        let start_date = parse_rfc3339(&start_date)?;
+        let end_date = parse_rfc3339(&end_date)?;
+
+        self.uc
+            .sales_by_day(start_date, end_date, printer_name)
+            .map(|_| ())
+    }
 }

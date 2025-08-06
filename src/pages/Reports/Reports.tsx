@@ -31,7 +31,7 @@ export default function Reports() {
       </Typography>
       <Box
         sx={{
-          minHeight: "80vh",
+          minHeight: "70vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -93,10 +93,13 @@ export default function Reports() {
             }}
           />
           <AppButton
-            text={"Amet"}
+            text={"Sales By Day"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
+            onClick={async () => {
+              setDateReport("byday");
+              setOpen(true);
+            }}
           />
           <AppButton
             text={"Consectetur"}
@@ -106,18 +109,6 @@ export default function Reports() {
           />
           <AppButton
             text={"Adipiscing"}
-            variant="outlined"
-            sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
-          />
-          <AppButton
-            text={"Elit"}
-            variant="outlined"
-            sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
-          />
-          <AppButton
-            text={"Sed"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
             onClick={async () => {}}
@@ -165,6 +156,12 @@ export default function Reports() {
                   });
                 } else if (dateReport === "byproduct") {
                   await invoke("print_product_sales_by_category", {
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    printerName: localStorage.getItem("fullpage_printer") ?? "",
+                  });
+                } else if (dateReport === "byday") {
+                  await invoke("print_daily_sales_report", {
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
                     printerName: localStorage.getItem("fullpage_printer") ?? "",

@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
 use crate::common::mutex_ext::MutexExt;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
+use crate::domain::report_models::daily_sales::DailySales;
 use crate::domain::report_models::product_sales::{ProductSalesByCategory, SalesTotals};
 use crate::domain::repos::customer_tx_detail_repo_trait::CustomerTxDetailRepoTrait;
 use chrono::NaiveDateTime;
@@ -193,6 +194,43 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
         })?;
 
         Ok(row)
+    }
+
+    fn sales_by_day(
+        &self,
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+    ) -> Result<Vec<DailySales>, AppError> {
+        let conn = self.conn.safe_lock()?;
+        let sql = r#"
+            SELECT
+                t.date                   AS full_ts,
+                COALESCE(SUM(d.quantity * d.price), 0) AS total_sales
+            FROM customer_tx_detail d
+            JOIN customer_transactions t
+              ON d.order_id = t.order_id
+             AND t.date >= ?1
+             AND t.date < datetime(?2, '+1 day')
+            GROUP BY DATE(t.date)
+            ORDER BY DATE(t.date)
+        "#;
+
+        let mut stmt = conn.prepare(sql)?;
+        let rows = stmt.query_map(params![start, end], |r| {
+            // rusqlite will convert `full_ts` into NaiveDateTime for us
+            let full_ts: NaiveDateTime = r.get("full_ts")?;
+            let total_sales: i64 = r.get("total_sales")?;
+            Ok(DailySales {
+                day: full_ts.date(),
+                total_sales: total_sales as i32,
+            })
+        })?;
+
+        let mut out = Vec::new();
+        for row in rows {
+            out.push(row?);
+        }
+        Ok(out)
     }
 }
 

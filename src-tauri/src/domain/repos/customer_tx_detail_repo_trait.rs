@@ -1,5 +1,6 @@
 use crate::common::error::AppError;
 use crate::domain::models::customer_tx_detail::CustomerTxDetail;
+use crate::domain::report_models::daily_sales::DailySales;
 use crate::domain::report_models::product_sales::{ProductSalesByCategory, SalesTotals};
 use chrono::NaiveDateTime;
 
@@ -24,4 +25,9 @@ pub trait CustomerTxDetailRepoTrait: Send + Sync {
         start: NaiveDateTime,
         end: NaiveDateTime,
     ) -> Result<SalesTotals, AppError>;
+    fn sales_by_day(
+        &self,
+        start: NaiveDateTime,
+        end: NaiveDateTime,
+    ) -> Result<Vec<DailySales>, AppError>;
 }

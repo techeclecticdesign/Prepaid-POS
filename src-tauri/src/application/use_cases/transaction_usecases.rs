@@ -185,6 +185,7 @@ mod tests {
     use crate::test_support::mock_product_repo::MockProductRepo;
     use crate::test_support::mock_weekly_limit_repo::MockWeeklyLimitRepo;
 
+    use crate::domain::report_models::daily_sales::DailySales;
     use crate::domain::report_models::product_sales::{ProductSalesByCategory, SalesTotals};
     use chrono::NaiveDateTime;
     use rusqlite::{Connection, Transaction};
@@ -248,6 +249,13 @@ mod tests {
             Err(AppError::Unexpected(
                 "get_sales_totals not implemented".into(),
             ))
+        }
+        fn sales_by_day(
+            &self,
+            _from: NaiveDateTime,
+            _to: NaiveDateTime,
+        ) -> Result<Vec<DailySales>, AppError> {
+            Err(AppError::Unexpected("sales_by_day not implemented".into()))
         }
     }
 
