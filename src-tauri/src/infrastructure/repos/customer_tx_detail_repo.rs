@@ -115,7 +115,7 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
           JOIN customer_transactions t
             ON d.order_id = t.order_id
            AND t.date >= ?1
-           AND t.date <  ?2
+           AND t.date < datetime(?2, '+1 day')
           JOIN products p
             ON d.upc = p.upc
           GROUP BY p.category, d.upc
@@ -183,7 +183,7 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
             JOIN customer_transactions t
               ON d.order_id = t.order_id
              AND t.date >= ?1
-             AND t.date <  ?2
+             AND t.date < datetime(?2, '+1 day')
         "#;
 
         let row = conn.query_row(sql, params![start, end], |r| {

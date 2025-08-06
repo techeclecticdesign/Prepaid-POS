@@ -324,7 +324,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
              JOIN customer_tx_detail d ON t.order_id = d.order_id
              WHERE t.customer_mdoc = ?1
                AND t.date >= ?2
-               AND t.date <  ?3",
+               AND t.date < datetime(?3, '+1 day')",
         )?;
 
         let spent: i32 =
@@ -354,7 +354,7 @@ impl CustomerTransactionRepoTrait for SqliteCustomerTransactionRepo {
              FROM customer_transactions t
              JOIN customer_tx_detail d ON d.order_id = t.order_id
              JOIN customer c ON t.customer_mdoc = c.mdoc
-             WHERE t.date >= ?1 AND t.date < ?2
+             WHERE t.date >= ?1 AND t.date < datetime(?2, '+1 day')
              GROUP BY t.order_id
              ORDER BY t.date, t.order_id",
         )?;
