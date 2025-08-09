@@ -11,6 +11,7 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import AppButton from "../../components/AppButton";
 import AppSnackbar from "../../components/AppSnackbar";
+import ClubImportSelectModal from "./components/ClubImportSelect";
 
 export default function Reports() {
   const [open, setOpen] = useState(false);
@@ -19,6 +20,7 @@ export default function Reports() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMsg, setSnackMsg] = useState("");
+  const [importModalOpen, setImportModalOpen] = useState(false);
   return (
     <>
       <Typography
@@ -102,10 +104,10 @@ export default function Reports() {
             }}
           />
           <AppButton
-            text={"Consectetur"}
+            text={"Club Import"}
             variant="outlined"
             sx={{ width: "14rem", height: "3rem" }}
-            onClick={async () => {}}
+            onClick={() => setImportModalOpen(true)}
           />
           <AppButton
             text={"Adipiscing"}
@@ -178,7 +180,10 @@ export default function Reports() {
           </Button>
         </DialogActions>
       </Dialog>
-
+      <ClubImportSelectModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+      />
       {/* Snackbar for validation/errors */}
       <AppSnackbar
         open={snackOpen}

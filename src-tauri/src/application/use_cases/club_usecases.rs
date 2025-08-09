@@ -1,21 +1,24 @@
 use crate::common::error::AppError;
-use crate::domain::models::{ClubTransaction, Customer};
-use crate::domain::repos::{ClubTransactionRepoTrait, CustomerRepoTrait};
+use crate::domain::models::{ClubImport, ClubTransaction, Customer};
+use crate::domain::repos::{ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait};
 use std::sync::Arc;
 
 pub struct ClubUseCases {
     customer_repo: Arc<dyn CustomerRepoTrait>,
     tx_repo: Arc<dyn ClubTransactionRepoTrait>,
+    import_repo: Arc<dyn ClubImportRepoTrait>,
 }
 
 impl ClubUseCases {
     pub fn new(
         customer_repo: Arc<dyn CustomerRepoTrait>,
         tx_repo: Arc<dyn ClubTransactionRepoTrait>,
+        import_repo: Arc<dyn ClubImportRepoTrait>,
     ) -> Self {
         Self {
             customer_repo,
             tx_repo,
+            import_repo,
         }
     }
 
@@ -50,5 +53,9 @@ impl ClubUseCases {
         search: Option<String>,
     ) -> Result<i32, AppError> {
         self.tx_repo.count(date, search)
+    }
+
+    pub fn list_club_imports(&self) -> Result<Vec<ClubImport>, AppError> {
+        self.import_repo.list()
     }
 }

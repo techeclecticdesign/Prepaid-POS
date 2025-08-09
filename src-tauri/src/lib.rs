@@ -94,11 +94,14 @@ pub fn run() {
         runner: Arc::clone(&runner),
         customer_repo: Arc::clone(&customer_repo),
         prod_repo: Arc::clone(&product_repo),
+        club_tx_repo: Arc::clone(&club_tx_repo),
+        club_import_repo: Arc::clone(&club_import_repo),
         conn: Arc::clone(&conn),
     }));
     let club_ctrl = Arc::new(ClubController::new(
         Arc::clone(&customer_repo),
         Arc::clone(&club_tx_repo),
+        Arc::clone(&club_import_repo),
     ));
     let pos_ctrl = Arc::new(PosController::new(
         Arc::clone(&product_repo),
@@ -129,6 +132,8 @@ pub fn run() {
         Arc::clone(&product_repo),
         Arc::clone(&cust_tx_repo),
         Arc::clone(&cust_tx_detail_repo),
+        Arc::clone(&club_import_repo),
+        Arc::clone(&club_tx_repo),
     );
     let printer_ctrl = Arc::new(PrinterController::new(printer_uc));
 
@@ -194,6 +199,8 @@ pub fn run() {
             interface::commands::transaction::get_weekly_spent,
             interface::commands::club::search_customers,
             interface::commands::club::search_club_transactions,
+            interface::commands::club::list_club_imports,
+            interface::commands::printer::print_club_import,
             interface::commands::pos::pos_init,
             interface::commands::legacy_migration::has_legacy_data,
             interface::commands::legacy_migration::do_legacy_data_import,
@@ -205,6 +212,7 @@ pub fn run() {
             interface::commands::printer::print_sales_detail_report,
             interface::commands::printer::print_product_sales_by_category,
             interface::commands::printer::print_daily_sales_report,
+            interface::commands::printer::print_club_import,
         ])
         .on_window_event(|_window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

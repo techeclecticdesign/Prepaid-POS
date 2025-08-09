@@ -26,6 +26,8 @@ pub struct TransactionControllerDeps {
     pub runner: Arc<dyn crate::infrastructure::command_runner::CommandRunner>,
     pub customer_repo: Arc<dyn crate::domain::repos::CustomerRepoTrait>,
     pub prod_repo: Arc<dyn crate::domain::repos::ProductRepoTrait>,
+    pub club_tx_repo: Arc<dyn crate::domain::repos::ClubTransactionRepoTrait>,
+    pub club_import_repo: Arc<dyn crate::domain::repos::ClubImportRepoTrait>,
     pub conn: Arc<Mutex<rusqlite::Connection>>,
 }
 
@@ -49,6 +51,8 @@ impl TransactionController {
             deps.prod_repo,
             deps.cust_tx_repo,
             deps.cust_tx_detail_repo,
+            deps.club_import_repo,
+            deps.club_tx_repo,
         );
         Self { tx_uc, printer_uc }
     }

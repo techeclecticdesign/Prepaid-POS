@@ -1,5 +1,6 @@
 use crate::application::use_cases::club_usecases::ClubUseCases;
 use crate::common::error::AppError;
+use crate::domain::models::ClubImport;
 use crate::interface::dto::club_transaction_dto::ClubTransactionSearchResult;
 use crate::interface::dto::customer_dto::CustomerSearchResult;
 use crate::interface::presenters::club_transaction_presenter::ClubTransactionPresenter;
@@ -14,9 +15,10 @@ impl ClubController {
     pub fn new(
         customer_repo: Arc<dyn crate::domain::repos::CustomerRepoTrait>,
         tx_repo: Arc<dyn crate::domain::repos::ClubTransactionRepoTrait>,
+        import_repo: Arc<dyn crate::domain::repos::ClubImportRepoTrait>,
     ) -> Self {
         Self {
-            uc: ClubUseCases::new(customer_repo, tx_repo),
+            uc: ClubUseCases::new(customer_repo, tx_repo, import_repo),
         }
     }
 
@@ -47,5 +49,9 @@ impl ClubController {
             items: ClubTransactionPresenter::to_search_rows(tuples),
             total_count: total,
         })
+    }
+
+    pub fn list_club_imports(&self) -> Result<Vec<ClubImport>, AppError> {
+        self.uc.list_club_imports()
     }
 }

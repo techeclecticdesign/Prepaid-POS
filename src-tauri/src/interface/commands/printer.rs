@@ -65,3 +65,13 @@ pub fn print_daily_sales_report(
 ) -> Result<(), AppError> {
     controller.print_daily_sales_report(start_date, end_date, printer_name)
 }
+
+#[tauri::command]
+pub fn print_club_import(
+    controller: State<'_, Arc<PrinterController>>,
+    import_id: i32,
+    start_date: String,
+    printer_name: String,
+) -> Result<(), AppError> {
+    controller.print_club_import(import_id, start_date, printer_name)
+}

@@ -69,7 +69,6 @@ impl PrinterController {
         end_date: String,
         printer_name: String,
     ) -> Result<(), AppError> {
-        // convert dates into NaiveDateTime
         let start_date = parse_rfc3339(&start_date)?;
         let end_date = parse_rfc3339(&end_date)?;
 
@@ -84,12 +83,23 @@ impl PrinterController {
         end_date: String,
         printer_name: String,
     ) -> Result<(), AppError> {
-        // convert dates into NaiveDateTime
         let start_date = parse_rfc3339(&start_date)?;
         let end_date = parse_rfc3339(&end_date)?;
 
         self.uc
             .sales_by_day(start_date, end_date, printer_name)
+            .map(|_| ())
+    }
+
+    pub fn print_club_import(
+        &self,
+        import_id: i32,
+        start_date: String,
+        printer_name: String,
+    ) -> Result<(), AppError> {
+        let start_date = parse_rfc3339(&start_date)?;
+        self.uc
+            .print_club_import(import_id, start_date, printer_name)
             .map(|_| ())
     }
 }

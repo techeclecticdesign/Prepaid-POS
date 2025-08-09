@@ -790,6 +790,7 @@ impl LegacyMigrationUseCases {
                 activity_to,
                 source_file,
             };
+
             if let Err(e) = self.deps.club_imports_repo.create(&stmt) {
                 warn!("skip club_import {id}: insert error: {e}");
                 continue;

@@ -1,10 +1,14 @@
 use crate::common::error::AppError;
+use crate::domain::report_models::club_import_report::ClubTransactionRow;
+use crate::domain::repos::ClubImportRepoTrait;
+use crate::domain::repos::ClubTransactionRepoTrait;
 use crate::domain::repos::CustomerRepoTrait;
 use crate::domain::repos::CustomerTransactionRepoTrait;
 use crate::domain::repos::CustomerTxDetailRepoTrait;
 use crate::domain::repos::ProductRepoTrait;
 use crate::infrastructure::command_runner::CommandRunner;
 use crate::infrastructure::printing::reports::business_receipt::print_business_receipt;
+use crate::infrastructure::printing::reports::club_imports::print_club_import_report;
 use crate::infrastructure::printing::reports::customer_balance_report::print_customer_balance_report;
 use crate::infrastructure::printing::reports::customer_receipt::print_customer_receipt;
 use crate::infrastructure::printing::reports::print_daily_sales::print_daily_sales;
@@ -26,6 +30,8 @@ pub struct PrinterUseCases {
     product_repo: Arc<dyn ProductRepoTrait>,
     cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
     cust_tx_detail_repo: Arc<dyn crate::domain::repos::CustomerTxDetailRepoTrait>,
+    club_import_repo: Arc<dyn ClubImportRepoTrait>,
+    club_tx_repo: Arc<dyn ClubTransactionRepoTrait>,
 }
 
 impl PrinterUseCases {
@@ -35,6 +41,8 @@ impl PrinterUseCases {
         product_repo: Arc<dyn ProductRepoTrait>,
         cust_tx_repo: Arc<dyn CustomerTransactionRepoTrait>,
         cust_tx_detail_repo: Arc<dyn CustomerTxDetailRepoTrait>,
+        club_import_repo: Arc<dyn ClubImportRepoTrait>,
+        club_tx_repo: Arc<dyn ClubTransactionRepoTrait>,
     ) -> Self {
         Self {
             runner,
@@ -42,6 +50,8 @@ impl PrinterUseCases {
             product_repo,
             cust_tx_repo,
             cust_tx_detail_repo,
+            club_import_repo,
+            club_tx_repo,
         }
     }
 
@@ -172,6 +182,40 @@ impl PrinterUseCases {
         let data = self.cust_tx_detail_repo.sales_by_day(start, end)?;
         let total_amount = self.customer_repo.sum_all_balances()?;
         print_daily_sales(&data, start, end, total_amount, &printer_name)?;
+        Ok(())
+    }
+
+    pub fn print_club_import(
+        &self,
+        id: i32,
+        start_date: NaiveDateTime,
+        printer_name: String,
+    ) -> Result<(), AppError> {
+        let tx = self
+            .club_tx_repo
+            .get_by_import_id_with_total(id, Some(start_date))?;
+        let import = self
+            .club_import_repo
+            .get_by_id(id)?
+            .ok_or_else(|| AppError::NotFound("Import not found".into()))?;
+        let total_amount = self.customer_repo.sum_all_balances()?;
+        let tx_rows: Vec<ClubTransactionRow> = tx
+            .into_iter()
+            .map(|row| ClubTransactionRow {
+                running_total: row.running_total,
+                tx: row,
+            })
+            .collect();
+        let period_totals = self.club_tx_repo.get_period_sums_for_import(id)?;
+
+        print_club_import_report(
+            &import,
+            &tx_rows,
+            total_amount,
+            &period_totals,
+            &printer_name,
+        )?;
+
         Ok(())
     }
 }
