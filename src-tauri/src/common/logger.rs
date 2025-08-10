@@ -42,6 +42,21 @@ pub fn init() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+// convert to our AppError and log with context, then return the AppError
+#[macro_export]
+macro_rules! try_log {
+    ($expr:expr, $ctx:expr) => {
+        match $expr {
+            Ok(val) => val,
+            Err(e) => {
+                let ae: $crate::common::error::AppError = e.into();
+                log::error!("{} failed: {:?}", $ctx, ae);
+                return Err(ae);
+            }
+        }
+    };
+}
+
 #[tauri::command]
 pub fn process_frontend_error(level: &str, message: &str) {
     match level {

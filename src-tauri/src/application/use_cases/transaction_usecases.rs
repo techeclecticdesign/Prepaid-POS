@@ -6,8 +6,9 @@ use crate::domain::repos::CustomerTransactionRepoTrait;
 use crate::domain::repos::CustomerTxDetailRepoTrait;
 use crate::domain::repos::InventoryTransactionRepoTrait;
 use crate::domain::repos::WeeklyLimitRepoTrait;
+use crate::try_log;
 use chrono::{Datelike, Duration, Utc};
-use log::{error, info};
+use log::info;
 use std::sync::{Arc, Mutex};
 
 pub struct TransactionUseCases {
@@ -41,18 +42,15 @@ impl TransactionUseCases {
     ) -> Result<InventoryTransaction, AppError> {
         tx.created_at = Some(chrono::Utc::now().naive_utc());
 
-        let res = self.inv_repo.create(&tx);
-        match &res {
-            Ok(()) => info!(
-                "inventory adjustment: upc={} change={} operator={} ",
-                tx.upc, tx.quantity_change, tx.operator_mdoc
-            ),
-            Err(e) => error!(
-                "inventory adjustment error: upc={} operator={} error={e}",
-                tx.upc, tx.operator_mdoc
-            ),
-        }
-        res.map(|()| tx)
+        try_log!(
+            self.inv_repo.create(&tx),
+            "TransactionUseCases::inventory_adjustment"
+        );
+        info!(
+            "inventory adjustment: upc={} change={} operator={} ",
+            tx.upc, tx.quantity_change, tx.operator_mdoc
+        );
+        Ok(tx)
     }
 
     pub fn sale_transaction(
@@ -61,30 +59,37 @@ impl TransactionUseCases {
         mut invs: Vec<InventoryTransaction>,
         mut details: Vec<CustomerTxDetail>,
     ) -> Result<i32, AppError> {
-        atomic_tx(&self.conn, |tx| {
-            // add timestamp
-            let mut tx_to_insert = cust_tx.clone();
-            if tx_to_insert.date.is_none() {
-                tx_to_insert.date = Some(chrono::Utc::now().naive_utc());
-            }
-            let order_id = self.cust_tx_repo.create_with_tx(&tx_to_insert, tx)?;
+        Ok(try_log!(
+            atomic_tx(&self.conn, |tx| {
+                // add timestamp
+                let mut tx_to_insert = cust_tx.clone();
+                if tx_to_insert.date.is_none() {
+                    tx_to_insert.date = Some(chrono::Utc::now().naive_utc());
+                }
+                let order_id = self.cust_tx_repo.create_with_tx(&tx_to_insert, tx)?;
 
-            for inv in &mut invs {
-                inv.ref_order_id = Some(order_id);
-                self.inv_repo.create_with_tx(inv, tx)?;
-            }
+                for inv in &mut invs {
+                    inv.ref_order_id = Some(order_id);
+                    self.inv_repo.create_with_tx(inv, tx)?;
+                }
 
-            for det in &mut details {
-                det.order_id = order_id;
-                self.cust_tx_detail_repo.create_with_tx(det, tx)?;
-            }
+                for det in &mut details {
+                    det.order_id = order_id;
+                    self.cust_tx_detail_repo.create_with_tx(det, tx)?;
+                }
 
-            Ok(order_id)
-        })
+                Ok(order_id)
+            }),
+            "TransactionUseCases::sale_transaction"
+        ))
     }
 
     pub fn list_for_product(&self, upc: String) -> Result<Vec<InventoryTransaction>, AppError> {
-        self.inv_repo.list_for_product(upc)
+        let res = try_log!(
+            self.inv_repo.list_for_product(upc),
+            "TransactionUseCases::list_for_product"
+        );
+        Ok(res)
     }
 
     pub fn search_inventory_transactions(
@@ -95,7 +100,11 @@ impl TransactionUseCases {
     ) -> Result<Vec<(InventoryTransaction, String, String)>, AppError> {
         let limit = 10;
         let offset = page.saturating_sub(1) * limit;
-        self.inv_repo.search(limit, offset, date, search)
+        let res = try_log!(
+            self.inv_repo.search(limit, offset, date, search),
+            "TransactionUseCases::search_inventory_transactions"
+        );
+        Ok(res)
     }
 
     pub fn count_inventory_transactions(
@@ -103,21 +112,33 @@ impl TransactionUseCases {
         date: Option<String>,
         search: Option<String>,
     ) -> Result<i32, AppError> {
-        self.inv_repo.count(date, search)
+        let res = try_log!(
+            self.inv_repo.count(date, search),
+            "TransactionUseCases::count_inventory_transactions"
+        );
+        Ok(res)
     }
 
     pub fn list_for_customer(
         &self,
         customer_mdoc: i32,
     ) -> Result<Vec<InventoryTransaction>, AppError> {
-        self.inv_repo.list_for_customer(customer_mdoc)
+        let res = try_log!(
+            self.inv_repo.list_for_customer(customer_mdoc),
+            "TransactionUseCases::list_for_customer"
+        );
+        Ok(res)
     }
 
     pub fn list_order_details(
         &self,
         order_id: i32,
     ) -> Result<Vec<(CustomerTxDetail, String)>, AppError> {
-        self.cust_tx_detail_repo.list_by_order(order_id)
+        let res = try_log!(
+            self.cust_tx_detail_repo.list_by_order(order_id),
+            "TransactionUseCases::list_order_details"
+        );
+        Ok(res)
     }
 
     pub fn search_customer_transactions(
@@ -129,7 +150,11 @@ impl TransactionUseCases {
     ) -> Result<Vec<(CustomerTransaction, String, i32)>, AppError> {
         let limit = 10;
         let offset = page.saturating_sub(1) * limit;
-        self.cust_tx_repo.search(limit, offset, mdoc, date, search)
+        let res = try_log!(
+            self.cust_tx_repo.search(limit, offset, mdoc, date, search),
+            "TransactionUseCases::search_customer_transactions"
+        );
+        Ok(res)
     }
 
     pub fn count_customer_transactions(
@@ -138,19 +163,35 @@ impl TransactionUseCases {
         date: Option<String>,
         search: Option<String>,
     ) -> Result<i32, AppError> {
-        self.cust_tx_repo.count(mdoc, date, search)
+        let res = try_log!(
+            self.cust_tx_repo.count(mdoc, date, search),
+            "TransactionUseCases::count_customer_transactions"
+        );
+        Ok(res)
     }
 
     pub fn get_sale_details(&self, order_id: i32) -> Result<SaleDetailsTuple, AppError> {
-        self.cust_tx_repo.get_with_details_and_balance(order_id)
+        let res = try_log!(
+            self.cust_tx_repo.get_with_details_and_balance(order_id),
+            "TransactionUseCases::get_sale_details"
+        );
+        Ok(res)
     }
 
     pub fn get_weekly_limit(&self) -> Result<i32, AppError> {
-        self.limit_repo.get_limit()
+        let res = try_log!(
+            self.limit_repo.get_limit(),
+            "TransactionUseCases::get_weekly_limit"
+        );
+        Ok(res)
     }
 
     pub fn set_weekly_limit(&self, limit: i32) -> Result<(), AppError> {
-        self.limit_repo.set_limit(limit)
+        try_log!(
+            self.limit_repo.set_limit(limit),
+            "TransactionUseCases::set_weekly_limit"
+        );
+        Ok(())
     }
 
     pub fn get_weekly_spent(&self, customer_mdoc: i32) -> Result<i32, AppError> {
@@ -161,8 +202,12 @@ impl TransactionUseCases {
             .and_hms_opt(0, 0, 0)
             .ok_or_else(|| AppError::Unexpected("Could not construct midnight time".to_string()))?;
         let week_start = midnight - Duration::days(weekday);
-        self.cust_tx_repo
-            .get_weekly_spent(customer_mdoc, week_start)
+        let res = try_log!(
+            self.cust_tx_repo
+                .get_weekly_spent(customer_mdoc, week_start),
+            "TransactionUseCases::get_weekly_spent"
+        );
+        Ok(res)
     }
 }
 

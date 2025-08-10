@@ -3,8 +3,9 @@ use crate::common::error::AppError;
 use crate::domain::models::{Category, PriceAdjustment, Product};
 use crate::domain::repos::{CategoryRepoTrait, PriceAdjustmentRepoTrait, ProductRepoTrait};
 use crate::interface::dto::product_dto::UpdateProductDto;
+use crate::try_log;
 use chrono::Utc;
-use log::{error, info};
+use log::info;
 use std::sync::{Arc, Mutex};
 
 pub struct ProductUseCases {
@@ -30,7 +31,10 @@ impl ProductUseCases {
     }
 
     pub fn create_product(&self, product: Product) -> Result<(), AppError> {
-        let maybe_existing = self.repo.get_by_upc(product.upc.clone())?;
+        let maybe_existing = try_log!(
+            self.repo.get_by_upc(product.upc.clone()),
+            "ProductUseCases::create_product"
+        );
         if let Some(existing) = maybe_existing {
             if existing.deleted.is_some() {
                 // Resurrect the product by updating it
@@ -54,51 +58,58 @@ impl ProductUseCases {
             deleted: None,
             ..product
         };
-        let res = self.repo.create(&new_product);
-        match &res {
-            Ok(()) => info!(
-                "product created: upc={} desc={}",
-                new_product.upc, new_product.desc
-            ),
-            Err(e) => error!("product create error: upc={} error={e}", new_product.upc),
-        }
-        res
+        try_log!(
+            self.repo.create(&new_product),
+            "ProductUseCases::create_product"
+        );
+        info!(
+            "product created: upc={} desc={}",
+            new_product.upc, new_product.desc
+        );
+        Ok(())
     }
 
     pub fn delete_product(&self, upc: String) -> Result<(), AppError> {
-        let mut p = self
-            .repo
-            .get_by_upc(upc.clone())?
-            .ok_or_else(|| AppError::NotFound(format!("Product {upc} not found")))?;
+        let mut p = try_log!(
+            self.repo.get_by_upc(upc.clone()),
+            "ProductUseCases::delete_product"
+        )
+        .ok_or_else(|| AppError::NotFound(format!("Product {upc} not found")))?;
         p.deleted = Some(Utc::now().naive_utc());
-        let res = self.repo.update_by_upc(&p);
-        match &res {
-            Ok(()) => info!("product deleted: upc={upc}"),
-            Err(e) => error!("product delete error: upc={upc} error={e}"),
-        }
-        res
+        try_log!(
+            self.repo.update_by_upc(&p),
+            "ProductUseCases::delete_product"
+        );
+        info!("product deleted: upc={upc}");
+        Ok(())
     }
 
     pub fn price_adjustment(&self, adj: PriceAdjustment) -> Result<PriceAdjustment, AppError> {
-        let mut p = self
-            .repo
-            .get_by_upc(adj.upc.clone())?
-            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", adj.upc)))?;
+        let mut p = try_log!(
+            self.repo.get_by_upc(adj.upc.clone()),
+            "ProductUseCases::price_adjustment"
+        )
+        .ok_or_else(|| AppError::NotFound(format!("Product {} not found", adj.upc)))?;
 
         let mut adj = adj;
         adj.created_at = Some(chrono::Utc::now().naive_utc());
 
-        let adj_id = atomic_tx(&self.conn, |tx| {
-            self.price_repo.create_with_tx(&adj, tx)?;
-            p.price = adj.new;
-            p.updated = Some(chrono::Utc::now().naive_utc());
-            self.repo.update_by_upc_with_tx(&p, tx)?;
-
-            Ok(tx.last_insert_rowid() as i32)
-        })?;
+        let adj_id = try_log!(
+            atomic_tx(&self.conn, |tx| {
+                self.price_repo.create_with_tx(&adj, tx)?;
+                p.price = adj.new;
+                p.updated = Some(chrono::Utc::now().naive_utc());
+                self.repo.update_by_upc_with_tx(&p, tx)?;
+                Ok(tx.last_insert_rowid() as i32)
+            }),
+            "ProductUseCases::price_adjustment"
+        );
 
         // now that TX is committed (and Mutex released), read back the row:
-        let adj_loaded = self.price_repo.get_by_id(adj_id)?;
+        let adj_loaded = try_log!(
+            self.price_repo.get_by_id(adj_id),
+            "ProductUseCases::price_adjustment"
+        );
 
         match &adj_loaded {
             Some(a) => log::info!(
@@ -109,34 +120,39 @@ impl ProductUseCases {
             ),
             None => log::error!("price adjustment not found after insert: id={adj_id}"),
         }
-
-        adj_loaded.ok_or_else(|| AppError::Unexpected("failed load price adj".into()))
+        adj_loaded.ok_or_else(|| {
+            AppError::NotFound(format!(
+                "price adjustment not found after insert: id={adj_id}"
+            ))
+        })
     }
 
     pub fn update_product(&self, dto: UpdateProductDto) -> Result<(), AppError> {
         // load existing product
-        let mut p = self
-            .repo
-            .get_by_upc(dto.upc.clone())?
-            .ok_or_else(|| AppError::NotFound(format!("Product {} not found", dto.upc)))?;
+        let mut p = try_log!(
+            self.repo.get_by_upc(dto.upc.clone()),
+            "ProductUseCases::update_product"
+        )
+        .ok_or_else(|| AppError::NotFound(format!("Product {} not found", dto.upc)))?;
 
         // update
         p.desc = dto.desc;
         p.category = dto.category;
         p.updated = Some(Utc::now().naive_utc());
 
-        let res = self.repo.update_by_upc(&p);
-        match &res {
-            Ok(()) => info!(
-                "product updated: upc={} desc={} category={}",
-                p.upc, p.desc, p.category
-            ),
-            Err(e) => error!("product update error: upc={} error={e}", p.upc),
-        }
-        res
+        try_log!(
+            self.repo.update_by_upc(&p),
+            "ProductUseCases::update_product"
+        );
+        info!(
+            "product updated: upc={} desc={} category={}",
+            p.upc, p.desc, p.category
+        );
+        Ok(())
     }
     pub fn list_price_adjust(&self) -> Result<Vec<PriceAdjustment>, AppError> {
-        self.price_repo.list()
+        let res = try_log!(self.price_repo.list(), "ProductUseCases::list_price_adjust");
+        Ok(res)
     }
 
     pub fn search_products(
@@ -147,7 +163,11 @@ impl ProductUseCases {
     ) -> Result<Vec<(Product, i32)>, AppError> {
         let limit = 10;
         let offset = page.saturating_sub(1) * limit;
-        self.repo.search(search, category, limit, offset)
+        let res = try_log!(
+            self.repo.search(search, category, limit, offset),
+            "ProductUseCases::search_products"
+        );
+        Ok(res)
     }
 
     pub fn search_price_adjustments(
@@ -158,7 +178,11 @@ impl ProductUseCases {
     ) -> Result<Vec<(PriceAdjustment, String, String)>, AppError> {
         let limit = 10;
         let offset = page.saturating_sub(1) * limit;
-        self.price_repo.search(limit, offset, date, search)
+        let res = try_log!(
+            self.price_repo.search(limit, offset, date, search),
+            "ProductUseCases::search_price_adjustments"
+        );
+        Ok(res)
     }
 
     pub fn count_price_adjustments(
@@ -166,28 +190,35 @@ impl ProductUseCases {
         date: Option<String>,
         search: Option<String>,
     ) -> Result<i32, AppError> {
-        self.price_repo.count(date, search)
+        let res = try_log!(
+            self.price_repo.count(date, search),
+            "ProductUseCases::count_price_adjustments"
+        );
+        Ok(res)
     }
 
     pub fn list_categories(&self) -> Result<Vec<Category>, AppError> {
-        self.category_repo.list_active()
+        let res = try_log!(
+            self.category_repo.list_active(),
+            "ProductUseCases::list_categories"
+        );
+        Ok(res)
     }
 
     pub fn delete_category(&self, id: i32) -> Result<(), AppError> {
-        match self.category_repo.soft_delete(id) {
-            Ok(()) => {
-                info!("category deleted: id={id}");
-                Ok(())
-            }
-            Err(e) => {
-                error!("category delete error: id={id} error={e}");
-                Err(e)
-            }
-        }
+        try_log!(
+            self.category_repo.soft_delete(id),
+            "ProductUseCases::delete_category"
+        );
+        info!("category deleted: id={id}");
+        Ok(())
     }
 
     pub fn create_category(&self, cat: String) -> Result<(), AppError> {
-        if let Some(existing) = self.category_repo.get_by_name(&cat)? {
+        if let Some(existing) = try_log!(
+            self.category_repo.get_by_name(&cat),
+            "ProductUseCases::create_category"
+        ) {
             // it was soft‐deleted, undelete it.
             if existing.deleted.is_some() {
                 return self.category_repo.undelete(existing.id);
@@ -198,12 +229,12 @@ impl ProductUseCases {
             )));
         }
         // create new category
-        let res = self.category_repo.create(cat.clone());
-        match &res {
-            Ok(()) => info!("category created: name={cat}"),
-            Err(e) => error!("category create error: name={cat} error={e}"),
-        }
-        res
+        try_log!(
+            self.category_repo.create(cat.clone()),
+            "ProductUseCases::create_category"
+        );
+        info!("category created: name={cat}");
+        Ok(())
     }
 
     pub fn count_products(
@@ -211,7 +242,11 @@ impl ProductUseCases {
         search: Option<String>,
         category: Option<String>,
     ) -> Result<i32, AppError> {
-        self.repo.count(search, category)
+        let res = try_log!(
+            self.repo.count(search, category),
+            "ProductUseCases::count_products"
+        );
+        Ok(res)
     }
 }
 

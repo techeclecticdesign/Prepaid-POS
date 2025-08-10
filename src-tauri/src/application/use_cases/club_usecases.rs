@@ -1,6 +1,7 @@
 use crate::common::error::AppError;
 use crate::domain::models::{ClubImport, ClubTransaction, Customer};
 use crate::domain::repos::{ClubImportRepoTrait, ClubTransactionRepoTrait, CustomerRepoTrait};
+use crate::try_log;
 use std::sync::Arc;
 
 pub struct ClubUseCases {
@@ -29,11 +30,19 @@ impl ClubUseCases {
     ) -> Result<Vec<(Customer, i32)>, AppError> {
         let limit = 10;
         let offset = page.saturating_sub(1) * limit;
-        self.customer_repo.search(limit, offset, search)
+        let res = try_log!(
+            self.customer_repo.search(limit, offset, search),
+            "ClubUseCases::search_customers"
+        );
+        Ok(res)
     }
 
     pub fn count_customers(&self, search: Option<String>) -> Result<i32, AppError> {
-        self.customer_repo.count(search)
+        let count = try_log!(
+            self.customer_repo.count(search),
+            "ClubUseCases::count_customers"
+        );
+        Ok(count)
     }
 
     pub fn search_club_transactions(
@@ -44,7 +53,11 @@ impl ClubUseCases {
     ) -> Result<Vec<(ClubTransaction, Option<String>)>, AppError> {
         let limit = 10;
         let offset = page.saturating_sub(1) * limit;
-        self.tx_repo.search(limit, offset, date, search)
+        let res = try_log!(
+            self.tx_repo.search(limit, offset, date, search),
+            "ClubUseCases::search_club_transactions"
+        );
+        Ok(res)
     }
 
     pub fn count_club_transactions(
@@ -52,10 +65,15 @@ impl ClubUseCases {
         date: Option<String>,
         search: Option<String>,
     ) -> Result<i32, AppError> {
-        self.tx_repo.count(date, search)
+        let count = try_log!(
+            self.tx_repo.count(date, search),
+            "ClubUseCases::count_club_transactions"
+        );
+        Ok(count)
     }
 
     pub fn list_club_imports(&self) -> Result<Vec<ClubImport>, AppError> {
-        self.import_repo.list()
+        let res = try_log!(self.import_repo.list(), "ClubUseCases::list_club_imports");
+        Ok(res)
     }
 }

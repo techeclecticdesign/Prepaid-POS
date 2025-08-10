@@ -17,6 +17,7 @@ use crate::infrastructure::printing::reports::product_catalog::print_product_cat
 use crate::infrastructure::printing::reports::product_sales::print_product_sales;
 use crate::infrastructure::printing::reports::sales_detail_report::print_sales_detail_report;
 use crate::interface::dto::printer_dto::PrintableSaleDto;
+use crate::try_log;
 use chrono::NaiveDateTime;
 use std::sync::Arc;
 
@@ -123,17 +124,32 @@ impl PrinterUseCases {
     }
 
     pub fn print_prod_inv_rpt(&self, printer_name: String) -> Result<(), AppError> {
-        let rows = self.product_repo.report_by_category()?;
-        let total_amount = self.customer_repo.sum_all_balances()?;
-        let product_totals = self.product_repo.get_inventory_totals()?;
+        let rows = try_log!(
+            self.product_repo.report_by_category(),
+            "PrinterUseCases::print_prod_inv_rpt"
+        );
+        let total_amount = try_log!(
+            self.customer_repo.sum_all_balances(),
+            "PrinterUseCases::print_prod_inv_rpt"
+        );
+        let product_totals = try_log!(
+            self.product_repo.get_inventory_totals(),
+            "PrinterUseCases::print_prod_inv_rpt"
+        );
 
         print_inventory_report(&rows, product_totals, total_amount, &printer_name)?;
         Ok(())
     }
 
     pub fn print_cust_bal_rpt(&self, printer_name: String) -> Result<(), AppError> {
-        let data = self.customer_repo.list_customer_accounts()?;
-        let total_amount = self.customer_repo.sum_all_balances()?;
+        let data = try_log!(
+            self.customer_repo.list_customer_accounts(),
+            "PrinterUseCases::print_cust_bal_rpt"
+        );
+        let total_amount = try_log!(
+            self.customer_repo.sum_all_balances(),
+            "PrinterUseCases::print_cust_bal_rpt"
+        );
 
         print_customer_balance_report(&data, total_amount, &printer_name)?;
         Ok(())
@@ -141,7 +157,10 @@ impl PrinterUseCases {
 
     pub fn print_product_catalog(&self, printer_name: String) -> Result<(), AppError> {
         // fetch the same rows as inventory report
-        let rows = self.product_repo.list()?;
+        let rows = try_log!(
+            self.product_repo.list(),
+            "PrinterUseCases::print_product_catalog"
+        );
         print_product_catalog_report(&rows, &printer_name)?;
         Ok(())
     }
@@ -152,10 +171,16 @@ impl PrinterUseCases {
         end_date: chrono::NaiveDateTime,
         printer_name: String,
     ) -> Result<(), AppError> {
-        let data = self
-            .cust_tx_repo
-            .get_sales_details_data(start_date, end_date)?;
-        let total_amount = self.customer_repo.sum_all_balances()?;
+        let data = try_log!(
+            self.cust_tx_repo
+                .get_sales_details_data(start_date, end_date),
+            "PrinterUseCases::print_sales_detail_report"
+        );
+        let total_amount = try_log!(
+            self.customer_repo.sum_all_balances(),
+            "PrinterUseCases::print_sales_detail_report"
+        );
+
         print_sales_detail_report(&data, start_date, end_date, total_amount, &printer_name)?;
         Ok(())
     }
@@ -166,9 +191,18 @@ impl PrinterUseCases {
         end: NaiveDateTime,
         printer_name: String,
     ) -> Result<(), AppError> {
-        let data = self.cust_tx_detail_repo.sales_by_category(start, end)?;
-        let sales_totals = self.cust_tx_detail_repo.get_sales_totals(start, end)?;
-        let total_amount = self.customer_repo.sum_all_balances()?;
+        let data = try_log!(
+            self.cust_tx_detail_repo.sales_by_category(start, end),
+            "PrinterUseCases::sales_by_category"
+        );
+        let sales_totals = try_log!(
+            self.cust_tx_detail_repo.get_sales_totals(start, end),
+            "PrinterUseCases::sales_by_category"
+        );
+        let total_amount = try_log!(
+            self.customer_repo.sum_all_balances(),
+            "PrinterUseCases::sales_by_category"
+        );
         print_product_sales(&data, start, end, sales_totals, total_amount, &printer_name)?;
         Ok(())
     }
@@ -179,8 +213,15 @@ impl PrinterUseCases {
         end: NaiveDateTime,
         printer_name: String,
     ) -> Result<(), AppError> {
-        let data = self.cust_tx_detail_repo.sales_by_day(start, end)?;
-        let total_amount = self.customer_repo.sum_all_balances()?;
+        let data = try_log!(
+            self.cust_tx_detail_repo.sales_by_day(start, end),
+            "PrinterUseCases::sales_by_day"
+        );
+        let total_amount = try_log!(
+            self.customer_repo.sum_all_balances(),
+            "PrinterUseCases::sales_by_day"
+        );
+
         print_daily_sales(&data, start, end, total_amount, &printer_name)?;
         Ok(())
     }
@@ -191,14 +232,20 @@ impl PrinterUseCases {
         start_date: NaiveDateTime,
         printer_name: String,
     ) -> Result<(), AppError> {
-        let tx = self
-            .club_tx_repo
-            .get_by_import_id_with_total(id, Some(start_date))?;
-        let import = self
-            .club_import_repo
-            .get_by_id(id)?
-            .ok_or_else(|| AppError::NotFound("Import not found".into()))?;
-        let total_amount = self.customer_repo.sum_all_balances()?;
+        let tx = try_log!(
+            self.club_tx_repo
+                .get_by_import_id_with_total(id, Some(start_date)),
+            "PrinterUseCases::print_club_import"
+        );
+        let import = try_log!(
+            self.club_import_repo.get_by_id(id),
+            "PrinterUseCases::print_club_import"
+        )
+        .ok_or_else(|| AppError::NotFound("Import not found".into()))?;
+        let total_amount = try_log!(
+            self.customer_repo.sum_all_balances(),
+            "PrinterUseCases::print_club_import"
+        );
         let tx_rows: Vec<ClubTransactionRow> = tx
             .into_iter()
             .map(|row| ClubTransactionRow {
@@ -206,7 +253,10 @@ impl PrinterUseCases {
                 tx: row,
             })
             .collect();
-        let period_totals = self.club_tx_repo.get_period_sums_for_import(id)?;
+        let period_totals = try_log!(
+            self.club_tx_repo.get_period_sums_for_import(id),
+            "PrinterUseCases::print_club_import"
+        );
 
         print_club_import_report(
             &import,

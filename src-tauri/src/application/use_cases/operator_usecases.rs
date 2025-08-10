@@ -1,7 +1,8 @@
 use crate::common::error::AppError;
 use crate::domain::models::Operator;
 use crate::domain::repos::OperatorRepoTrait;
-use log::{error, info, warn};
+use crate::try_log;
+use log::{info, warn};
 use std::sync::Arc;
 
 pub struct OperatorUseCases {
@@ -14,7 +15,8 @@ impl OperatorUseCases {
     }
 
     pub fn list_operators(&self) -> Result<Vec<Operator>, AppError> {
-        self.repo.list()
+        let res = try_log!(self.repo.list(), "OperatorUseCases::list_operators");
+        Ok(res)
     }
 
     pub fn create_operator(&self, op: &Operator) -> Result<(), AppError> {
@@ -23,7 +25,9 @@ impl OperatorUseCases {
             return Err(AppError::Unexpected("Operator name cannot be empty".into()));
         }
         // Check if any operator already has this mdoc
-        let existing = self.repo.list()?.into_iter().find(|o| o.mdoc == op.mdoc);
+        let existing = try_log!(self.repo.list(), "OperatorUseCases::create_operator")
+            .into_iter()
+            .find(|o| o.mdoc == op.mdoc);
         if existing.is_some() {
             warn!("create failed: duplicate mdoc {}", op.mdoc);
             return Err(AppError::Unexpected(format!(
@@ -31,17 +35,17 @@ impl OperatorUseCases {
                 op.mdoc
             )));
         }
-        let res = self.repo.create(op);
-        match &res {
-            Ok(()) => info!("operator created: mdoc={} name={}", op.mdoc, op.name),
-            Err(e) => error!("operator create error: mdoc={} error={e}", op.mdoc),
-        }
-        res
+        try_log!(self.repo.create(op), "OperatorUseCases::create_operator");
+        info!("operator created: mdoc={} name={}", op.mdoc, op.name);
+        Ok(())
     }
 
     pub fn update_operator(&self, op: &Operator) -> Result<(), AppError> {
         // Check if operator exists
-        let existing = self.repo.get_by_mdoc(op.mdoc)?;
+        let existing = try_log!(
+            self.repo.get_by_mdoc(op.mdoc),
+            "OperatorUseCases::update_operator"
+        );
         if existing.is_none() {
             warn!("update failed: not found (mdoc={})", op.mdoc);
             return Err(AppError::NotFound(format!(
@@ -49,12 +53,12 @@ impl OperatorUseCases {
                 op.mdoc
             )));
         }
-        let res = self.repo.update_by_mdoc(op);
-        match &res {
-            Ok(()) => info!("operator updated: mdoc={} name={}", op.mdoc, op.name),
-            Err(e) => error!("operator update error: mdoc={} error={e}", op.mdoc),
-        }
-        res
+        try_log!(
+            self.repo.update_by_mdoc(op),
+            "OperatorUseCases::update_operator"
+        );
+        info!("operator updated: mdoc={} name={}", op.mdoc, op.name);
+        Ok(())
     }
 }
 
