@@ -12,8 +12,7 @@ use std::sync::{
     Arc,
 };
 
-/// Prints a “Sales by Day” report PDF and sends to printer.
-/// Columns: Date | Total
+// Prints a “Sales by Day” report PDF and sends to printer.
 pub fn print_daily_sales(
     rows: &[DailySales],
     start: NaiveDateTime,
@@ -28,6 +27,12 @@ pub fn print_daily_sales(
     let margin_bottom = Mm(15.0);
     let line_height = Mm(7.0);
     let footer_height = Mm(12.0);
+
+    // column x positions
+    let date_x1 = Mm(20.0);
+    let total_x1 = Mm(55.0);
+    let date_x2 = Mm(125.0);
+    let total_x2 = Mm(160.0);
 
     // create PDF
     let (doc, first_page, first_layer) =
@@ -60,10 +65,13 @@ pub fn print_daily_sales(
             let mut y = page_height - margin_top;
             if first_flag.swap(false, Ordering::SeqCst) {
                 layer.use_text(&title, title_size, title_x, y, &bold);
-                y -= Mm(line_height.0 * 1.5);
+                y -= Mm(line_height.0 * 2.0);
             }
-            layer.use_text("Date", 11.0, Mm(20.0), y, &bold);
-            layer.use_text("Total", 11.0, Mm(140.0), y, &bold);
+            // draw column headers for both left & right columns
+            layer.use_text("Date", 11.0, date_x1, y, &bold);
+            layer.use_text("Total", 11.0, total_x1, y, &bold);
+            layer.use_text("Date", 11.0, date_x2, y, &bold);
+            layer.use_text("Total", 11.0, total_x2, y, &bold);
         }
     };
 
@@ -92,24 +100,64 @@ pub fn print_daily_sales(
             draw_footer,
         );
 
-        pg.advance(line_height * 1.5);
+        pg.advance(line_height * 2.0);
 
-        for (i, r) in rows.iter().enumerate() {
-            let layer = pg.layer_for(line_height);
-            // date column
-            let date_str = r.day.format("%Y-%m-%d").to_string();
-            layer.use_text(&date_str, 9.0, Mm(20.0), pg.current_y(), &font);
-            // total column
-            layer.use_text(
-                format_cents(r.total_sales),
-                9.0,
-                Mm(140.0),
-                pg.current_y(),
-                &font,
-            );
-            if i < rows.len() - 1 {
+        // compute how many rows fit vertically
+        let start_y = pg.current_y();
+        let usable_mm = (start_y.0 - margin_bottom.0 - footer_height.0).max(0.0);
+        let mut rows_per_column = (usable_mm / line_height.0).floor() as usize;
+        if rows_per_column == 0 {
+            rows_per_column = 1;
+        }
+
+        let mut idx = 0usize;
+        while idx < rows.len() {
+            // for each vertical slot (0..rows_per_column)
+            for slot in 0..rows_per_column {
+                let left_idx = idx + slot;
+                let right_idx = idx + slot + rows_per_column;
+
+                // If both indices are past the end, we're done for this page
+                if left_idx >= rows.len() && right_idx >= rows.len() {
+                    break;
+                }
+
+                let layer = pg.layer_for(line_height);
+
+                // left column entry
+                if left_idx < rows.len() {
+                    let r = &rows[left_idx];
+                    let date_str = r.day.format("%Y-%m-%d").to_string();
+                    layer.use_text(&date_str, 9.0, date_x1, pg.current_y(), &font);
+                    layer.use_text(
+                        format_cents(r.total_sales),
+                        9.0,
+                        total_x1,
+                        pg.current_y(),
+                        &font,
+                    );
+                }
+
+                // right column entry (if present)
+                if right_idx < rows.len() {
+                    let r = &rows[right_idx];
+                    let date_str = r.day.format("%Y-%m-%d").to_string();
+                    layer.use_text(&date_str, 9.0, date_x2, pg.current_y(), &font);
+                    layer.use_text(
+                        format_cents(r.total_sales),
+                        9.0,
+                        total_x2,
+                        pg.current_y(),
+                        &font,
+                    );
+                }
+
+                // advance one slot (shared for both columns)
                 pg.advance(line_height);
             }
+
+            // advance index by the number of rows we consumed on this page
+            idx += rows_per_column * 2;
         }
 
         pg.finalize();
