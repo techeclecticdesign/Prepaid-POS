@@ -15,18 +15,9 @@ pub fn list_operators(
 
 #[tauri::command]
 pub fn create_operator(
-    auth: State<'_, RwLock<AuthState>>,
     ctrl: State<'_, Arc<OperatorController>>,
     dto: OperatorDto,
 ) -> Result<(), AppError> {
-    let st = auth
-        .read()
-        .map_err(|e| AppError::LockPoisoned(e.to_string()))?;
-
-    if !st.logged_in {
-        return Err(AppError::Unauthorized);
-    }
-
     ctrl.create(dto)?;
     Ok(())
 }
