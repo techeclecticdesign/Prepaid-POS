@@ -96,38 +96,45 @@ pub fn print_product_sales(
             draw_footer,
         );
 
-        // leave a little space under the column headers before first row
-        pg.advance(line_height * 1.5);
-
         let mut last_cat: Option<&str> = None;
+
+        pg.advance(line_height * 1.3);
 
         for (i, r) in rows.iter().enumerate() {
             // Category header (only before the first non‐summary of each category)
             if !r.is_summary && last_cat != Some(r.category.as_str()) {
                 let layer = pg.layer_for(Mm(line_height.0 * 2.0));
                 layer.use_text(r.category.as_str(), 12.0, Mm(10.0), pg.current_y(), &bold);
-                pg.advance(Mm(line_height.0 * 2.0));
+                pg.advance(Mm(line_height.0 * 1.5));
                 last_cat = Some(r.category.as_str());
             }
 
             // Draw either summary or detail
             let layer = pg.layer_for(line_height);
             if r.is_summary {
+                pg.advance(line_height * -0.8);
+                if i > 1 {
+                    let qty_line_layer = pg.layer_for(line_height);
+                    qty_line_layer.use_text("____", 11.0, Mm(10.0), pg.current_y(), &font);
+                    let total_line_layer = pg.layer_for(line_height);
+                    total_line_layer.use_text("_______", 11.0, Mm(170.0), pg.current_y(), &font);
+                }
                 // category‐total line in bold (Qty + Total only)
                 layer.use_text(
                     r.quantity_sold.to_string(),
                     9.0,
                     Mm(10.0),
-                    pg.current_y(),
+                    pg.current_y() - Mm(line_height.0) + Mm(2.0),
                     &bold,
                 );
                 layer.use_text(
                     format_cents(r.total_sales),
                     9.0,
                     Mm(170.0),
-                    pg.current_y(),
+                    pg.current_y() - Mm(line_height.0) + Mm(2.0),
                     &bold,
                 );
+                pg.advance(line_height * 1.4);
             } else {
                 // regular detail row
                 layer.use_text(
@@ -157,6 +164,11 @@ pub fn print_product_sales(
         // grand totals
         pg.advance(Mm(2.0));
         let sep_layer = pg.layer_for(Mm(7.0));
+        // first line
+        sep_layer.use_text("____", 9.0, Mm(10.0), pg.current_y(), &font);
+        sep_layer.use_text("__________", 9.0, Mm(170.0), pg.current_y(), &font);
+        // double line
+        pg.advance(Mm(0.4));
         sep_layer.use_text("____", 9.0, Mm(10.0), pg.current_y(), &font);
         sep_layer.use_text("__________", 9.0, Mm(170.0), pg.current_y(), &font);
         pg.advance(Mm(5.0));
@@ -169,6 +181,7 @@ pub fn print_product_sales(
             pg.current_y(),
             &bold,
         );
+        tot_layer.use_text("Grand Total:", 9.0, Mm(150.0), pg.current_y(), &bold);
         tot_layer.use_text(
             format_cents(sales_totals.total_value),
             9.0,

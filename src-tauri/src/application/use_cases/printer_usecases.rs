@@ -176,12 +176,24 @@ impl PrinterUseCases {
                 .get_sales_details_data(start_date, end_date),
             "PrinterUseCases::print_sales_detail_report"
         );
+
+        let grand_total = self
+            .cust_tx_detail_repo
+            .get_sales_totals(start_date, end_date)?;
+
         let total_amount = try_log!(
             self.customer_repo.sum_all_balances(),
             "PrinterUseCases::print_sales_detail_report"
         );
 
-        print_sales_detail_report(&data, start_date, end_date, total_amount, &printer_name)?;
+        print_sales_detail_report(
+            &data,
+            start_date,
+            end_date,
+            grand_total,
+            total_amount,
+            &printer_name,
+        )?;
         Ok(())
     }
 

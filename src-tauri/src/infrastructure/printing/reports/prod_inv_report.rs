@@ -53,16 +53,36 @@ pub fn print_inventory_report(
         let bold = bold_for_closure.clone();
         move |layer: &PdfLayerReference| {
             let mut y = page_height - margin_top;
+            let first = is_first.swap(false, Ordering::SeqCst);
             // title only once
-            if is_first.swap(false, Ordering::SeqCst) {
+            if first {
                 layer.use_text(&title, title_font_size, centered_x, y, &bold);
-                y -= line_height * 1.1;
+                y -= line_height * 1.6;
             }
             // column labels
             layer.use_text("Qty", 11.0, Mm(25.0), y, &bold);
             layer.use_text("Name", 11.0, Mm(40.0), y, &bold);
             layer.use_text("UPC", 11.0, Mm(120.0), y, &bold);
             layer.use_text("Total", 11.0, Mm(170.0), y, &bold);
+
+            // show grand totals immediately under headers ONLY on the first page
+            if first {
+                y -= line_height;
+                layer.use_text(
+                    product_totals.total_quantity.to_string(),
+                    9.0,
+                    Mm(25.0),
+                    y,
+                    &bold,
+                );
+                layer.use_text(
+                    format_cents(product_totals.total_value),
+                    9.0,
+                    Mm(170.0),
+                    y,
+                    &bold,
+                );
+            }
         }
     };
     let draw_footer = {
@@ -90,6 +110,8 @@ pub fn print_inventory_report(
         );
         let mut last_category: Option<&str> = None;
 
+        pg.advance(line_height * 1.5);
+
         for (i, r) in rows.iter().enumerate() {
             // how much space we'll need
             let extra = if !r.is_summary && (last_category != Some(r.category.as_str())) {
@@ -110,6 +132,23 @@ pub fn print_inventory_report(
 
             // draw the row
             if r.is_summary {
+                let qty_line_layer = pg.layer_for(line_height);
+                qty_line_layer.use_text(
+                    "_____",
+                    11.0,
+                    Mm(25.0),
+                    pg.current_y() + Mm(line_height.0 * 0.75),
+                    &font,
+                );
+                let total_line_layer = pg.layer_for(line_height);
+                total_line_layer.use_text(
+                    "_______",
+                    11.0,
+                    Mm(170.0),
+                    pg.current_y() + Mm(line_height.0 * 0.75),
+                    &font,
+                );
+
                 layer.use_text(r.quantity.to_string(), 9.0, Mm(25.0), pg.current_y(), &bold);
                 layer.use_text(format_cents(r.total), 9.0, Mm(170.0), pg.current_y(), &bold);
             } else {
@@ -137,6 +176,9 @@ pub fn print_inventory_report(
         // draw separator line with underscores
         layer.use_text("____", 9.0, Mm(25.0), pg.current_y(), &font); // Qty column
         layer.use_text("________", 9.0, Mm(170.0), pg.current_y(), &font); // Total column
+        pg.advance(Mm(0.4));
+        layer.use_text("____", 9.0, Mm(25.0), pg.current_y(), &font); // Qty column
+        layer.use_text("________", 9.0, Mm(170.0), pg.current_y(), &font); // Total column
 
         pg.advance(Mm(5.0));
         let layer = pg.layer_for(line_height);
@@ -149,6 +191,7 @@ pub fn print_inventory_report(
             pg.current_y(),
             &bold,
         );
+        layer.use_text("Grand Total:", 9.0, Mm(150.0), pg.current_y(), &bold);
         layer.use_text(
             format_cents(product_totals.total_value),
             9.0,

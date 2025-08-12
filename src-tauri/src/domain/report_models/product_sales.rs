@@ -8,6 +8,7 @@ pub struct ProductSalesByCategory {
     pub is_summary: bool,
 }
 
+#[derive(Clone, Copy)]
 pub struct SalesTotals {
     pub total_quantity: i32,
     pub total_value: i32,

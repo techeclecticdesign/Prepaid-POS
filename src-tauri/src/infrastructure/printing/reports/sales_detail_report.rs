@@ -1,7 +1,9 @@
 use crate::common::error::AppError;
+use crate::domain::report_models::product_sales::SalesTotals;
 use crate::domain::report_models::sales_details::SalesReportDetails;
 use crate::infrastructure::printing::reports::common::account_footer;
 use crate::infrastructure::printing::reports::common::horizontal_line;
+use crate::infrastructure::printing::reports::common::util::format_cents;
 use crate::infrastructure::printing::{paginator::Paginator, print::print_pdf_silently};
 use chrono::NaiveDateTime;
 use dotenvy::var;
@@ -16,6 +18,7 @@ pub fn print_sales_detail_report(
     txs: &[SalesReportDetails],
     start: NaiveDateTime,
     end: NaiveDateTime,
+    sales_totals: SalesTotals,
     total_amount: i32,
     printer_name: &str,
 ) -> Result<(), AppError> {
@@ -47,6 +50,7 @@ pub fn print_sales_detail_report(
 
     // draw title flag
     let first_flag = Arc::new(AtomicBool::new(true));
+    let header_printed = Arc::new(AtomicBool::new(false));
     let draw_header = {
         let facility_name = var("CLUB_NAME").unwrap_or_else(|_| "".into());
         let title = format!(
@@ -56,10 +60,12 @@ pub fn print_sales_detail_report(
         );
         let flag = first_flag.clone();
         let bold = bold.clone();
+        let header_printed = header_printed.clone();
         move |layer: &PdfLayerReference| {
             let mut y = h - margin_top;
             // on first invocation only:
-            if flag.swap(false, Ordering::SeqCst) {
+            let first = flag.swap(false, Ordering::SeqCst); // local `first` avoids double-swap
+            if first {
                 layer.use_text(&title, title_font_size, centered_x, y, &bold);
                 y -= line_height;
             }
@@ -68,6 +74,30 @@ pub fn print_sales_detail_report(
             layer.use_text("Customer", 10.0, Mm(80.0), y, &bold);
             layer.use_text("Items", 10.0, Mm(140.0), y, &bold);
             layer.use_text("Total", 10.0, Mm(165.0), y, &bold);
+
+            // Draw underlines + grand totals right below headers on first page
+            if first {
+                // totals row
+                y -= line_height;
+                layer.use_text(
+                    sales_totals.total_quantity.to_string(),
+                    9.0,
+                    Mm(140.0),
+                    y,
+                    &bold,
+                );
+                layer.use_text(
+                    format_cents(sales_totals.total_value),
+                    9.0,
+                    Mm(165.0),
+                    y,
+                    &bold,
+                );
+
+                // small gap before first data row
+                y -= Mm(6.0);
+                header_printed.store(true, Ordering::SeqCst);
+            }
         }
     };
     // footer closure
@@ -77,6 +107,9 @@ pub fn print_sales_detail_report(
 
     // paginate
     {
+        // estimate of how much vertical space the header block consumes on first page
+        let header_space = line_height * 1.8;
+
         let mut pg = Paginator::new(
             &doc,
             first_page,
@@ -90,15 +123,22 @@ pub fn print_sales_detail_report(
             draw_header,
             draw_footer,
         );
-        pg.advance(line_height * 1.0);
-        // for each transaction:
+        // advance past the header+totals block so first data row starts lower
+        pg.advance(header_space);
+        let mut first_tx = true;
         for t in txs {
             let tx = &t.tx;
             let lines_needed = 1 + t.details.len();
             let needed_height = line_height * (lines_needed as f32) + line_height;
             // ask paginator for a page that can fit the whole block
             let layer = pg.layer_for(needed_height);
-            horizontal_line::draw_line(&layer, &font, pg.current_y() + line_height);
+            if first_tx && header_printed.load(Ordering::SeqCst) {
+                // position just below totals
+                horizontal_line::draw_line(&layer, &font, pg.current_y() + Mm(6.8));
+                first_tx = false;
+            } else {
+                horizontal_line::draw_line(&layer, &font, pg.current_y() + line_height);
+            }
             let layer = pg.layer_for(line_height);
             // print the header row for this tx
             layer.use_text(
@@ -163,6 +203,34 @@ pub fn print_sales_detail_report(
                 pg.advance(line_height);
             }
         }
+
+        // grand totals at the bottom
+        let sep_layer = pg.layer_for(Mm(7.0));
+        // first underline
+        sep_layer.use_text("____", 9.0, Mm(140.0), pg.current_y(), &font);
+        sep_layer.use_text("__________", 9.0, Mm(165.0), pg.current_y(), &font);
+        // double-line
+        pg.advance(Mm(0.4));
+        sep_layer.use_text("____", 9.0, Mm(140.0), pg.current_y(), &font);
+        sep_layer.use_text("__________", 9.0, Mm(165.0), pg.current_y(), &font);
+        pg.advance(Mm(5.0));
+
+        let tot_layer = pg.layer_for(line_height);
+        tot_layer.use_text(
+            sales_totals.total_quantity.to_string(),
+            9.0,
+            Mm(140.0),
+            pg.current_y(),
+            &bold,
+        );
+        tot_layer.use_text("Total:", 9.0, Mm(154.0), pg.current_y(), &bold);
+        tot_layer.use_text(
+            format_cents(sales_totals.total_value),
+            9.0,
+            Mm(165.0),
+            pg.current_y(),
+            &bold,
+        );
 
         // finish PDF
         pg.finalize();
