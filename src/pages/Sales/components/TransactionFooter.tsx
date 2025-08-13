@@ -10,7 +10,6 @@ interface Props {
   transactionTotal: number;
   sessionSales: number;
   sessionCustomers: number;
-  onAcceptReturn: () => void;
   onCancelTransaction: () => void;
   onSubmitTransaction: () => void;
 }
@@ -20,7 +19,6 @@ export default function TransactionFooter({
   transactionTotal,
   sessionSales,
   sessionCustomers,
-  onAcceptReturn,
   onCancelTransaction,
   onSubmitTransaction,
 }: Props) {
@@ -139,15 +137,16 @@ export default function TransactionFooter({
         </Box>
 
         {/* Right Column - Action Buttons */}
-        <Box sx={{ ...columnSx, minWidth: 150 }}>
-          <Button
-            variant="outlined"
-            color="warning"
-            sx={buttonSx}
-            onClick={onAcceptReturn}
-          >
-            Accept Return
-          </Button>
+        <Box
+          sx={{
+            ...columnSx,
+            minWidth: 150,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 1,
+          }}
+        >
           <Button
             variant="outlined"
             color="error"

@@ -170,17 +170,6 @@ export default function Sales() {
   );
 
   // Footer Button Handlers
-  const handleAcceptReturn = () => {
-    if (!selectedCustomer) {
-      showSnackbar("Customer needs to scan in first.", "warning");
-      return;
-    }
-    if (transactionItems.length !== 0) {
-      showSnackbar("Cannot accept return when a sale is pending.", "warning");
-      return;
-    }
-    console.log("Accept Return clicked");
-  };
 
   const handleCancelTransaction = () => {
     if (!selectedCustomer) {
@@ -432,7 +421,6 @@ export default function Sales() {
             transactionTotal={transactionTotal}
             sessionSales={sessionSales}
             sessionCustomers={sessionCustomers}
-            onAcceptReturn={handleAcceptReturn}
             onCancelTransaction={handleCancelTransaction}
             onSubmitTransaction={handleSubmitTransaction}
           />
