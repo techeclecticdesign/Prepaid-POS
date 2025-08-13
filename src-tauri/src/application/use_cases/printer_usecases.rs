@@ -229,12 +229,13 @@ impl PrinterUseCases {
             self.cust_tx_detail_repo.sales_by_day(start, end),
             "PrinterUseCases::sales_by_day"
         );
+        let grand_total = self.cust_tx_detail_repo.get_sales_totals(start, end)?;
         let total_amount = try_log!(
             self.customer_repo.sum_all_balances(),
             "PrinterUseCases::sales_by_day"
         );
 
-        print_daily_sales(&data, start, end, total_amount, &printer_name)?;
+        print_daily_sales(&data, start, end, grand_total, total_amount, &printer_name)?;
         Ok(())
     }
 

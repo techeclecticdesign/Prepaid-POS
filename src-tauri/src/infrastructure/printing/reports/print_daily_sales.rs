@@ -1,5 +1,6 @@
 use crate::common::error::AppError;
 use crate::domain::report_models::daily_sales::DailySales;
+use crate::domain::report_models::product_sales::SalesTotals;
 use crate::infrastructure::printing::paginator::Paginator;
 use crate::infrastructure::printing::print::print_pdf_silently;
 use crate::infrastructure::printing::reports::common::{account_footer, util::format_cents};
@@ -17,6 +18,7 @@ pub fn print_daily_sales(
     rows: &[DailySales],
     start: NaiveDateTime,
     end: NaiveDateTime,
+    sales_totals: SalesTotals,
     total_amount: i32,
     printer_name: &str,
 ) -> Result<(), AppError> {
@@ -160,6 +162,42 @@ pub fn print_daily_sales(
             idx += rows_per_column * 2;
         }
 
+        // bottom grand totals with double underline
+        pg.advance(Mm(2.0));
+        let sep_layer = pg.layer_for(Mm(7.0));
+        // first underline pair (left & right totals)
+        sep_layer.use_text("____", 9.0, total_x1, pg.current_y(), &font);
+        sep_layer.use_text("________", 9.0, total_x2, pg.current_y(), &font);
+        // small vertical nudge, then second underline pair to make it a double-line
+        pg.advance(Mm(0.4));
+        sep_layer.use_text("____", 9.0, total_x1, pg.current_y(), &font);
+        sep_layer.use_text("________", 9.0, total_x2, pg.current_y(), &font);
+        pg.advance(Mm(5.0));
+
+        // draw the grand total values (quantity + money) using the SalesTotals struct
+        let tot_layer = pg.layer_for(line_height);
+
+        tot_layer.use_text("Total Quantity:", 9.0, Mm(25.0), pg.current_y(), &bold);
+
+        tot_layer.use_text(
+            sales_totals.total_quantity.to_string(),
+            9.0,
+            total_x1,
+            pg.current_y(),
+            &bold,
+        );
+
+        tot_layer.use_text("Grand Total:", 9.0, Mm(133.0), pg.current_y(), &bold);
+
+        tot_layer.use_text(
+            format_cents(sales_totals.total_value),
+            9.0,
+            total_x2,
+            pg.current_y(),
+            &bold,
+        );
+
+        // finish PDF
         pg.finalize();
         pg.draw_page_numbers(&font);
     }
