@@ -3,7 +3,7 @@ use crate::domain::report_models::product_sales::SalesTotals;
 use crate::domain::report_models::sales_details::SalesReportDetails;
 use crate::infrastructure::printing::reports::common::account_footer;
 use crate::infrastructure::printing::reports::common::horizontal_line;
-use crate::infrastructure::printing::reports::common::util::format_cents;
+use crate::infrastructure::printing::reports::common::util::{format_cents, format_number};
 use crate::infrastructure::printing::{paginator::Paginator, print::print_pdf_silently};
 use chrono::NaiveDateTime;
 use dotenvy::var;
@@ -81,7 +81,7 @@ pub fn print_sales_detail_report(
                 // totals row
                 y -= line_height;
                 layer.use_text(
-                    sales_totals.total_quantity.to_string(),
+                    format_number(sales_totals.total_quantity),
                     9.0,
                     Mm(140.0),
                     y,
@@ -212,7 +212,7 @@ pub fn print_sales_detail_report(
 
         let tot_layer = pg.layer_for(line_height);
         tot_layer.use_text(
-            sales_totals.total_quantity.to_string(),
+            format_number(sales_totals.total_quantity),
             9.0,
             Mm(140.0),
             pg.current_y(),

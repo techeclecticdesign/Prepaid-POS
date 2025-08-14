@@ -3,7 +3,7 @@ use crate::domain::report_models::product_sales::{ProductSalesByCategory, SalesT
 use crate::infrastructure::printing::paginator::Paginator;
 use crate::infrastructure::printing::print::print_pdf_silently;
 use crate::infrastructure::printing::reports::common::account_footer;
-use crate::infrastructure::printing::reports::common::util::format_cents;
+use crate::infrastructure::printing::reports::common::util::{format_cents, format_number};
 use chrono::NaiveDateTime;
 use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument, PdfLayerReference};
@@ -122,7 +122,7 @@ pub fn print_product_sales(
                 }
                 // category‐total line in bold (Qty + Total only)
                 layer.use_text(
-                    r.quantity_sold.to_string(),
+                    format_number(r.quantity_sold),
                     9.0,
                     Mm(10.0),
                     pg.current_y() - Mm(line_height.0) + Mm(2.0),
@@ -139,7 +139,7 @@ pub fn print_product_sales(
             } else {
                 // regular detail row
                 layer.use_text(
-                    r.quantity_sold.to_string(),
+                    format_number(r.quantity_sold),
                     9.0,
                     Mm(10.0),
                     pg.current_y(),
@@ -176,7 +176,7 @@ pub fn print_product_sales(
 
         let tot_layer = pg.layer_for(line_height);
         tot_layer.use_text(
-            sales_totals.total_quantity.to_string(),
+            format_number(sales_totals.total_quantity),
             9.0,
             Mm(10.0),
             pg.current_y(),

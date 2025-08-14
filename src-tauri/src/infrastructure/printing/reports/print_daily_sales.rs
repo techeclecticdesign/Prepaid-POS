@@ -3,7 +3,8 @@ use crate::domain::report_models::daily_sales::DailySales;
 use crate::domain::report_models::product_sales::SalesTotals;
 use crate::infrastructure::printing::paginator::Paginator;
 use crate::infrastructure::printing::print::print_pdf_silently;
-use crate::infrastructure::printing::reports::common::{account_footer, util::format_cents};
+use crate::infrastructure::printing::reports::common::account_footer;
+use crate::infrastructure::printing::reports::common::util::{format_cents, format_number};
 use chrono::NaiveDateTime;
 use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument, PdfLayerReference};
@@ -181,7 +182,7 @@ pub fn print_daily_sales(
         tot_layer.use_text("Total Quantity:", 9.0, Mm(25.0), pg.current_y(), &bold);
 
         tot_layer.use_text(
-            sales_totals.total_quantity.to_string(),
+            format_number(sales_totals.total_quantity),
             9.0,
             total_x1,
             pg.current_y(),

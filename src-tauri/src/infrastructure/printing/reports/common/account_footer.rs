@@ -1,3 +1,4 @@
+use crate::infrastructure::printing::reports::common::util::format_cents;
 use chrono::Local;
 use printpdf::{IndirectFontRef, Mm, PdfLayerReference};
 
@@ -18,8 +19,7 @@ pub fn account_footer(
     layer.use_text(format!("Printed: {ts}"), font_size, Mm(5.0), y, font);
 
     // Account total line
-    let total_value = total_amount as f64 / 100.0;
-    let total_text = format!("Account Total: ${total_value:.2}");
+    let total_text = format!("Account Total: {}", format_cents(total_amount));
     layer.use_text(&total_text, font_size, Mm(90.0), y, bold_font);
 
     y

@@ -4,7 +4,7 @@ use crate::domain::report_models::product_inventory::ProductInventoryTotals;
 use crate::infrastructure::printing::paginator::Paginator;
 use crate::infrastructure::printing::print::print_pdf_silently;
 use crate::infrastructure::printing::reports::common::account_footer;
-use crate::infrastructure::printing::reports::common::util::format_cents;
+use crate::infrastructure::printing::reports::common::util::{format_cents, format_number};
 use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument, PdfLayerReference};
 use std::io::Write;
@@ -70,7 +70,7 @@ pub fn print_inventory_report(
             if first {
                 y -= line_height;
                 layer.use_text(
-                    product_totals.total_quantity.to_string(),
+                    format_number(product_totals.total_quantity),
                     9.0,
                     Mm(25.0),
                     y,
@@ -150,11 +150,23 @@ pub fn print_inventory_report(
                     &font,
                 );
 
-                layer.use_text(r.quantity.to_string(), 9.0, Mm(25.0), pg.current_y(), &bold);
+                layer.use_text(
+                    format_number(r.quantity),
+                    9.0,
+                    Mm(25.0),
+                    pg.current_y(),
+                    &bold,
+                );
                 layer.use_text(format_cents(r.total), 9.0, Mm(170.0), pg.current_y(), &bold);
             } else {
                 let txt = r.upc.as_deref().unwrap_or("---");
-                layer.use_text(r.quantity.to_string(), 9.0, Mm(25.0), pg.current_y(), &font);
+                layer.use_text(
+                    format_number(r.quantity),
+                    9.0,
+                    Mm(25.0),
+                    pg.current_y(),
+                    &font,
+                );
                 layer.use_text(
                     r.name.as_deref().unwrap_or("---"),
                     9.0,
@@ -186,7 +198,7 @@ pub fn print_inventory_report(
 
         // draw grand totals
         layer.use_text(
-            product_totals.total_quantity.to_string(),
+            format_number(product_totals.total_quantity),
             9.0,
             Mm(25.0),
             pg.current_y(),

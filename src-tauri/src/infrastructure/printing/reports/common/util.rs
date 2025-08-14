@@ -1,3 +1,4 @@
+use num_format::{Locale, ToFormattedString};
 use std::borrow::Cow;
 
 pub fn format_cents(cents: i32) -> String {
@@ -5,10 +6,20 @@ pub fn format_cents(cents: i32) -> String {
     let remainder = (cents.abs() % 100) as u8;
     if cents < 0 {
         // Wrap negative amounts in parentheses, using absolute value
-        format!("(${}.{remainder:02})", dollars.abs())
+        format!(
+            "(${}.{remainder:02})",
+            dollars.abs().to_formatted_string(&Locale::en)
+        )
     } else {
-        format!("${dollars}.{remainder:02}")
+        format!(
+            "${}.{remainder:02}",
+            dollars.to_formatted_string(&Locale::en)
+        )
     }
+}
+
+pub fn format_number(n: i32) -> String {
+    n.to_formatted_string(&Locale::en)
 }
 
 pub fn truncate_desc(desc: &str, max_len: usize) -> Cow<'_, str> {
