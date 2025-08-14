@@ -19,6 +19,7 @@ pub fn print_club_import_report(
     total_amount: i32,
     totals: &PeriodTotals,
     printer_name: &str,
+    sumatra_location: &str,
 ) -> Result<(), AppError> {
     let page_width = Mm(210.0);
     let page_height = Mm(297.0);
@@ -213,8 +214,9 @@ pub fn print_club_import_report(
     f.flush()?;
 
     let printer = printer_name.to_string();
+    let sumatra_location = sumatra_location.to_string();
     std::thread::spawn(move || {
-        if let Err(e) = print_pdf_silently(path, &printer) {
+        if let Err(e) = print_pdf_silently(path, &printer, &sumatra_location) {
             log::error!("Print failed: {e}");
         }
     });

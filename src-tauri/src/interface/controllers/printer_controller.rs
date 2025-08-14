@@ -36,16 +36,34 @@ impl PrinterController {
         Ok(PrinterPresenter::to_dto(names))
     }
 
-    pub fn print_prod_inv_rpt(&self, printer_name: String) -> Result<(), AppError> {
-        self.uc.print_prod_inv_rpt(printer_name).map(|_| ())
+    pub fn print_prod_inv_rpt(
+        &self,
+        printer_name: String,
+        sumatra_location: String,
+    ) -> Result<(), AppError> {
+        self.uc
+            .print_prod_inv_rpt(printer_name, sumatra_location)
+            .map(|_| ())
     }
 
-    pub fn print_cust_bal_rpt(&self, printer_name: String) -> Result<(), AppError> {
-        self.uc.print_cust_bal_rpt(printer_name).map(|_| ())
+    pub fn print_cust_bal_rpt(
+        &self,
+        printer_name: String,
+        sumatra_location: String,
+    ) -> Result<(), AppError> {
+        self.uc
+            .print_cust_bal_rpt(printer_name, sumatra_location)
+            .map(|_| ())
     }
 
-    pub fn print_product_catalog(&self, printer_name: String) -> Result<(), AppError> {
-        self.uc.print_product_catalog(printer_name).map(|_| ())
+    pub fn print_product_catalog(
+        &self,
+        printer_name: String,
+        sumatra_location: String,
+    ) -> Result<(), AppError> {
+        self.uc
+            .print_product_catalog(printer_name, sumatra_location)
+            .map(|_| ())
     }
 
     pub fn print_sales_detail_report(
@@ -53,13 +71,14 @@ impl PrinterController {
         start_date: String,
         end_date: String,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         // convert dates into NaiveDateTime
         let start_date = parse_rfc3339(&start_date)?;
         let end_date = parse_rfc3339(&end_date)?;
 
         self.uc
-            .print_sales_detail_report(start_date, end_date, printer_name)
+            .print_sales_detail_report(start_date, end_date, printer_name, sumatra_location)
             .map(|_| ())
     }
 
@@ -68,12 +87,13 @@ impl PrinterController {
         start_date: String,
         end_date: String,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         let start_date = parse_rfc3339(&start_date)?;
         let end_date = parse_rfc3339(&end_date)?;
 
         self.uc
-            .sales_by_category(start_date, end_date, printer_name)
+            .sales_by_category(start_date, end_date, printer_name, sumatra_location)
             .map(|_| ())
     }
 
@@ -82,12 +102,13 @@ impl PrinterController {
         start_date: String,
         end_date: String,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         let start_date = parse_rfc3339(&start_date)?;
         let end_date = parse_rfc3339(&end_date)?;
 
         self.uc
-            .sales_by_day(start_date, end_date, printer_name)
+            .sales_by_day(start_date, end_date, printer_name, sumatra_location)
             .map(|_| ())
     }
 
@@ -96,10 +117,11 @@ impl PrinterController {
         import_id: i32,
         start_date: String,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         let start_date = parse_rfc3339(&start_date)?;
         self.uc
-            .print_club_import(import_id, start_date, printer_name)
+            .print_club_import(import_id, start_date, printer_name, sumatra_location)
             .map(|_| ())
     }
 }

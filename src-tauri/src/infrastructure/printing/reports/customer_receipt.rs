@@ -17,6 +17,7 @@ pub fn print_customer_receipt(
     operator_name: &str,
     customer_name: &str,
     printer_name: &str,
+    sumatra_location: &str,
 ) -> Result<(), AppError> {
     let lines = 3 + details.len() + 2;
     let height = Mm((lines as f32 * 7.0) + 20.0).max(Mm(100.0));
@@ -87,5 +88,5 @@ pub fn print_customer_receipt(
     let mut file = BufWriter::new(File::create(path)?);
     doc.save(&mut file)?;
     drop(file);
-    print_pdf_silently(path, printer_name)
+    print_pdf_silently(path, printer_name, sumatra_location)
 }

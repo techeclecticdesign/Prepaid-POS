@@ -10,6 +10,7 @@ pub fn print_customer_balance_report(
     rows: &[(Customer, i32)],
     total_amount: i32,
     printer_name: &str,
+    sumatra_location: &str,
 ) -> Result<(), AppError> {
     let page_w = Mm(210.0);
     let page_h = Mm(297.0);
@@ -95,8 +96,9 @@ pub fn print_customer_balance_report(
     doc.save(&mut file)?;
     file.flush()?;
     let printer = printer_name.to_string();
+    let sumatra_location = sumatra_location.to_string();
     std::thread::spawn(move || {
-        if let Err(e) = print_pdf_silently(path, &printer) {
+        if let Err(e) = print_pdf_silently(path, &printer, &sumatra_location) {
             log::error!("Failed to print PDF: {e}");
         }
     });

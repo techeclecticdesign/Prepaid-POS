@@ -21,6 +21,7 @@ pub fn print_daily_sales(
     sales_totals: SalesTotals,
     total_amount: i32,
     printer_name: &str,
+    sumatra_location: &str,
 ) -> Result<(), AppError> {
     // layout constants
     let page_width = Mm(210.0);
@@ -209,8 +210,9 @@ pub fn print_daily_sales(
     file.flush()?;
 
     let printer = printer_name.to_string();
+    let sumatra_location = sumatra_location.to_string();
     std::thread::spawn(move || {
-        if let Err(e) = print_pdf_silently(path, &printer) {
+        if let Err(e) = print_pdf_silently(path, &printer, &sumatra_location) {
             log::error!("Print failed: {e}");
         }
     });

@@ -53,6 +53,7 @@ export default function Reports() {
             onClick={async () => {
               await invoke("print_prod_inv_rpt", {
                 printerName: localStorage.getItem("fullpage_printer") ?? "",
+                sumatraLocation: localStorage.getItem("sumatra_path") ?? "",
               });
             }}
           />
@@ -63,6 +64,7 @@ export default function Reports() {
             onClick={async () => {
               await invoke("print_cust_bal_rpt", {
                 printerName: localStorage.getItem("fullpage_printer") ?? "",
+                sumatraLocation: localStorage.getItem("sumatra_path") ?? "",
               });
             }}
           />
@@ -73,6 +75,7 @@ export default function Reports() {
             onClick={async () => {
               await invoke("print_product_catalog", {
                 printerName: localStorage.getItem("fullpage_printer") ?? "",
+                sumatraLocation: localStorage.getItem("sumatra_path") ?? "",
               });
             }}
           />
@@ -155,18 +158,21 @@ export default function Reports() {
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
                     printerName: localStorage.getItem("fullpage_printer") ?? "",
+                    sumatraLocation: localStorage.getItem("sumatra_path") ?? "",
                   });
                 } else if (dateReport === "byproduct") {
                   await invoke("print_product_sales_by_category", {
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
                     printerName: localStorage.getItem("fullpage_printer") ?? "",
+                    sumatraLocation: localStorage.getItem("sumatra_path") ?? "",
                   });
                 } else if (dateReport === "byday") {
                   await invoke("print_daily_sales_report", {
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
                     printerName: localStorage.getItem("fullpage_printer") ?? "",
+                    sumatraLocation: localStorage.getItem("sumatra_path") ?? "",
                   });
                 }
                 setOpen(false);

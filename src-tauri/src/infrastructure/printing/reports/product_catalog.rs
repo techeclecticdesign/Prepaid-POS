@@ -6,7 +6,11 @@ use dotenvy::var;
 use printpdf::{BuiltinFont, Mm, PdfDocument};
 use std::io::Write;
 
-pub fn print_product_catalog_report(rows: &[Product], printer_name: &str) -> Result<(), AppError> {
+pub fn print_product_catalog_report(
+    rows: &[Product],
+    printer_name: &str,
+    sumatra_location: &str,
+) -> Result<(), AppError> {
     // page & layout constants
     let page_w = Mm(210.0);
     let page_h = Mm(297.0);
@@ -133,8 +137,9 @@ pub fn print_product_catalog_report(rows: &[Product], printer_name: &str) -> Res
     file.flush()?;
 
     let printer = printer_name.to_string();
+    let sumatra_location = sumatra_location.to_string();
     std::thread::spawn(move || {
-        if let Err(e) = print_pdf_silently(path, &printer) {
+        if let Err(e) = print_pdf_silently(path, &printer, &sumatra_location) {
             log::error!("print failed: {e}");
         }
     });

@@ -21,6 +21,7 @@ pub fn print_sales_detail_report(
     sales_totals: SalesTotals,
     total_amount: i32,
     printer_name: &str,
+    sumatra_location: &str,
 ) -> Result<(), AppError> {
     // paper/layout
     let w = Mm(210.0);
@@ -173,7 +174,7 @@ pub fn print_sales_detail_report(
                 &bold,
             );
             layer.use_text(
-                format!("{:.2}", t.order_total as f64 / 100.0),
+                format_cents(t.order_total),
                 9.0,
                 Mm(165.0),
                 pg.current_y(),
@@ -193,13 +194,7 @@ pub fn print_sales_detail_report(
                     pg.current_y(),
                     &font,
                 );
-                layer.use_text(
-                    format!("{:.2}", d.price as f64 / 100.0),
-                    8.0,
-                    Mm(165.0),
-                    pg.current_y(),
-                    &font,
-                );
+                layer.use_text(format_cents(d.price), 8.0, Mm(165.0), pg.current_y(), &font);
                 pg.advance(line_height);
             }
         }
@@ -246,8 +241,9 @@ pub fn print_sales_detail_report(
 
     std::thread::spawn({
         let printer = printer_name.to_string();
+        let sumatra_location = sumatra_location.to_string();
         move || {
-            if let Err(e) = print_pdf_silently(path, &printer) {
+            if let Err(e) = print_pdf_silently(path, &printer, &sumatra_location) {
                 log::error!("Print failed: {e}");
             }
         }

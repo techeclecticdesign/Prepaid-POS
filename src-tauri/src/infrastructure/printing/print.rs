@@ -3,8 +3,12 @@ use std::path::PathBuf;
 use std::process::Command;
 
 // helper to send a PDF to Sumatra silently
-pub fn print_pdf_silently(pdf_path: &str, printer_name: &str) -> Result<(), AppError> {
-    let sumatra = r"C:\52770\new_annex\mdoc-annex-pos\src-tauri\Sumatra.exe"; // TODO: adjust this for production
+pub fn print_pdf_silently(
+    pdf_path: &str,
+    printer_name: &str,
+    sumatra_location: &str,
+) -> Result<(), AppError> {
+    let sumatra = PathBuf::from(sumatra_location);
     let abs_path = PathBuf::from(pdf_path)
         .canonicalize()
         .map(|p| p.to_string_lossy().trim_start_matches(r"\\?\").to_string())

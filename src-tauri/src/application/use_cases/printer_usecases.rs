@@ -92,6 +92,7 @@ impl PrinterUseCases {
         &self,
         printable: &PrintableSaleDto,
         printer_name: &str,
+        sumatra_location: &str,
         operator_name: &str,
         customer_name: &str,
     ) -> Result<(), AppError> {
@@ -108,6 +109,7 @@ impl PrinterUseCases {
             operator_name,
             customer_name,
             printer_name,
+            sumatra_location,
         )?;
 
         // business copy
@@ -118,12 +120,17 @@ impl PrinterUseCases {
             customer_name,
             *balance,
             printer_name,
+            sumatra_location,
         )?;
 
         Ok(())
     }
 
-    pub fn print_prod_inv_rpt(&self, printer_name: String) -> Result<(), AppError> {
+    pub fn print_prod_inv_rpt(
+        &self,
+        printer_name: String,
+        sumatra_location: String,
+    ) -> Result<(), AppError> {
         let rows = try_log!(
             self.product_repo.report_by_category(),
             "PrinterUseCases::print_prod_inv_rpt"
@@ -137,11 +144,21 @@ impl PrinterUseCases {
             "PrinterUseCases::print_prod_inv_rpt"
         );
 
-        print_inventory_report(&rows, product_totals, total_amount, &printer_name)?;
+        print_inventory_report(
+            &rows,
+            product_totals,
+            total_amount,
+            &printer_name,
+            &sumatra_location,
+        )?;
         Ok(())
     }
 
-    pub fn print_cust_bal_rpt(&self, printer_name: String) -> Result<(), AppError> {
+    pub fn print_cust_bal_rpt(
+        &self,
+        printer_name: String,
+        sumatra_location: String,
+    ) -> Result<(), AppError> {
         let data = try_log!(
             self.customer_repo.list_customer_accounts(),
             "PrinterUseCases::print_cust_bal_rpt"
@@ -151,17 +168,21 @@ impl PrinterUseCases {
             "PrinterUseCases::print_cust_bal_rpt"
         );
 
-        print_customer_balance_report(&data, total_amount, &printer_name)?;
+        print_customer_balance_report(&data, total_amount, &printer_name, &sumatra_location)?;
         Ok(())
     }
 
-    pub fn print_product_catalog(&self, printer_name: String) -> Result<(), AppError> {
+    pub fn print_product_catalog(
+        &self,
+        printer_name: String,
+        sumatra_location: String,
+    ) -> Result<(), AppError> {
         // fetch the same rows as inventory report
         let rows = try_log!(
             self.product_repo.list(),
             "PrinterUseCases::print_product_catalog"
         );
-        print_product_catalog_report(&rows, &printer_name)?;
+        print_product_catalog_report(&rows, &printer_name, &sumatra_location)?;
         Ok(())
     }
 
@@ -170,6 +191,7 @@ impl PrinterUseCases {
         start_date: chrono::NaiveDateTime,
         end_date: chrono::NaiveDateTime,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         let data = try_log!(
             self.cust_tx_repo
@@ -193,6 +215,7 @@ impl PrinterUseCases {
             grand_total,
             total_amount,
             &printer_name,
+            &sumatra_location,
         )?;
         Ok(())
     }
@@ -202,6 +225,7 @@ impl PrinterUseCases {
         start: NaiveDateTime,
         end: NaiveDateTime,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         let data = try_log!(
             self.cust_tx_detail_repo.sales_by_category(start, end),
@@ -215,7 +239,15 @@ impl PrinterUseCases {
             self.customer_repo.sum_all_balances(),
             "PrinterUseCases::sales_by_category"
         );
-        print_product_sales(&data, start, end, sales_totals, total_amount, &printer_name)?;
+        print_product_sales(
+            &data,
+            start,
+            end,
+            sales_totals,
+            total_amount,
+            &printer_name,
+            &sumatra_location,
+        )?;
         Ok(())
     }
 
@@ -224,6 +256,7 @@ impl PrinterUseCases {
         start: NaiveDateTime,
         end: NaiveDateTime,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         let data = try_log!(
             self.cust_tx_detail_repo.sales_by_day(start, end),
@@ -235,7 +268,15 @@ impl PrinterUseCases {
             "PrinterUseCases::sales_by_day"
         );
 
-        print_daily_sales(&data, start, end, grand_total, total_amount, &printer_name)?;
+        print_daily_sales(
+            &data,
+            start,
+            end,
+            grand_total,
+            total_amount,
+            &printer_name,
+            &sumatra_location,
+        )?;
         Ok(())
     }
 
@@ -244,6 +285,7 @@ impl PrinterUseCases {
         id: i32,
         start_date: NaiveDateTime,
         printer_name: String,
+        sumatra_location: String,
     ) -> Result<(), AppError> {
         let tx = try_log!(
             self.club_tx_repo
@@ -277,6 +319,7 @@ impl PrinterUseCases {
             total_amount,
             &period_totals,
             &printer_name,
+            &sumatra_location,
         )?;
 
         Ok(())

@@ -78,7 +78,12 @@ impl TransactionController {
         Ok(InventoryTransactionPresenter::to_dto(itx))
     }
 
-    pub fn sale_transaction(&self, dto: SaleDto, printer_name: &str) -> Result<i32, AppError> {
+    pub fn sale_transaction(
+        &self,
+        dto: SaleDto,
+        printer_name: &str,
+        sumatra_location: &str,
+    ) -> Result<i32, AppError> {
         let cust_tx = CustomerTransaction {
             order_id: 0,
             customer_mdoc: dto.customer_mdoc,
@@ -116,6 +121,7 @@ impl TransactionController {
             self.printer_uc.print_receipts(
                 &printable,
                 printer_name,
+                sumatra_location,
                 &dto.customer_name,
                 &dto.operator_name,
             )?;

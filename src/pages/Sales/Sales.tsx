@@ -206,9 +206,11 @@ export default function Sales() {
 
     try {
       const receiptPrinter = localStorage.getItem("receipt_printer") ?? "";
+      const sumatraLocation = localStorage.getItem("sumatra_path") ?? "";
       const orderId = await invoke<number>("sale_transaction", {
         dto: saleDto,
         receiptPrinter: receiptPrinter,
+        sumatraLocation: sumatraLocation,
       });
 
       // Update session stats

@@ -19,6 +19,7 @@ pub fn print_inventory_report(
     product_totals: ProductInventoryTotals,
     total_amount: i32,
     printer_name: &str,
+    sumatra_location: &str,
 ) -> Result<(), AppError> {
     // layout constants
     let page_width = Mm(210.0);
@@ -233,9 +234,10 @@ pub fn print_inventory_report(
     file.flush()?;
 
     let printer = printer_name.to_string();
+    let sumatra_location = sumatra_location.to_string();
     let pdf_path = path.to_string();
     std::thread::spawn(move || {
-        if let Err(e) = print_pdf_silently(&pdf_path, &printer) {
+        if let Err(e) = print_pdf_silently(&pdf_path, &printer, &sumatra_location) {
             log::error!("Failed to print PDF silently: {e}");
         }
     });

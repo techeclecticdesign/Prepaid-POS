@@ -22,8 +22,9 @@ pub fn sale_transaction(
     controller: State<Arc<TransactionController>>,
     dto: SaleDto,
     receipt_printer: String,
+    sumatra_location: String,
 ) -> Result<i32, AppError> {
-    let order_id = controller.sale_transaction(dto.clone(), &receipt_printer)?;
+    let order_id = controller.sale_transaction(dto.clone(), &receipt_printer, &sumatra_location)?;
     Ok(order_id)
 }
 
