@@ -49,6 +49,7 @@ export default function ClubImportSelectModal({ open, onClose }: Props) {
         importId: selectedId,
         startDate: fromIso,
         printerName: localStorage.getItem("fullpage_printer") ?? "",
+        sumatraLocation: localStorage.getItem("sumatra_path") ?? "",
       });
       onClose();
     } catch (e) {
