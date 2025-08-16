@@ -27,18 +27,51 @@ export default function CategoriesPage() {
   };
 
   return (
-    <Box className="fixed top-0 w-[calc(100vw-21.5rem)] h-screen overflow-auto">
-      <Box className="p-12 flex justify-center">
-        <Box className="w-110">
+    <Box
+      sx={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: "18rem",
+        bottom: 0,
+        overflowY: "auto",
+        /* custom scrollbar */
+        "&::-webkit-scrollbar": {
+          width: "10px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "transparent",
+        },
+        "&::-webkit-scrollbar-thumb": (theme) => ({
+          borderRadius: "8px",
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? "rgba(255,255,255,0.3)"
+              : "rgba(0,0,0,0.3)",
+          border: "2px solid transparent",
+          backgroundClip: "padding-box",
+        }),
+        scrollbarWidth: "thin",
+        scrollbarColor: (theme) =>
+          theme.palette.mode === "dark"
+            ? "rgba(255,255,255,0.3) transparent"
+            : "rgba(0,0,0,0.3) transparent",
+      }}
+    >
+      <Box sx={{ p: 12, display: "flex", justifyContent: "center" }}>
+        <Box sx={{ width: 440 }}>
           <Typography
             variant="h4"
             component="h1"
-            className="font-bold text-center"
-            sx={{ color: "text.primary" }}
+            sx={{
+              color: "text.primary",
+              fontWeight: "bold",
+              textAlign: "center",
+            }}
           >
             Categories
           </Typography>
-          <Box className="my-12 text-center">
+          <Box sx={{ my: 12, textAlign: "center" }}>
             <AppButton onClick={() => setShowAdd(true)} text="Add Category" />
           </Box>
           <CategoryList categories={categories} onDelete={handleDelete} />
