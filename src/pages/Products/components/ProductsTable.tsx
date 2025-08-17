@@ -48,8 +48,8 @@ export default function ProductsTable({ products, onProductClick }: Props) {
 
   return (
     <Table
-      className="min-w-full"
       sx={{
+        minWidth: "100%",
         "& .MuiTableCell-root": {
           borderColor: "divider",
         },

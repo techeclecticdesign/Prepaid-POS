@@ -23,7 +23,16 @@ export default function Sales() {
   };
 
   return (
-    <Box className="min-h-screen flex flex-col gap-4 p-4 text-center">
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        p: 4,
+        textAlign: "center",
+      }}
+    >
       <Typography variant="h4" sx={{ color: "text.primary" }}>
         Import Account Information
       </Typography>

@@ -36,7 +36,13 @@ export default function CustomerTransactionFilters({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box className="flex flex-col sm:flex-row" sx={containerSx}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          ...containerSx,
+        }}
+      >
         {onSearchChange && (
           <TextField
             label="Search transactions"

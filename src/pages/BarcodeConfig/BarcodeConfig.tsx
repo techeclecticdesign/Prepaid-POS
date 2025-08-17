@@ -58,7 +58,13 @@ export default function BarcodeConfig() {
   };
 
   return (
-    <Box className="p-2 w-4/5 mx-auto 2xl:px-50">
+    <Box
+      sx={{
+        p: { xs: 2, sm: 4 },
+        width: { xs: "100%", md: "80%" },
+        mx: "auto",
+      }}
+    >
       <Typography variant="h4" component="h1" sx={headingSx}>
         Barcode Scanner Configuration
       </Typography>

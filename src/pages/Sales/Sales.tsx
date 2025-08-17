@@ -303,7 +303,14 @@ export default function Sales() {
   // Loading State
   if (loading) {
     return (
-      <Box className="min-h-screen flex items-center justify-center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Typography variant="h5">Loading POS data...</Typography>
       </Box>
     );
@@ -312,7 +319,14 @@ export default function Sales() {
   // Error State
   if (error) {
     return (
-      <Box className="min-h-screen flex flex-col relative">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+        }}
+      >
         <Typography variant="h5" color="error">
           Error loading POS data: {error.message}
         </Typography>
@@ -364,14 +378,22 @@ export default function Sales() {
     <Box
       onClick={handlePageClick}
       sx={{
-        minHeight: "100vh",
+        minHeight: "100%",
         width: "100%",
         position: "relative",
       }}
     >
       <Box
-        className="max-h-screen flex flex-col items-center justify-center relative"
-        sx={{ pb: 12, flexGrow: 1 }}
+        sx={{
+          maxHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          pb: 12,
+          flexGrow: 1,
+        }}
       >
         {/* Customer Info Display */}
         <Box sx={customerInfoSx}>
@@ -389,8 +411,15 @@ export default function Sales() {
 
         {/* Main Content Area */}
         <Box
-          className="flex-1 flex flex-col items-center justify-start pt-3"
-          sx={{ width: "100%" }}
+          sx={{
+            width: "100%",
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            pt: 1.5,
+          }}
         >
           {selectedCustomer ? (
             <Box onClick={(e) => e.stopPropagation()}>

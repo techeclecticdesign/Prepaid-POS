@@ -18,9 +18,9 @@ export default function OperatorSelector({
   onAddClick,
 }: Props) {
   return (
-    <Box className="flex gap-4 mb-6">
+    <Box sx={{ display: "flex", gap: 2, mb: 6 }}>
       <Autocomplete
-        className="w-full max-w-sm"
+        sx={{ width: "100%", maxWidth: "24rem" }}
         options={options}
         getOptionLabel={(o) => o.name}
         value={selected}

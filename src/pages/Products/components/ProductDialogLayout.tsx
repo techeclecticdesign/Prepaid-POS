@@ -3,6 +3,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 
 interface Props {
   open: boolean;
@@ -36,12 +37,12 @@ export default function ProductDialogLayout({
       >
         {leftActions && leftActions}
         {/* Only render leftActions if it's not null/undefined */}
-        <div className="flex gap-4">
+        <Box sx={{ display: "flex", gap: 2 }}>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="contained" onClick={onSubmit}>
             {submitText}
           </Button>
-        </div>
+        </Box>
       </DialogActions>
     </Dialog>
   );

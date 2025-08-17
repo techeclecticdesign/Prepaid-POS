@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider, useAuth } from "./AuthProvider";
 import { ThemeProvider } from "./theme/ThemeContext";
-import "./tailwind.css";
+import "./globals.css";
 
 // wrapper component to provide activeOperatorMdoc to ThemeProvider
 function RootProviders() {

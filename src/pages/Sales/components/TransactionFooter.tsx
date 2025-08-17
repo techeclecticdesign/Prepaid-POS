@@ -32,7 +32,7 @@ export default function TransactionFooter({
     position: "fixed",
     bottom: 0,
     left: 0,
-    right: "20rem",
+    right: "18rem",
     backgroundColor: theme.palette.background.paper,
     borderTop: `1px solid ${theme.palette.divider}`,
     p: 2,

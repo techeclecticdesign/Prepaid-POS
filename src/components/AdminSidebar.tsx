@@ -28,26 +28,38 @@ export default function AdminSidebar() {
   return (
     <Box
       component="aside"
-      className="fixed top-0 right-0 w-xs shrink-0 p-6 h-screen"
       sx={{
+        position: "fixed",
+        top: 0,
+        right: 0,
+        width: "18rem",
+        flexShrink: 0,
+        p: 3,
+        height: "100vh",
         borderLeft: 1,
         borderColor: "divider",
         backgroundColor: "background.paper",
         color: "text.primary",
       }}
     >
-      <div className="flex items-center justify-between mb-4">
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 4,
+        }}
+      >
         <Typography
           variant="h5"
           component="h2"
-          className="font-semibold mb-4"
-          sx={{ color: "text.primary" }}
+          sx={{ color: "text.primary", fontWeight: 600 }}
         >
           Admin Pages
         </Typography>
         <ThemeSwitch />
-      </div>
-      <nav className="flex flex-col space-y-2">
+      </Box>
+      <Box component="nav" sx={{ display: "flex", flexDirection: "column" }}>
         <Link
           component={RouterLink}
           to="/operators"
@@ -129,18 +141,18 @@ export default function AdminSidebar() {
         >
           Weekly Limit
         </Link>
-      </nav>
-      <Link
-        onClick={() => {
-          logout();
-          navigate("/");
-        }}
-        underline="hover"
-        color="error"
-        sx={{ mt: 6, fontSize: "1.2rem", fontWeight: 600, cursor: "pointer" }}
-      >
-        Sign Out
-      </Link>
+        <Link
+          onClick={() => {
+            logout();
+            navigate("/");
+          }}
+          underline="hover"
+          color="error"
+          sx={{ fontSize: "1.2rem", fontWeight: 600, cursor: "pointer" }}
+        >
+          Sign Out
+        </Link>
+      </Box>
     </Box>
   );
 }

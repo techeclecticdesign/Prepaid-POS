@@ -19,13 +19,26 @@ export default function LostInventory() {
   );
 
   return (
-    <Box className="w-full 2xl:px-50">
-      <Box className="flex w-4/5 mx-auto justify-between items-center mb-4">
+    <Box
+      sx={{
+        width: "100%",
+        px: { xl: 50 },
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          width: "80%",
+          mx: "auto",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography
           variant="h4"
           component="h1"
-          className="font-bold"
-          sx={{ color: "text.primary" }}
+          sx={{ color: "text.primary", fontWeight: "bold" }}
         >
           Lost Inventory
         </Typography>
@@ -45,7 +58,14 @@ export default function LostInventory() {
       />
 
       {loading ? (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 6,
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : (
@@ -58,7 +78,14 @@ export default function LostInventory() {
             }}
           />
 
-          <Box className="flex justify-center mt-4 2xl:mt-12">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: 3,
+              "@media (min-width: 1536px)": { mt: 12 },
+            }}
+          >
             <Pagination
               count={totalPages}
               page={page}
@@ -69,7 +96,14 @@ export default function LostInventory() {
       )}
 
       {!loading && transactions.length === 0 && (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 8,
+          }}
+        >
           <Typography variant="body1" color="text.secondary">
             No inventory transactions found.
           </Typography>

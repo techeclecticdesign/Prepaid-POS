@@ -78,7 +78,7 @@ export default function ChangePasswordPage() {
         width: "calc(100vw - 21.5rem)",
         height: "100vh",
         overflow: "auto",
-        p: 6,
+        p: 8,
       }}
     >
       <Box
@@ -106,7 +106,7 @@ export default function ChangePasswordPage() {
             display: "flex",
             flexDirection: "column",
             gap: 3,
-            mt: 4,
+            mt: 8,
           }}
         >
           {passwordRequired && (
@@ -133,7 +133,7 @@ export default function ChangePasswordPage() {
             onChange={(e) => setConfirmPw(e.target.value)}
           />
 
-          <Box sx={{ display: "flex", textAlign: "center", gap: 2, mt: 2 }}>
+          <Box sx={{ display: "flex", textAlign: "center", gap: 2, mt: 1 }}>
             <AppButton
               type="submit"
               variant="contained"

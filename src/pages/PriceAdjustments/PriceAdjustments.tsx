@@ -19,13 +19,19 @@ export default function PriceAdjustmentsPage() {
   );
 
   return (
-    <Box className="p-2 w-4/5 mx-auto 2xl:px-50">
-      <Box className="flex justify-between items-center mb-6">
+    <Box sx={{ p: 2, width: "80%", mx: "auto", px: { xl: 50 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 6,
+        }}
+      >
         <Typography
           variant="h4"
           component="h1"
-          className="font-bold"
-          sx={{ color: "text.primary" }}
+          sx={{ fontWeight: "bold", color: "text.primary" }}
         >
           Price Adjustments
         </Typography>
@@ -45,7 +51,14 @@ export default function PriceAdjustmentsPage() {
       />
 
       {loading ? (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 8,
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : (
@@ -57,7 +70,14 @@ export default function PriceAdjustmentsPage() {
             }}
           />
 
-          <Box className="flex justify-center mt-4 2xl:mt-12">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: 4,
+              "@media (min-width: 1536px)": { mt: 12 },
+            }}
+          >
             <Pagination
               count={totalPages}
               page={page}
@@ -68,7 +88,14 @@ export default function PriceAdjustmentsPage() {
       )}
 
       {!loading && adjustments.length === 0 && (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 8,
+          }}
+        >
           <Typography variant="body1" color="text.secondary">
             No price adjustments found.
           </Typography>

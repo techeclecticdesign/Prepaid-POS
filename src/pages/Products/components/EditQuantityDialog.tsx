@@ -113,7 +113,7 @@ export default function EditQuantityDialog({
       }}
     >
       <DialogTitle>Adjust Quantity</DialogTitle>
-      <DialogContent dividers className="space-y-4">
+      <DialogContent dividers sx={{ gap: 4 }}>
         <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
           Any changes to inventory are logged and reported. If you wish to
           continue, please enter the new quantity below.

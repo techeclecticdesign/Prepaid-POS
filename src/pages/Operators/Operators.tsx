@@ -56,13 +56,25 @@ export default function OperatorsPage() {
   };
 
   return (
-    <Box className="p-12 flex justify-center w-full mb-auto">
-      <Box className="w-110 mx-auto">
+    <Box
+      sx={{
+        p: 12,
+        display: "flex",
+        justifyContent: "center",
+        width: "100%",
+        mb: "auto",
+      }}
+    >
+      <Box sx={{ width: 440, mx: "auto" }}>
         <Typography
           variant="h4"
           component="h1"
-          className="font-bold mb-8 text-center"
-          sx={{ color: "text.primary", marginBottom: 6 }}
+          sx={{
+            fontWeight: "bold",
+            textAlign: "center",
+            mb: 6,
+            color: "text.primary",
+          }}
         >
           Operators
         </Typography>

@@ -4,6 +4,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AppButton from "../../../components/AppButton";
@@ -65,8 +66,12 @@ export default function AddOperatorDialog({
       >
         <form onSubmit={wrappedSubmit}>
           <DialogTitle>Add Operator</DialogTitle>
-          <DialogContent className="space-y-4">
-            <div className="flex flex-col gap-3 pt-1.5">
+          <DialogContent
+            sx={{ display: "flex", flexDirection: "column", gap: 4 }}
+          >
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1.5 }}
+            >
               <Controller
                 name="mdoc"
                 control={control}
@@ -95,7 +100,7 @@ export default function AddOperatorDialog({
                   />
                 )}
               />
-            </div>
+            </Box>
           </DialogContent>
           <DialogActions>
             <AppButton text="Cancel" onClick={onClose} variant="outlined" />

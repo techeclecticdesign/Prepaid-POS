@@ -15,8 +15,15 @@ export default function OperatorDetails({
   onRehire,
 }: Props) {
   return (
-    <Box className="space-y-6">
-      <Box className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+    <Box sx={{ "& > * + *": { mt: 6 } }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          gap: 6,
+          maxWidth: "40rem",
+        }}
+      >
         {["MDOC", "Name", "Start Time", "Stop Time"].map((label, i) => {
           const value =
             i === 0

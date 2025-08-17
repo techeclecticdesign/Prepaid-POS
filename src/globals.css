@@ -1,0 +1,17 @@
+@layer base {
+  html {
+    font-size: clamp(14px, 1.25vw, 18px);
+  }
+
+  /* Border to distinguish title bar from page content */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #d1d5db;
+    z-index: 50;
+  }
+}

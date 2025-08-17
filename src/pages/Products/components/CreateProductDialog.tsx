@@ -3,6 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
 import ProductDialogLayout from "./ProductDialogLayout";
 import AppSnackbar from "../../../components/AppSnackbar";
 import {
@@ -75,7 +76,7 @@ export default function CreateProductDialog({
         onSubmit={wrapped}
         submitText="Create"
       >
-        <div className="flex flex-col gap-4 pt-2">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4, pt: 2 }}>
           <Controller
             name="desc"
             control={control}
@@ -141,7 +142,7 @@ export default function CreateProductDialog({
               />
             )}
           />
-        </div>
+        </Box>
       </ProductDialogLayout>
       <AppSnackbar
         open={snackbarOpen}

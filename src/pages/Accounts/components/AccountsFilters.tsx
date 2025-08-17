@@ -19,7 +19,14 @@ export default function AccountsFilters({
 }: Props) {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box className="flex flex-col sm:flex-row gap-4 mb-6">
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 2,
+          mb: 6,
+        }}
+      >
         <TextField
           label="Search accounts"
           value={search}

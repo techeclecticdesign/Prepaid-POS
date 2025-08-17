@@ -26,18 +26,31 @@ export default function ProductsPage() {
     useProductActions();
 
   return (
-    <Box className="p-2 w-3/5 mx-auto 2xl:px-50">
-      <Box className="flex justify-between items-center mb-6">
+    <Box
+      sx={{
+        p: 1,
+        width: "60%",
+        mx: "auto",
+        "@media (min-width:1536px)": { px: "200px" },
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography
           variant="h4"
           component="h1"
-          className="font-bold"
-          sx={{ color: "text.primary" }}
+          sx={{ fontWeight: "bold", color: "text.primary" }}
         >
           Products
         </Typography>
         <IconButton onClick={() => setCreating(true)}>
-          <AddIcon className="mt-1" />
+          <AddIcon sx={{ mt: 0.5 }} />
         </IconButton>
       </Box>
       <ProductsFilters
@@ -54,7 +67,14 @@ export default function ProductsPage() {
         }}
       />
       <ProductsTable products={products} onProductClick={setEditing} />
-      <Box className="flex justify-center mt-4 2xl:mt-12">
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          mt: 2,
+          "@media (min-width:1536px)": { mt: 6 },
+        }}
+      >
         <Pagination
           count={totalPages}
           page={page}

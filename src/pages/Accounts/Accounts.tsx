@@ -19,13 +19,19 @@ export default function AccountsPage() {
   );
 
   return (
-    <Box className="p-2 w-4/5 mx-auto 2xl:px-50">
-      <Box className="flex justify-between items-center mb-6">
+    <Box sx={{ p: 2, width: "80%", mx: "auto", px: { xl: 50 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 6,
+        }}
+      >
         <Typography
           variant="h4"
           component="h1"
-          className="font-bold"
-          sx={{ color: "text.primary" }}
+          sx={{ color: "text.primary", fontWeight: "bold" }}
         >
           Accounts
         </Typography>
@@ -45,7 +51,14 @@ export default function AccountsPage() {
       />
 
       {loading ? (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 8,
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : (
@@ -57,7 +70,13 @@ export default function AccountsPage() {
             }}
           />
 
-          <Box className="flex justify-center mt-4 2xl:mt-12">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: { xs: 4, xl: 12 },
+            }}
+          >
             <Pagination
               count={totalPages}
               page={page}
@@ -68,7 +87,14 @@ export default function AccountsPage() {
       )}
 
       {!loading && transactions.length === 0 && (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 8,
+          }}
+        >
           <Typography variant="body1" color="text.secondary">
             No account transactions found.
           </Typography>

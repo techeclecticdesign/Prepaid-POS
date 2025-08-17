@@ -8,7 +8,14 @@ interface Props {
 
 export default function CustomerFilters({ search, onSearchChange }: Props) {
   return (
-    <Box className="flex flex-col sm:flex-row gap-4 mb-6">
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        gap: 4,
+        mb: 6,
+      }}
+    >
       <TextField
         label="Search customers"
         value={search}

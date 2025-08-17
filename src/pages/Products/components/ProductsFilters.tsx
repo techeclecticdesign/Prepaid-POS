@@ -23,20 +23,20 @@ export default function ProductsFilters({
   onCategoryChange,
 }: Props) {
   return (
-    <Box className="flex gap-4 mb-3">
+    <Box sx={{ display: "flex", gap: 2, mb: 1.5 }}>
       <TextField
-        className="flex-1 basis-0"
+        sx={{ flex: 1, flexBasis: 0 }}
         label="Search"
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
       />
-      <FormControl className="flex-1 basis-0">
+      <FormControl sx={{ flex: 1, flexBasis: 0 }}>
         <InputLabel>Category</InputLabel>
         <Select
           value={category}
           label="Category"
           onChange={(e) => onCategoryChange(e.target.value)}
-          style={{ minWidth: "13rem" }}
+          sx={{ minWidth: "13rem" }}
         >
           <MenuItem value="">
             <Typography component="em" sx={{ color: "text.secondary" }}>

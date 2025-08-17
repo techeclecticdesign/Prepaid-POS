@@ -14,13 +14,19 @@ export default function CustomersPage() {
   const { customers, totalPages, loading } = useCustomers(search, page);
 
   return (
-    <Box className="p-2 w-4/5 mx-auto 2xl:px-50">
-      <Box className="flex justify-between items-center mb-6">
+    <Box sx={{ width: "80%", mx: "auto", px: { xl2: 50 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography
           variant="h4"
           component="h1"
-          className="font-bold"
-          sx={{ color: "text.primary" }}
+          sx={{ color: "text.primary", fontWeight: "bold" }}
         >
           Customers
         </Typography>
@@ -35,14 +41,27 @@ export default function CustomersPage() {
       />
 
       {loading ? (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 4,
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : (
         <>
           <CustomerTable customers={customers} />
 
-          <Box className="flex justify-center mt-4 2xl:mt-12">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: { xs: 4, xl: 6 },
+            }}
+          >
             <Pagination
               count={totalPages}
               page={page}
@@ -53,7 +72,14 @@ export default function CustomersPage() {
       )}
 
       {!loading && customers.length === 0 && (
-        <Box className="flex justify-center items-center py-8">
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            py: 8,
+          }}
+        >
           <Typography variant="body1" color="text.secondary">
             No customers found.
           </Typography>

@@ -5,7 +5,6 @@ import pluginReact from "eslint-plugin-react";
 export default tseslint.config(
   { ignores: ["dist/**", "src-tauri/target/**"] },
   {
-    files: ["tailwind.config.cjs", "postcss.config.cjs"],
     languageOptions: {
       sourceType: "script",
       ecmaVersion: "latest",

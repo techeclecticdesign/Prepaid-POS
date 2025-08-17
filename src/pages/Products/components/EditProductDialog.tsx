@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Autocomplete from "@mui/material/Autocomplete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -98,14 +99,14 @@ export default function EditProductDialog({
           </Button>
         }
       >
-        <div className="flex flex-col gap-4 pt-2">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4, pt: 2 }}>
           <TextField
             label="UPC"
             value={product.upc}
             slotProps={{ input: { readOnly: true } }}
             fullWidth
           />
-          <div className="flex items-center space-x-2">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <TextField
               label="Price"
               value={`$${(displayedPriceCents / 100).toFixed(2)}`}
@@ -115,8 +116,8 @@ export default function EditProductDialog({
             <IconButton onClick={() => setPriceDialogOpen(true)}>
               <EditIcon />
             </IconButton>
-          </div>
-          <div className="flex items-center space-x-2">
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <TextField
               label="Qty"
               value={displayedQty}
@@ -126,7 +127,7 @@ export default function EditProductDialog({
             <IconButton onClick={() => setQuantityDialogOpen(true)}>
               <EditIcon />
             </IconButton>
-          </div>
+          </Box>
           <Controller
             name="desc"
             control={control}
@@ -161,7 +162,7 @@ export default function EditProductDialog({
               />
             )}
           />
-        </div>
+        </Box>
       </ProductDialogLayout>
       <EditPriceDialog
         open={priceDialogOpen}

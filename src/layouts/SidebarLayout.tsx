@@ -19,11 +19,14 @@ export default function SidebarLayout({ Sidebar }: SidebarLayoutProps) {
   return (
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
-      <div className="flex h-screen">
-        <main
-          className="flex-1 overflow-auto p-6"
-          style={{
-            marginRight: "16rem",
+      <Box sx={{ display: "flex", height: "100vh" }}>
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            overflow: "auto",
+            p: 3,
+            mr: "16rem",
           }}
         >
           <Box
@@ -35,9 +38,9 @@ export default function SidebarLayout({ Sidebar }: SidebarLayoutProps) {
           >
             <Outlet />
           </Box>
-        </main>
+        </Box>
         {Sidebar()}
-      </div>
+      </Box>
     </MuiThemeProvider>
   );
 }

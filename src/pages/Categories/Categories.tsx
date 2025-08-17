@@ -58,7 +58,7 @@ export default function CategoriesPage() {
             : "rgba(0,0,0,0.3) transparent",
       }}
     >
-      <Box sx={{ p: 12, display: "flex", justifyContent: "center" }}>
+      <Box sx={{ p: 6, display: "flex", justifyContent: "center" }}>
         <Box sx={{ width: 440 }}>
           <Typography
             variant="h4"
@@ -71,7 +71,7 @@ export default function CategoriesPage() {
           >
             Categories
           </Typography>
-          <Box sx={{ my: 12, textAlign: "center" }}>
+          <Box sx={{ my: 8, textAlign: "center" }}>
             <AppButton onClick={() => setShowAdd(true)} text="Add Category" />
           </Box>
           <CategoryList categories={categories} onDelete={handleDelete} />

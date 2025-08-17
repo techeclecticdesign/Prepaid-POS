@@ -26,8 +26,12 @@ export default function Reports() {
       <Typography
         variant="h4"
         component="h1"
-        className="font-bold"
-        sx={{ color: "text.primary", textAlign: "center", mt: 2 }}
+        sx={{
+          fontWeight: "bold",
+          color: "text.primary",
+          textAlign: "center",
+          mt: 2,
+        }}
       >
         Reports
       </Typography>

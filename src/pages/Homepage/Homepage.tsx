@@ -110,14 +110,26 @@ export default function App() {
   };
 
   return (
-    <Box className="min-h-screen flex flex-col items-center justify-start">
-      <Box className="h-20">
+    <Box
+      sx={{
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-start",
+      }}
+    >
+      <Box sx={{ height: "5rem" }}>
         {scanError && (
           <Typography
             variant="h5"
             component="h1"
-            className="font-bold text-center mt-4"
-            sx={{ color: "error.main" }}
+            sx={{
+              color: "error.main",
+              fontWeight: "bold",
+              textAlign: "center",
+              mt: 4,
+            }}
           >
             {scanError}
           </Typography>
@@ -126,12 +138,11 @@ export default function App() {
       <Typography
         variant="h4"
         component="h1"
-        className="font-bold text-center"
-        sx={{ color: "text.primary" }}
+        sx={{ color: "text.primary", fontWeight: "bold", textAlign: "center" }}
       >
         Click your name or scan your ID to get started.
       </Typography>
-      <Box className="flex flex-col gap-4 mt-20">
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 10 }}>
         {/* Display operator buttons only if operators are loaded and not empty */}
         {!isLoadingOperators && currentOperators.length > 0
           ? currentOperators.map((o) => (

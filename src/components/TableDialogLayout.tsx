@@ -63,7 +63,7 @@ export default function TableDialogLayout({
         }
       >
         {leftActions && leftActions}
-        <Box className="flex gap-4">
+        <Box sx={{ display: "flex", gap: 2 }}>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="contained" onClick={onSubmit}>
             {submitText}
