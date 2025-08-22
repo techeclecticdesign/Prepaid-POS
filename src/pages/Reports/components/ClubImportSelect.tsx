@@ -32,6 +32,9 @@ export default function ClubImportSelectModal({ open, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [open]);
 
+  const toDateOnly = (v: unknown) =>
+    typeof v === "string" ? v.split("T")[0] : String(v ?? "");
+
   const handlePrint = async () => {
     if (selectedId === "") return;
 
@@ -76,7 +79,7 @@ export default function ClubImportSelectModal({ open, onClose }: Props) {
             </MenuItem>
             {imports.map((imp) => (
               <MenuItem key={imp.id} value={imp.id}>
-                {imp.activity_from} - {imp.activity_to}
+                {toDateOnly(imp.activity_from)} - {toDateOnly(imp.activity_to)}
               </MenuItem>
             ))}
           </Select>
