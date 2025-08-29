@@ -4,6 +4,7 @@
 #![deny(clippy::panic)]
 #![deny(unused_must_use)]
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     prepaid_pos_lib::run();
+    Ok(())
 }

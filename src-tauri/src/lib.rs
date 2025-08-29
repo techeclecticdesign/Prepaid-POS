@@ -22,6 +22,7 @@ use crate::interface::controllers::parse_pdf_controller::PdfParseController;
 use crate::interface::controllers::pos_controller::PosController;
 use crate::interface::controllers::printer_controller::PrinterController;
 use crate::interface::controllers::product_controller::ProductController;
+use crate::interface::controllers::stats_controller::StatsController;
 use crate::interface::controllers::transaction_controller::{
     TransactionController, TransactionControllerDeps,
 };
@@ -85,6 +86,10 @@ pub fn run() {
         Arc::clone(&price_repo),
         Arc::clone(&category_repo),
         Arc::clone(&conn),
+    ));
+    let stats_ctrl = Arc::new(StatsController::new(
+        Arc::clone(&club_tx_repo),
+        Arc::clone(&customer_repo),
     ));
     let tx_ctrl = Arc::new(TransactionController::new(TransactionControllerDeps {
         inv_repo: Arc::clone(&inv_repo),
@@ -156,6 +161,7 @@ pub fn run() {
         .manage(legacy_ctrl)
         .manage(pdf_ctrl)
         .manage(auth_ctrl)
+        .manage(stats_ctrl)
         .manage(RwLock::new(common::auth::AuthState::default()))
         .manage(cred_repo)
         .manage(op_repo)
@@ -197,6 +203,7 @@ pub fn run() {
             interface::commands::transaction::set_weekly_limit,
             interface::commands::transaction::get_weekly_limit,
             interface::commands::transaction::get_weekly_spent,
+            interface::commands::stats::get_stats,
             interface::commands::club::search_customers,
             interface::commands::club::search_club_transactions,
             interface::commands::club::list_club_imports,

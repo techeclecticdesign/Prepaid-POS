@@ -6,4 +6,5 @@ pub mod parse_pdf_controller;
 pub mod pos_controller;
 pub mod printer_controller;
 pub mod product_controller;
+pub mod stats_controller;
 pub mod transaction_controller;

@@ -6,4 +6,5 @@ pub mod parse_pdf;
 pub mod pos;
 pub mod printer;
 pub mod product;
+pub mod stats;
 pub mod transaction;

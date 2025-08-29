@@ -12,3 +12,4 @@ pub mod price_adjustment_dto;
 pub mod printer_dto;
 pub mod product_dto;
 pub mod sale_dto;
+pub mod stats_dto;
