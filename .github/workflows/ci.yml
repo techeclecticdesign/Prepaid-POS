@@ -54,7 +54,7 @@ jobs:
 
       - name: Clean stale Tauri build artifacts
         working-directory: src-tauri
-        run: Remove-Item -Recurse -Force target
+        run: if (Test-Path target) { Remove-Item -Recurse -Force target }
         shell: pwsh
 
       - name: Rust fmt & lint & test
