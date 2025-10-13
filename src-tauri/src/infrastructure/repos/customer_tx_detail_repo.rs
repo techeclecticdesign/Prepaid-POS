@@ -237,9 +237,7 @@ impl CustomerTxDetailRepoTrait for SqliteCustomerTxDetailRepo {
 #[cfg(test)]
 mod repo_tests {
     use super::*;
-    use crate::domain::models::customer_tx_detail::CustomerTxDetail;
     use crate::infrastructure::db::create_connection;
-    use std::sync::Arc;
 
     fn make_repo() -> SqliteCustomerTxDetailRepo {
         let mtx_conn = create_connection(":memory:").unwrap();

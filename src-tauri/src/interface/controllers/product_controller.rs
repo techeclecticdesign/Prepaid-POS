@@ -146,7 +146,7 @@ mod smoke {
     use crate::test_support::mock_price_adjustment_repo::MockPriceAdjustmentRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
     use rusqlite::Connection;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Mutex;
 
     fn make_controller() -> ProductController {
         let prod_repo = Arc::new(MockProductRepo::new());

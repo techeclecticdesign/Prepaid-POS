@@ -1452,8 +1452,6 @@ mod tests {
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-    use odbc_sys::Timestamp;
-    use std::sync::Arc;
 
     impl Default for LegacyMigrationDeps {
         fn default() -> Self {

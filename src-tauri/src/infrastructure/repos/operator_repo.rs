@@ -71,7 +71,6 @@ impl OperatorRepoTrait for SqliteOperatorRepo {
 #[cfg(test)]
 mod repo_tests {
     use super::*;
-    use std::sync::Arc;
 
     /// Helper to spin up an in‐memory repo with migrations applied
     fn make_live_repo() -> SqliteOperatorRepo {

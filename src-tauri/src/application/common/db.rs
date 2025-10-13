@@ -24,7 +24,6 @@ mod tests {
     use crate::infrastructure::repos::SqliteOperatorRepo;
     use chrono::Utc;
     use rusqlite::params;
-    use std::sync::Arc;
 
     #[test]
     fn atomic_tx_rolls_back_on_error() -> anyhow::Result<()> {

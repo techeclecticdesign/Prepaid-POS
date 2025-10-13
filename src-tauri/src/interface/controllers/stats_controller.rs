@@ -31,7 +31,6 @@ mod smoke {
     use super::*;
     use crate::test_support::mock_club_tx_repo::MockClubTransactionRepo;
     use crate::test_support::mock_customer_repo::MockCustomerRepo;
-    use std::sync::Arc;
 
     fn make_controller() -> StatsController {
         let club_repo = Arc::new(MockClubTransactionRepo::new());

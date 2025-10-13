@@ -66,7 +66,6 @@ impl OperatorUseCases {
 mod tests {
     use super::*;
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
-    use std::sync::Arc;
 
     #[test]
     fn service_crud_flow() -> anyhow::Result<()> {

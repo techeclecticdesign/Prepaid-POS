@@ -260,7 +260,6 @@ mod tests {
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
     use crate::test_support::mock_price_adjustment_repo::MockPriceAdjustmentRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
-    use std::sync::Arc;
 
     impl Default for Product {
         fn default() -> Self {

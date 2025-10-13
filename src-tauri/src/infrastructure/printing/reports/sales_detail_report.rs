@@ -149,16 +149,12 @@ pub fn print_sales_detail_report(
                 pg.current_y(),
                 &bold,
             );
-            layer.use_text(
-                tx.date
-                    .expect("tx.date should be present")
-                    .format("%Y-%m-%d")
-                    .to_string(),
-                9.0,
-                Mm(40.0),
-                pg.current_y(),
-                &bold,
-            );
+            let date_text = tx
+                .date
+                .as_ref()
+                .map(|d| d.format("%Y-%m-%d").to_string())
+                .unwrap_or_default();
+            layer.use_text(&date_text, 9.0, Mm(40.0), pg.current_y(), &bold);
             layer.use_text(
                 format!("{} ({})", t.customer_name, tx.customer_mdoc),
                 9.0,

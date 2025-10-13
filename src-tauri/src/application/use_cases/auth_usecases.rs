@@ -38,7 +38,6 @@ impl AuthUseCase {
 mod tests {
     use super::*;
     use crate::test_support::mock_cred_repo::MockCredRepo;
-    use std::sync::Arc;
 
     #[test]
     fn test_set_and_validate_password() {

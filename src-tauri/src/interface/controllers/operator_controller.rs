@@ -72,7 +72,6 @@ impl OperatorController {
 mod smoke {
     use super::*;
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
-    use std::sync::Arc;
 
     #[test]
     fn controller_smoke_list() {

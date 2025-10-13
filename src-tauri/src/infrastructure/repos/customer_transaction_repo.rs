@@ -438,7 +438,6 @@ mod repo_tests {
     use super::*;
     use crate::infrastructure::db::create_connection;
     use chrono::Utc;
-    use std::sync::Arc;
 
     impl SqliteCustomerTransactionRepo {
         pub fn create_table_if_not_exists(&self) -> Result<(), AppError> {

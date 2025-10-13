@@ -88,10 +88,7 @@ impl AuthController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::auth::AuthState;
-    use crate::common::error::AppError;
     use crate::test_support::mock_cred_repo::MockCredRepo;
-    use std::sync::{Arc, RwLock};
 
     fn setup() -> AuthController {
         let repo = Arc::new(MockCredRepo::new());

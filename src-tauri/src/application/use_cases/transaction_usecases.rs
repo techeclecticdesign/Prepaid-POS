@@ -2,10 +2,11 @@ use crate::application::common::db::atomic_tx;
 use crate::common::error::AppError;
 use crate::domain::models::{CustomerTransaction, CustomerTxDetail, InventoryTransaction};
 use crate::domain::repos::customer_tx_repo_trait::SaleDetailsTuple;
-use crate::domain::repos::CustomerTransactionRepoTrait;
-use crate::domain::repos::CustomerTxDetailRepoTrait;
-use crate::domain::repos::InventoryTransactionRepoTrait;
-use crate::domain::repos::WeeklyLimitRepoTrait;
+use crate::domain::repos::{
+    CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
+    WeeklyLimitRepoTrait,
+};
+
 use crate::try_log;
 use chrono::{Datelike, Duration, Utc};
 use log::info;
@@ -214,14 +215,10 @@ impl TransactionUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::error::AppError;
     use crate::domain::models::operator::Operator;
     use crate::domain::models::product::Product;
-    use crate::domain::models::{CustomerTransaction, CustomerTxDetail, InventoryTransaction};
-    use crate::domain::repos::{
-        CustomerTransactionRepoTrait, CustomerTxDetailRepoTrait, InventoryTransactionRepoTrait,
-        WeeklyLimitRepoTrait,
-    };
+    use crate::domain::report_models::daily_sales::DailySales;
+    use crate::domain::report_models::product_sales::{ProductSalesByCategory, SalesTotals};
     use crate::domain::repos::{OperatorRepoTrait, ProductRepoTrait};
     use crate::test_support::mock_customer_tx_detail_repo::MockCustomerTxDetailRepo;
     use crate::test_support::mock_customer_tx_repo::MockCustomerTransactionRepo;
@@ -229,12 +226,8 @@ mod tests {
     use crate::test_support::mock_operator_repo::MockOperatorRepo;
     use crate::test_support::mock_product_repo::MockProductRepo;
     use crate::test_support::mock_weekly_limit_repo::MockWeeklyLimitRepo;
-
-    use crate::domain::report_models::daily_sales::DailySales;
-    use crate::domain::report_models::product_sales::{ProductSalesByCategory, SalesTotals};
     use chrono::NaiveDateTime;
     use rusqlite::{Connection, Transaction};
-    use std::sync::{Arc, Mutex};
 
     impl Default for InventoryTransaction {
         fn default() -> Self {
