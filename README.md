@@ -8,7 +8,7 @@ A robust point-of-sale system built with **Tauri** and a **React** frontend, des
 
 ### 📌 Use Case
 
-This system is designed specifically for **Maine State Prison**, where it enables inmates to order items using funds transferred to an annex account. Funds are:
+Funds are:
 
 - Sent via reports by the accounting office
 - Parsed into the system
